@@ -1,0 +1,74 @@
+export type Page = 'pulse' | 'insight' | 'action' | 'watch';
+export type InsightType = 'problem' | 'opportunity' | 'change';
+export type StatusKind = 'none' | 'action' | 'watch';
+
+export interface Insight {
+  id: string;
+  type: InsightType;
+  tag: string;
+  title: string;
+  desc: string;
+  confidence: number;
+  metric: string;
+  delta: string;
+  source: string;
+  question: string;
+}
+
+export interface Evidence {
+  title: string;
+  source: string;
+  updated: string;
+  sheet: string;
+  scope: string;
+  metric: string;
+  hits: string[];
+  rows: string;
+  path: string;
+  fact: string;
+  judgment: string;
+  suggestion: string;
+  rawRows: string[][];
+}
+
+export interface ActionCase {
+  id: string;
+  kind: 'problem' | 'opportunity';
+  tag: string;
+  tagCls: 'red' | 'green';
+  caseTitle: string;
+  code: string;
+  source: string;
+  steps: { title: string; desc: string; evidence: string }[];
+  current: { title: string; desc: string; why: string; evidence: string };
+  experts: string[];
+  data: string[];
+  expertDesc: string;
+  archive: string;
+}
+
+export interface WatchItem {
+  id: string;
+  name: string;
+  value: string;
+  color: 'red' | 'blue' | 'green';
+  logic: string;
+  source: string;
+}
+
+export type ChartPointSeries = { name: string; values: number[]; color: string };
+
+export interface DataSource {
+  name: string;
+  kind: 'sample' | 'upload';
+  at: string;
+  rows: number;
+  fields: number;
+}
+
+export type ChartData =
+  | { kind: 'line'; unit: string; labels: string[]; series: ChartPointSeries[]; threshold?: { value: number; label: string; color: string } }
+  | { kind: 'bar'; unit: string; labels: string[]; series: ChartPointSeries[] }
+  | { kind: 'barline'; labels: string[]; bars: ChartPointSeries; line: ChartPointSeries }
+  | { kind: 'bubble'; labels: string[]; bubbles: { name: string; size: number; count: string; value: string; color: string }[] }
+  | { kind: 'step'; labels: string[]; steps: { name: string; note: string; done: boolean }[] };

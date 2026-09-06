@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dora · 主动经营回路 · v9</title>
+<meta name="description" content="Dora 主动经营回路：业务脉搏、洞察、行动回路与持续关注的轻量演示。">
+<meta name="theme-color" content="#665cf5">
+<style>
+:root{
+  --bg:#f4f5f9;--panel:#fff;--soft:#f8f9fc;--soft2:#f1f3f8;--text:#171923;--muted:#747b8d;
+  --line:#e4e7ee;--brand:#665cf5;--brand-soft:#f0efff;--red:#d84d5e;--red-soft:#fff0f3;
+  --green:#1b966a;--green-soft:#ecfaf4;--blue:#3975da;--blue-soft:#edf4ff;--amber:#ad761a;--amber-soft:#fff7e8;
+  --shadow:0 8px 28px rgba(31,38,67,.055);--r:15px
+}
+*{box-sizing:border-box}
+body{margin:0;min-width:1180px;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+button,input{font:inherit}button{cursor:pointer}
+.app{display:flex;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:#151621;color:#fff;padding:17px 12px;z-index:50;display:flex;flex-direction:column}
+.logo{font-size:23px;font-weight:850;padding:4px 10px 20px}.logo small{display:block;color:#8f94a6;font-size:9px;font-weight:500;margin-top:3px}
+.s-title{font-size:9px;color:#7e8293;letter-spacing:.11em;padding:10px 10px 6px}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{border:0;background:transparent;color:#b9bdca;text-align:left;border-radius:10px;padding:10px 11px;font-size:12px}
+.nav button:hover{background:#22232f;color:#fff}.nav button.active{background:#2a2940;color:#fff;box-shadow:inset 3px 0 var(--brand)}
+.cap-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}.cap-grid button{background:#1d1e29;color:#b6bbc8;border:1px solid #2b2d3b;border-radius:8px;padding:7px 3px;font-size:9px}
+.side-note{margin-top:auto;color:#777c8d;font-size:9px;line-height:1.7;padding:9px}
+.main{margin-left:220px;flex:1}
+.topbar{height:62px;background:rgba(246,247,250,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:30}
+.crumb{font-size:11px;color:#7a7f8f}.crumb b{color:#2b2e39}.top-actions{display:flex;align-items:center;gap:8px}.top-btn,.btn{background:#fff;color:#2a2d38;border:1px solid var(--line);border-radius:10px;padding:8px 11px;font-size:10px;font-weight:720}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}.btn.soft{background:var(--brand-soft);border-color:#e1ddff;color:#5249db}.btn.green{background:var(--green-soft);border-color:#d9f1e7;color:#167653}
+.avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#8f88ff,#4a42cf);color:#fff;font-weight:800;font-size:10px}
+
+.page{display:none;max-width:1440px;margin:0 auto;padding:25px 28px 50px}.page.active{display:block}
+.eyebrow{font-size:9px;color:#675ef0;letter-spacing:.13em;font-weight:900}.h1{font-size:30px;font-weight:900;line-height:1.2;margin:5px 0}.sub{font-size:11px;color:var(--muted);margin:0;line-height:1.55}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}.status{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 11px;font-size:9px;color:#666c7c;white-space:nowrap}.dot{width:7px;height:7px;border-radius:50%;background:#38a97a;display:inline-block;margin-right:6px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.tag{display:inline-flex;align-items:center;border-radius:8px;padding:5px 7px;font-size:8px;border:1px solid var(--line);background:#f7f8fb;color:#696e7d}.tag.red{background:var(--red-soft);border-color:#ffdce1;color:#b63146}.tag.green{background:var(--green-soft);border-color:#d9f1e6;color:#177654}.tag.blue{background:var(--blue-soft);border-color:#d9e5ff;color:#2f66c4}.tag.ai{background:var(--brand-soft);border-color:#e2dfff;color:#5149dc}
+
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 14px}.summary-card{padding:14px 16px;border-top:3px solid transparent;transition:.16s}.summary-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(35,41,76,.09)}.summary-card.problem{border-top-color:var(--red)}.summary-card.opportunity{border-top-color:var(--green)}.summary-card.change{border-top-color:var(--blue)}.summary-card.watch{border-top-color:#8a86d8}.summary-card .label{font-size:10px;color:#7a8090}.summary-card .num{font-size:27px;font-weight:900;margin-top:4px}.summary-card .desc{font-size:8px;color:#979cab;margin-top:2px}
+
+.pulse-layout{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(330px,.88fr);gap:14px}.hero{padding:20px}.event-title{font-size:23px;font-weight:900;margin-top:11px}.event-sub{font-size:9px;color:var(--muted);margin-top:4px}.value-line{display:flex;align-items:baseline;gap:12px;margin:14px 0}.value{font-size:45px;font-weight:920}.down{color:var(--red);font-size:13px;font-weight:850}.muted{color:var(--muted);font-size:9px}.reason{padding:12px 13px;background:#fafafd;border:1px solid #eceef4;border-radius:11px;font-size:10px;line-height:1.7}.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}.fact{padding:10px;background:#fbfcff;border:1px solid var(--line);border-radius:10px}.fact .k{font-size:8px;color:#989dab}.fact .v{font-size:11px;font-weight:850;margin-top:4px}
+.main-buttons{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
+.side-col{display:flex;flex-direction:column;gap:12px}.work{padding:15px}.work-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:850}.step{display:flex;gap:8px;padding:9px 0;border-bottom:1px solid #eff0f4}.step:last-child{border-bottom:0}.step-icon{width:23px;height:23px;border-radius:7px;background:#f2f3f7;display:grid;place-items:center;font-size:8px;font-weight:850;color:#727789}.step.done .step-icon{background:var(--green-soft);color:#147b58}.step.active .step-icon{background:var(--brand-soft);color:#564cdd}.step b{font-size:9px}.step p{font-size:8px;color:var(--muted);margin:2px 0 0}.auto{padding:10px;background:#fbfbff;border:1px solid #e6e3ff;border-radius:10px}.auto-title{font-size:8px;font-weight:850;color:#5249dc}.auto-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+
+.secondary{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.compact{padding:14px}.compact-head{display:flex;justify-content:space-between;align-items:center}.compact-head h3{margin:0;font-size:12px}.item{padding:9px 0;border-bottom:1px solid #eff0f4}.item:last-child{border-bottom:0}.item b{font-size:10px}.item p{font-size:8px;color:var(--muted);margin:3px 0 0;line-height:1.5}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}.kpi{padding:9px;border:1px solid var(--line);border-radius:9px}.kpi b{font-size:11px}.kpi p{font-size:8px;color:var(--muted);margin:2px 0 0}
+.ask{margin-top:13px;background:#1a1b27;border-radius:13px;padding:11px;color:#fff;display:flex;align-items:center;gap:9px;box-shadow:0 8px 24px rgba(19,21,35,.12)}.ask-avatar{width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,#8b84ff,#5b53e7);display:grid;place-items:center;font-weight:900;font-size:9px}.ask-main{flex:1}.ask-main .hint{font-size:8px;color:#afb3c0}.ask-main input{width:100%;background:transparent;border:0;outline:0;color:#fff;font-size:10px;padding:4px 0}.ask-main input::placeholder{color:#858a9a}.ask button{flex:none;background:#6f67ff;border-color:#6f67ff;color:#fff}.ask-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.ask-chip{background:#262735;border:1px solid #343547;color:#c7cad4;border-radius:7px;padding:5px 7px;font-size:7px}
+
+.tabs{display:flex;gap:5px;margin-top:16px}.tab{border:1px solid var(--line);background:#fff;padding:8px 11px;border-radius:9px;font-size:9px;color:#666b79}.tab.active{background:var(--brand-soft);border-color:#dfdcff;color:#5148dc;font-weight:850}
+.insight-shell{display:grid;grid-template-columns:300px minmax(0,1fr);gap:12px;margin-top:11px}.insight-list{padding:10px}.list-head{display:flex;justify-content:space-between;align-items:center;padding:5px 5px 9px}.list-head b{font-size:11px}.list-head span{font-size:8px;color:var(--muted)}
+.insight-item{padding:11px;border-radius:11px;border:1px solid transparent;margin-bottom:6px;cursor:pointer}.insight-item:hover{background:#fafbfe;border-color:var(--line)}.insight-item.active{background:#f7f6ff;border-color:#dfdcff}.insight-item .itop{display:flex;justify-content:space-between;align-items:center}.insight-item .iname{font-size:10px;font-weight:850;margin-top:6px}.insight-item .idesc{font-size:8px;color:var(--muted);line-height:1.45;margin-top:3px}.confidence{font-size:7px;color:#777d8d;margin-top:6px}.confidence b{color:#4f48d7}
+.detail{padding:18px}.detail-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.detail-title{font-size:20px;font-weight:900;margin-top:7px}.detail-sub{font-size:9px;color:var(--muted);margin-top:4px}.detail-right{display:flex;gap:6px}.chart-card{margin-top:12px}.chart-header{display:flex;justify-content:space-between;align-items:center;padding:10px 11px;border-bottom:1px solid var(--line);font-size:9px}.chart-area{height:300px;position:relative;background:#fbfcff;overflow:hidden;cursor:crosshair}.chart-area svg{width:100%;height:100%;display:block}.chart-tooltip{position:absolute;display:none;background:rgba(23,25,35,.96);color:#fff;border-radius:10px;padding:9px 11px;font-size:11px;line-height:1.6;pointer-events:none;white-space:nowrap;box-shadow:0 12px 32px rgba(0,0,0,.22);z-index:5;border:1px solid rgba(255,255,255,.08)}.chart-tooltip b{color:#fff}.chart-tooltip .tt-title{font-weight:800;margin-bottom:3px;color:#fff}.chart-tooltip .tt-row{display:flex;align-items:center;gap:6px;white-space:nowrap}.chart-tooltip .tt-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:1px}.chart-tooltip .tt-label{color:#aeb2c0}
+.detail-bottom{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.panel{border:1px solid var(--line);border-radius:11px;padding:14px}.panel h4{margin:0;font-size:14px}.cause{display:grid;grid-template-columns:1fr 30px 1fr;gap:6px;align-items:center;margin-top:10px}.cause-box{padding:11px;border:1px solid var(--line);border-radius:9px}.cause-box.hot{background:#fff8fa;border-color:#ffd9df}.cause-box .k{font-size:11px;color:#9298a7}.cause-box b{font-size:13px}.cause-box .n{font-size:20px;font-weight:900;margin-top:3px}.arrow{text-align:center;color:#a4a8b3}.evidence{margin-top:11px;padding:12px;background:#faf9ff;border:1px solid #e7e4ff;border-radius:9px;display:flex;justify-content:space-between;gap:8px;align-items:center}.evidence b{font-size:13px}.evidence span{font-size:12px;color:var(--muted);line-height:1.55}.confidence-large{margin-top:11px}.confidence-large>div:first-child{font-size:13px !important}.confidence-large>div:last-child{font-size:12px !important}.cbar{height:7px;background:#e9ebef;border-radius:99px;overflow:hidden;margin-top:6px}.cbar i{display:block;height:100%;background:var(--brand)}.suggested{margin-top:10px;padding-left:0;display:grid;gap:8px}.suggested div{font-size:13px;color:#4f5564;line-height:1.55}.suggested span{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--brand-soft);color:#554bdd;margin-right:7px;font-size:11px;font-weight:850}
+.dialog-mini{margin-top:12px;background:#f8f8ff;color:#303342;border:1px solid #dcdcf0;border-radius:12px;padding:12px;display:grid;grid-template-columns:46px 1fr;column-gap:10px;align-items:start}
+.dialog-speaker{display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:2px}
+.dialog-avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#e8e7ff;color:#5149dc;font-size:14px;font-weight:900}
+.dialog-speaker b{font-size:11px;color:#5149dc;background:none;padding:0}
+.dialog-bubble{position:relative;background:#fff;border:1px solid #e6e5f2;border-radius:4px 10px 10px 10px;padding:10px 12px;min-width:0;box-shadow:0 2px 7px rgba(51,48,110,.04)}
+.dialog-bubble:before{content:"";position:absolute;left:-7px;top:9px;width:12px;height:12px;background:#fff;border-left:1px solid #e6e5f2;border-bottom:1px solid #e6e5f2;transform:rotate(45deg)}
+.dialog-bubble>*{position:relative}
+.dialog-mini strong{display:block;font-size:13px;color:#3e3a91;margin-bottom:2px}
+.dialog-mini p{font-size:13px;line-height:1.55;margin:3px 0 0;color:#464a59}
+.dialog-mini .qrow{grid-column:2;display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;background:#efeff9;border-radius:8px;padding:7px}
+.q{background:#fff;border:1px solid #d2ccff;color:#5149dc;padding:8px 10px;border-radius:7px;font-size:12px}
+
+.action-layout{display:grid;grid-template-columns:1.65fr 1fr;gap:14px;margin-top:14px;align-items:start}.action-card{padding:22px}.orch{padding:18px}
+.problem-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.problem-head b{font-size:17px}.pid{font-size:12px;color:var(--muted)}
+.action-evidence{margin-top:14px;padding:12px 14px;background:#fbfaff;border:1px solid #e7e2ff;border-radius:11px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.action-evidence .ae-head{display:flex;align-items:center;gap:10px}.action-evidence .ae-head b{font-size:13px}.action-evidence .ae-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.timeline{margin-top:18px}.tl{display:flex;gap:12px;position:relative;padding-bottom:22px}.tl:not(:last-child):before{content:"";position:absolute;left:14px;top:30px;bottom:0;width:2px;background:#e7e9ef}.tldot{width:29px;height:29px;border-radius:50%;background:#fff;border:2px solid #d7dae3;display:grid;place-items:center;font-size:12px;flex:0 0 auto;z-index:1}.tl.done .tldot{background:var(--green-soft);border-color:#79caa7;color:#167957}.tl.active .tldot{background:var(--brand-soft);border-color:#a39fff;color:#554bdc}.tl-body{flex:1;min-width:0}.tl-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.tl-head h4{font-size:14px;margin:0}.tl p{font-size:13px;color:var(--muted);margin:4px 0 0;line-height:1.6}.step-trace{border:1px solid #e2deff;background:#f7f5ff;color:#554bdc;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:750;white-space:nowrap}.step-trace:hover{background:#f0edff}.step-evidence{display:inline-block;margin-top:7px;font-size:11px;color:#8a83bd;background:#f6f5fd;border:1px solid #ece9fb;border-radius:7px;padding:3px 8px}
+.current{margin-top:10px;padding:14px;background:#faf9ff;border:1px solid #e6e2ff;border-radius:10px}.current b{font-size:13px;color:#5149dc}.current p{font-size:13px;color:#5f6470;line-height:1.6;margin:5px 0}
+.orch h3{font-size:15px;margin:0}.orch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.orch-section{padding:12px 0;border-bottom:1px solid #eff0f4}.orch-section:last-child{border-bottom:0}.os-title{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#464c5c}.add-mini{border:1px solid #ddd8ff;background:#fff;color:#554bdd;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:750}
+.expert-chips,.data-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.expert-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:9px;background:#f7f6ff;border:1px solid #e6e2ff;font-size:11px;font-weight:750;color:#4a4558}.expert-chip i{font-style:normal}.expert-chip em{font-style:normal;font-size:9px;color:#167653;background:var(--green-soft);border-radius:6px;padding:2px 5px}.expert-chip.user{border-color:#d8f2e6;background:#f2fbf7}.expert-chip.user em{color:#2f66c4;background:var(--blue-soft)}
+.data-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:9px;background:#fbfcff;border:1px solid #e7e9f0;font-size:11px;color:#5b6271}.data-chip.user{border-color:#d8f2e6;background:#f2fbf7;color:#167653}
+.orow{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #eff0f4}.orow:last-child{border-bottom:0}.oi{width:27px;height:27px;border-radius:8px;background:#f2f3f7;display:grid;place-items:center;font-size:12px}.orow b{font-size:12px}.orow p{font-size:11px;color:var(--muted);margin:2px 0 0;line-height:1.5}.archive{margin-top:12px;padding:12px;background:#fbfcff;border:1px solid var(--line);border-radius:9px;font-size:12px;color:#626776;line-height:1.6}
+
+.delegate{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-top:14px;align-items:start}.delegate-main,.delegate-side{padding:20px}.delegate-main{background:linear-gradient(145deg,#fff 0%,#faf9ff 100%);border-color:#dedbff}.d-title{font-size:20px;font-weight:900}.d-sub{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.55}.input-line{display:flex;gap:9px;margin-top:16px}.delegate-input{flex:1;border:1px solid #cbc6ff;box-shadow:0 0 0 4px #f3f1ff;border-radius:10px;padding:13px 14px;font-size:14px;outline:0;min-width:0}.delegate-input:focus{border-color:#665cf5;box-shadow:0 0 0 4px #e9e7ff}.suggests{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.suggest{border:1px solid #ddd9ff;background:#fff;color:#554bdd;border-radius:999px;padding:7px 10px;font-size:12px}.suggest:hover{background:#f0efff}.delegate-result{display:none;margin-top:14px;padding:14px;background:#f6f5ff;border:1px solid #dcd8ff;border-radius:10px}.delegate-result.show{display:block}.delegate-result>b{display:block;font-size:14px;color:#5149dc}.intent-grid{display:grid;grid-template-columns:88px 1fr;gap:8px 10px;margin-top:11px;font-size:13px;line-height:1.5}.intent-grid .k{color:#747b8d;font-weight:700}.delegate-side{background:#fcfcff}.delegate-side>div:first-child b{font-size:15px !important}.mstep{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid #eff0f4}.mstep:last-child{border-bottom:0}.mnum{width:27px;height:27px;border-radius:8px;background:var(--brand-soft);color:#554bdc;display:grid;place-items:center;font-size:11px;font-weight:850;flex:0 0 auto}.mstep b{font-size:13px}.mstep p{font-size:12px;color:var(--muted);margin:3px 0;line-height:1.5}.watch-table{margin-top:14px;overflow:hidden}.whead,.wrow{display:grid;grid-template-columns:1.25fr .75fr 1.55fr .45fr;gap:10px;align-items:center}.whead{padding:11px 14px;background:#fafbfc;color:#73798a;font-size:12px;font-weight:700}.wrow{padding:14px;border-top:1px solid #eff0f4}.wname{font-size:14px;font-weight:850}.wrow small{font-size:11px;color:var(--muted)}.wvalue{font-size:15px;font-weight:900}.wlogic{font-size:13px;color:#606575;line-height:1.5}.rowbtn{justify-self:end;border:1px solid var(--line);background:#fff;padding:8px 10px;border-radius:8px;font-size:12px;min-height:36px}
+.delegate-kicker{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;font-weight:800;color:#5149dc}.delegate-kicker>span:first-child{background:#eeecff;border:1px solid #dfdcff;border-radius:999px;padding:5px 9px}.delegate-state{color:#247b5b;background:#ecfaf4;border:1px solid #d4f0e2;border-radius:999px;padding:5px 9px}.delegate-label{display:block;font-size:13px;font-weight:800;color:#454a59;margin-top:16px}.suggest-head{font-size:12px;font-weight:800;color:#6b7181;margin-top:15px}
+.delegate-freq{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:15px}.delegate-freq .freq-lbl{font-size:11px;font-weight:800;color:#6b7181;margin-right:2px}.freq-chip{border:1px solid #ddd9ff;background:#fff;color:#554bdd;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:750}.freq-chip.active{background:#f0efff;border-color:#cfc9ff}
+
+.mask{position:fixed;inset:0;background:rgba(18,20,30,.22);display:none;z-index:90}.mask.open{display:block}.drawer{position:fixed;right:0;top:0;width:520px;height:100%;background:#fff;z-index:91;transform:translateX(100%);transition:.22s;box-shadow:-18px 0 48px rgba(0,0,0,.14);padding:20px;overflow:auto}.drawer.open{transform:translateX(0)}.close{position:absolute;right:17px;top:16px;border:0;background:#f1f2f6;border-radius:8px;width:28px;height:28px;color:#666b7a}.source{margin-top:12px;padding:11px;background:#fafbfe;border:1px solid var(--line);border-radius:10px}.source b{font-size:9px}.sg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.si{padding:8px;background:#fff;border:1px solid #eceef2;border-radius:8px}.si .k{font-size:7px;color:#989eab}.si .v{font-size:8px;font-weight:820;margin-top:2px}.raw{width:100%;border-collapse:collapse;margin-top:8px;font-size:7.5px}.raw th,.raw td{padding:6px 5px;border-bottom:1px solid #eceef4;text-align:left}.raw th{background:#fafbfc;color:#7c8291}.raw tr.hot{background:#fbf8ff}.code{margin-top:8px;background:#171923;color:#d4d6de;border-radius:9px;padding:9px;font:7px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}
+
+.cap-panel{position:fixed;left:232px;top:72px;width:360px;background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:0 14px 42px rgba(0,0,0,.14);z-index:80;padding:14px;display:none}.cap-panel.open{display:block}.cap-panel h3{margin:0;font-size:14px}.cap-panel p{margin:3px 0 0;font-size:8px;color:var(--muted)}.cap-grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.cap-card{padding:9px;border:1px solid var(--line);border-radius:9px;background:#fbfcff}.cap-card b{font-size:8px}.cap-card p{font-size:7px;margin-top:3px}
+.toast{position:fixed;right:20px;bottom:20px;background:#171923;color:#fff;border-radius:9px;padding:10px 12px;font-size:8.5px;opacity:0;transform:translateY(8px);transition:.2s;z-index:100;pointer-events:none}.toast.show{opacity:1;transform:translateY(0)}
+
+/* Enterprise cockpit refinement */
+.cockpit-kicker{display:flex;align-items:center;gap:8px;margin:17px 0 10px;color:#626878;font-size:12px;font-weight:800}
+.cockpit-kicker .line{height:1px;background:var(--line);flex:1}
+.pulse-priority{position:relative;overflow:hidden;background:linear-gradient(135deg,#fff 0%,#fbfaff 100%);border-color:#dfdcff}
+.pulse-priority:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--red)}
+.priority-meta{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.priority-label{font-size:13px;color:#6e7382;font-weight:800}
+.priority-score{font-size:12px;color:#b23a4c;background:var(--red-soft);border:1px solid #ffdce1;border-radius:999px;padding:6px 9px;font-weight:800}
+.priority-title{font-size:27px;font-weight:920;margin-top:10px;letter-spacing:-.02em}
+.priority-copy{font-size:14px;color:#666c7b;line-height:1.65;margin-top:5px}
+.priority-evidence{display:grid;grid-template-columns:1.1fr .9fr;gap:9px;margin-top:14px}
+.priority-evidence .fact{background:rgba(255,255,255,.82)}
+.problem-stack{margin-top:14px;padding:14px;background:#fbfbfe;border:1px solid #e8e5ff;border-radius:13px}
+.problem-stack-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.problem-stack-head b{font-size:13px}.problem-stack-head span{font-size:11px;line-height:1.45;color:var(--muted);text-align:right}
+.problem-list{height:190px;max-height:190px;overflow-y:auto;overscroll-behavior:contain;padding:2px 7px 2px 0;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:#c9c6f5 transparent}
+.problem-list::-webkit-scrollbar{width:7px}.problem-list::-webkit-scrollbar-thumb{background:#c9c6f5;border-radius:8px}.problem-list::-webkit-scrollbar-track{background:#f0f1f6;border-radius:8px}
+.problem-item{border:1px solid #e3e6ef;border-radius:12px;background:#fff;overflow:hidden}
+.problem-item.active,.problem-item.selected{border-color:#d7d1ff;box-shadow:0 8px 22px rgba(102,92,245,.08)}
+.problem-toggle{width:100%;border:0;background:transparent;padding:12px 12px 11px;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;cursor:pointer}
+.problem-toggle .meta{display:flex;flex-direction:column;gap:5px;min-width:0}
+.problem-toggle .meta b{font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.problem-toggle .meta .subline{font-size:11px;color:var(--muted)}
+.problem-toggle .arrow{width:22px;height:22px;border-radius:50%;background:#f3f1ff;color:#5b50dc;display:grid;place-items:center;font-size:13px;flex:0 0 auto}
+.problem-body{display:none;padding:0 12px 12px}.problem-item.active .problem-body{display:block}
+.problem-body .body-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 0 0;border-top:1px dashed #ebedf4}
+.problem-body .body-row .desc{font-size:11px;color:#666c7a;line-height:1.55;flex:1;min-width:220px}
+.problem-body .mini{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.problem-body .mini .tag{font-size:10px;padding:4px 6px}
+.problem-evidence{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding-top:9px;border-top:1px solid #f0f1f5}
+.problem-evidence span{font-size:10px;color:#777d8d;overflow-wrap:anywhere}.problem-evidence .btn{flex:0 0 auto}
+.signal-board{margin-top:14px;padding:16px}
+.signal-board-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:8px}
+.signal-board-head h3{margin:0;font-size:16px}.signal-board-head p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.signal-tabs{display:flex;gap:6px}.signal-tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 10px;font-size:11px;color:#666c7a}.signal-tab.active{background:#f1efff;border-color:#dedaff;color:#5047d8;font-weight:800}
+.signal-list{border-top:1px solid var(--line)}
+.signal-row{display:grid;grid-template-columns:100px minmax(0,1.5fr) minmax(190px,.8fr) auto;gap:14px;align-items:center;padding:13px 4px;border-bottom:1px solid #eff0f4}
+.signal-row:last-child{border-bottom:0}.signal-kind{font-size:11px;font-weight:800}.signal-kind.op{color:#177654}.signal-kind.ch{color:#2f66c4}.signal-main b{font-size:13px}.signal-main p{font-size:11px;color:var(--muted);margin:3px 0 0;line-height:1.45}.signal-value{font-size:13px;font-weight:850;display:flex;justify-content:flex-end;gap:7px;align-items:baseline;white-space:nowrap}.signal-value .base{color:#242938}.signal-value .delta{font-size:12px;font-weight:900}.signal-value .delta.pos{color:var(--green)}.signal-value .delta.neg{color:var(--red)}.signal-value .delta.neutral{color:#4d67d5}.signal-action{white-space:nowrap}
+.cockpit-side{display:flex;flex-direction:column;gap:12px}.monitor-card{padding:16px}.monitor-head{display:flex;justify-content:space-between;align-items:center}.monitor-head h3{margin:0;font-size:15px}.monitor-count{font-size:12px;color:#247b5b;background:#ecfaf4;border:1px solid #d4f0e2;border-radius:999px;padding:5px 8px;font-weight:800}
+.monitor-stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.monitor-stat>div{padding:10px;background:#fafbfc;border:1px solid var(--line);border-radius:9px}.monitor-stat b{font-size:18px}.monitor-stat span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+.monitor-list{margin-top:10px}.monitor-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eff0f4}.monitor-item:last-child{border-bottom:0}.monitor-item b{font-size:12px}.monitor-item span{font-size:10px;color:var(--muted)}
+.auto{padding:12px;background:#fbfbff;border:1px solid #e6e3ff;border-radius:10px}.auto-title{font-size:8px;font-weight:850;color:#5249dc}.auto-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.auto-tag{border:1px solid #ddd9ff;background:#fff;color:#554bdd;border-radius:999px;padding:6px 9px;font-size:10px;font-weight:800}.auto-tag.active{background:#f1efff;border-color:#cfc9ff}.auto-note{margin-top:8px;font-size:11px;line-height:1.55;color:#5f6474}
+/* One consistent Dora follow-up surface across pages and insight suggestions */
+.followup-mini{margin-top:14px;background:linear-gradient(145deg,#f7f6ff 0%,#fdfdff 100%);border:1px solid #e6e2ff;border-radius:13px;padding:13px 14px;display:grid;grid-template-columns:34px 1fr;gap:10px}
+.followup-mini .ask-avatar{width:34px;height:34px;background:linear-gradient(135deg,#8f88ff,#4a42cf);border-radius:10px;font-size:15px}.followup-content .hint{font-size:11px;color:#8b87c9}.followup-content p{font-size:13px;line-height:1.6;margin:4px 0 0;color:#3d3a52}.followup-actions{grid-column:1/-1;display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}.followup-actions .q{background:#fff;border:1px solid #ddd8ff;color:#554bdd;border-radius:9px;padding:8px 11px;font-size:11px;font-weight:750}.followup-actions .q:hover{background:#f0efff}.followup-footer{grid-column:1/-1;margin-top:4px;padding-top:9px;border-top:1px dashed #e7e3ff;font-size:11px;line-height:1.5;color:#8a86b8;display:flex;align-items:flex-start;gap:7px}.followup-footer .dot{width:6px;height:6px;border-radius:50%;background:#1b966a;margin-top:5px;flex:0 0 auto}
+.list-status{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800;width:fit-content}
+.list-status.action{background:var(--green-soft);color:#167653}.list-status.watch{background:var(--blue-soft);color:#2f66c4}.list-status.none{background:#f7f8fb;color:#9aa0ac;border:1px solid #e9ebf1}
+.insight-status{display:inline-flex;align-items:center;gap:6px;margin-left:8px;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;vertical-align:middle}
+.insight-status.action{background:var(--green-soft);color:#167653}.insight-status.watch{background:var(--blue-soft);color:#2f66c4}.insight-status.none{background:#f7f8fb;color:#9aa0ac;border:1px solid #e9ebf1}.status-dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.action-switch{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.action-switch .lbl{font-size:12px;color:var(--muted);font-weight:750}
+.action-tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:11px;font-weight:750;color:#5b6271;display:inline-flex;align-items:center;gap:6px}
+.action-tab.active{background:var(--brand);border-color:var(--brand);color:#fff}
+.action-tab .badge{display:inline-block;padding:0 6px;border-radius:999px;background:#fff;color:#5149dc;font-size:9px;font-weight:800}
+.action-tab.active .badge{background:rgba(255,255,255,.22);color:#fff}
+.action-empty{padding:16px;text-align:center;color:var(--muted);font-size:12px;border:1px dashed var(--line);border-radius:12px;margin-top:14px}
+.watch-empty{padding:22px 14px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6}
+.drawer-context{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 9px;border-radius:999px;background:#f3f1ff;color:#5149dc;font-size:11px;font-weight:800}
+.insight-route{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);align-items:center;gap:10px;margin:14px 0;padding:12px;background:#fbfbfd;border:1px solid var(--line);border-radius:12px}
+.route-node{padding:10px 12px;background:#fff;border:1px solid #e7e9f0;border-radius:9px}.route-node b{font-size:12px}.route-node p{margin:4px 0 0;color:var(--muted);font-size:11px;line-height:1.5}.route-arrow{text-align:center;color:var(--brand);font-size:18px;font-weight:900}
+.change-lifecycle{margin:14px 0;padding:14px;background:#f8f9fc;border:1px solid var(--line);border-radius:12px}.change-lifecycle h4{margin:0 0 10px;font-size:13px}.level-row{display:grid;grid-template-columns:108px 1fr;gap:10px;align-items:start;padding:9px 0;border-top:1px solid #e9ebf1}.level-row:first-of-type{border-top:0}.level-badge{display:inline-flex;justify-content:center;padding:5px 7px;border-radius:7px;font-size:10px;font-weight:800}.level-badge.watch{background:var(--blue-soft);color:#2f66c4}.level-badge.op{background:var(--green-soft);color:#177654}.level-badge.problem{background:var(--red-soft);color:#b63146}.level-copy{font-size:11px;line-height:1.55;color:#626979}.logic-strip{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.logic-pill{padding:5px 8px;border-radius:999px;background:#fff;border:1px solid #dfe3ed;color:#5b6271;font-size:10px;font-weight:750}
+
+/* 可访问性与可用性增强 */
+.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+.skip-link:focus{left:12px;top:12px;width:auto;height:auto;background:#fff;border:2px solid #665cf5;border-radius:8px;padding:6px 10px;z-index:9999}
+:focus-visible{outline:2px solid #5149dc;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important;animation:none !important}
+}
+/* Enterprise readability scale: keep hierarchy while removing sub-10px body copy. */
+body{font-size:14px}
+.logo small,.s-title,.side-note{font-size:11px}
+.cap-grid button{font-size:11px;padding:9px 5px}
+.crumb{font-size:13px}
+.top-btn,.btn{font-size:13px;padding:10px 13px;min-height:40px}
+.avatar{font-size:12px}
+.eyebrow{font-size:11px}
+.status{font-size:12px;padding:9px 12px}
+.tag{font-size:11px;padding:6px 8px}
+.summary-card .label{font-size:13px}
+.summary-card .desc{font-size:11px;line-height:1.45}
+.event-sub,.muted{font-size:13px}
+.reason{font-size:14px}
+.fact .k{font-size:11px}
+.fact .v{font-size:13px}
+.step{padding:11px 0}
+.step-icon{font-size:11px}
+.step b,.step p{font-size:12px}
+.auto-title,.auto-tags{font-size:12px}
+.confidence,.idesc,.list-hint,.detail-sub,.evidence-copy,.source b,.source,.raw,.code{font-size:12px}
+.iname{font-size:15px}
+.work-head{font-size:14px}
+.compact .item b{font-size:13px}
+.compact .item p{font-size:12px;line-height:1.55}
+.ask input,.hint{font-size:13px}
+.whead{font-size:11px}
+.wname{font-size:13px}
+.wrow small{font-size:10px}
+.wlogic{font-size:13px;line-height:1.5}
+.rowbtn{font-size:12px;padding:8px 10px;min-height:36px}
+.drawer{font-size:13px}
+.source .si .k{font-size:10px}
+.source .si .v{font-size:12px}
+.raw{font-size:11px}
+.code{font-size:11px;line-height:1.65}
+.cap-panel p,.cap-card p{font-size:11px;line-height:1.5}
+.cap-card b{font-size:12px}
+.toast{font-size:12px;padding:11px 14px}
+@media(max-width:1250px){body{min-width:0}.sidebar{width:200px}.main{margin-left:200px}}
+@media(max-width:760px){
+  .sidebar{position:static;width:100%;height:auto;min-height:0;padding:12px}
+  .app{display:block}.main{margin-left:0}.sidebar .side-note{display:none}
+  .nav{display:grid;grid-template-columns:repeat(4,1fr)}.cap-grid{grid-template-columns:repeat(4,1fr)}
+  .topbar{padding:0 16px}.page{padding:20px 16px 40px}.summary{grid-template-columns:repeat(2,1fr)}
+  .head{display:block}.status{display:inline-block;margin-top:12px}.drawer{width:min(520px,100%)}
+  .whead{display:none}.wrow{grid-template-columns:1fr auto;gap:8px}.wlogic{grid-column:1/-1}.rowbtn{grid-column:2;grid-row:1}
+  .input-line{flex-direction:column}.input-line .btn{width:100%}.delegate-kicker{align-items:flex-start;flex-direction:column}.delegate-label{margin-top:14px}.suggests{margin-top:10px}.wrow{padding:13px}.wvalue{font-size:14px}
+}
+@media(max-width:1250px){.pulse-layout,.insight-shell,.action-layout,.delegate{grid-template-columns:1fr}.secondary,.insight-grid,.detail-bottom{grid-template-columns:1fr}}
+@media(max-width:760px){.dialog-mini{grid-template-columns:36px 1fr;padding:10px}.dialog-avatar{width:27px;height:27px;font-size:12px}.dialog-speaker b{font-size:10px}.dialog-mini strong,.dialog-mini p{font-size:12px}.dialog-bubble{padding:9px 10px}.dialog-mini .qrow{grid-column:1/-1;margin-top:7px}}
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">跳到主内容</a>
+<div class="app">
+<aside class="sidebar" role="navigation" aria-label="主导航">
+  <div class="logo">Dora<small>主动经营回路 · v9</small></div>
+  <div class="s-title">工作台</div>
+  <div class="nav">
+    <button class="active navbtn" data-page="pulse">✦ 业务脉搏</button>
+    <button class="navbtn" data-page="insight">◒ 洞察</button>
+    <button class="navbtn" data-page="action">↗ 行动回路</button>
+    <button class="navbtn" data-page="watch">◌ 持续关注</button>
+  </div>
+  <div class="s-title">Dora 能力</div>
+  <div class="cap-grid">
+    <button data-cap="专家团">专家团</button><button data-cap="资源">资源</button><button data-cap="数据">数据</button><button data-cap="知识">知识</button>
+    <button data-cap="技能">技能</button><button data-cap="模型">模型</button><button data-cap="MCP">MCP</button><button data-cap="定时任务">定时任务</button>
+  </div>
+  <div class="s-title">系统记录</div>
+  <div class="nav"><button data-cap="Dora发现">◉ Dora发现 <span style="float:right;color:#8d84ff">3</span></button><button data-cap="执行记录">▣ 执行记录</button></div>
+  <div class="side-note">能力不消失，只从“用户要理解的结构”变成“Dora 自动编排的底座”。</div>
+</aside>
+
+<main class="main" id="main">
+<header class="topbar">
+  <div class="crumb">工作空间 <b>/</b> 门店经营 <b>/</b> <b id="crumb">业务脉搏</b></div>
+  <div class="top-actions"><button class="top-btn" id="chainBtn">⌁ 主动构建链</button><button class="top-btn" id="traceBtn">↗ 数据证据链</button><div class="avatar">T</div></div>
+</header>
+
+<!-- BUSINESS PULSE -->
+<section class="page active" id="page-pulse">
+  <div class="head">
+    <div><div class="eyebrow">BUSINESS PULSE · OVERVIEW</div><div class="h1">今天，有什么业务值得你关注？</div><p class="sub">数据更新后，Dora 自动完成“理解数据 → 判断重要性 → 形成业务脉络”。这里是总览入口，不在这里解决问题。</p></div>
+    <div class="status"><span class="dot"></span>门店经营数据.xlsx · 09:32 更新</div>
+  </div>
+
+  <div class="summary">
+    <div class="card summary-card problem" data-insight="problem"><div class="label">需要处理</div><div class="num">3</div><div class="desc">高影响问题 · 优先进入问题洞察</div></div>
+    <div class="card summary-card opportunity" data-insight="opportunity"><div class="label">增长机会</div><div class="num">2</div><div class="desc">可放大机会 · 看增长来源</div></div>
+    <div class="card summary-card change" data-insight="change"><div class="label">重要变化</div><div class="num">4</div><div class="desc">正在观察 · 看是否升级</div></div>
+    <div class="card summary-card watch" data-page="watch"><div class="label">持续关注</div><div class="num" id="pulseWatchCount">6</div><div class="desc">Dora 正在替你持续检查</div></div>
+  </div>
+
+  <div class="cockpit-kicker"><span>今日经营主线</span><span class="line"></span><span>先判断优先级，再进入洞察</span></div>
+  <div class="pulse-layout">
+    <div class="card hero pulse-priority">
+      <div class="priority-meta"><span class="tag red">P1 · 需要处理</span><span class="priority-score">影响高 · 置信 86%</span></div>
+      <div class="priority-title" id="pulsePriorityTitle">利润率正在失速</div>
+      <div class="priority-copy" id="pulsePriorityCopy">8/31 起连续 3 天低于 18.5% 目标。Dora 判断这不是一次普通波动，当前主要影响来自 A 产品线的采购成本。</div>
+      <div class="value-line"><span class="value" id="pulsePriorityMetric">18.7%</span><span class="down" id="pulsePriorityDelta">↓ 2.1%</span><span class="muted" id="pulsePriorityTarget">目标 18.5%</span></div>
+      <div class="reason"><b>Dora 判断：</b>A 产品线采购成本上涨 <b>8.3%</b>，进一步定位到供应商 B，若趋势继续，本月预计利润影响约 <b>¥230,000</b>。</div>
+      <div class="priority-evidence" id="pulsePriorityEvidence">
+        <div class="fact"><div class="k">主要影响因素</div><div class="v">A 产品线 · +8.3%</div></div>
+        <div class="fact"><div class="k">进一步定位</div><div class="v">供应商 B · +11.7%</div></div>
+      </div>
+      <div class="problem-stack">
+        <div class="problem-stack-head"><b>业务脉络 · 问题</b><span>3 条同级问题 · 可上下滑动查看</span></div>
+        <div class="problem-list" id="problemList">
+          <div class="problem-item active" data-problem="p1">
+            <button class="problem-toggle" type="button"><div class="meta"><b>利润率正在失速</b><div class="subline">高影响 · 置信 86%</div></div><div class="arrow">▾</div></button>
+            <div class="problem-body"><div class="body-row"><div class="desc">8/31 起连续 3 天低于目标。当前主要影响来自 A 产品线采购成本上涨。</div><button class="btn" data-problem-idx="0">进入问题洞察 →</button></div><div class="mini"><span class="tag red">A 产品线 · +8.3%</span><span class="tag">供应商 B · +11.7%</span></div><div class="problem-evidence"><span>证据：门店经营数据 · 供应商 B · 8/27—9/03</span><button class="btn" data-problem-evidence="p1">证据链</button></div></div>
+          </div>
+          <div class="problem-item" data-problem="p2">
+            <button class="problem-toggle" type="button"><div class="meta"><b>华东退货率连续上升</b><div class="subline">中影响 · 置信 78%</div></div><div class="arrow">▸</div></button>
+            <div class="problem-body"><div class="body-row"><div class="desc">退货率从 3.2% 升至 4.6%，主要集中在门店 08 / 16。</div><button class="btn" data-problem-idx="1">查看问题详情 →</button></div><div class="mini"><span class="tag red">4.6%</span><span class="tag">↑ 1.4pp</span><span class="tag">门店 08 / 16</span></div><div class="problem-evidence"><span>证据：退货明细 · 门店 08 / 16 · 近 8 周</span><button class="btn" data-problem-evidence="p2">证据链</button></div></div>
+          </div>
+          <div class="problem-item" data-problem="p3">
+            <button class="problem-toggle" type="button"><div class="meta"><b>订单量下降但销售额仍增长</b><div class="subline">需复核 · 置信 72%</div></div><div class="arrow">▸</div></button>
+            <div class="problem-body"><div class="body-row"><div class="desc">订单量下降 1.8%，但销售额增长 3.2%，存在结构性变化。</div><button class="btn" data-problem-idx="2">查看问题详情 →</button></div><div class="mini"><span class="tag blue">4,286 单</span><span class="tag">↓ 1.8%</span><span class="tag">¥12.8M · ↑3.2%</span></div><div class="problem-evidence"><span>证据：订单汇总 · 销售汇总 · 8/28—9/03</span><button class="btn" data-problem-evidence="p3">证据链</button></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="main-buttons"><button class="btn primary" id="mainProblemInsight" data-insight="problem">进入当前问题洞察 →</button><button class="btn soft" id="followMain">让 Dora 帮我跟进</button><button class="btn" id="pulseEvidence">查看当前问题证据链</button></div>
+    </div>
+
+    <div class="cockpit-side">
+      <div class="card monitor-card">
+        <div class="monitor-head"><h3>Dora 监控状态</h3><span class="monitor-count"><span id="monitorCount">6</span> 个目标运行中</span></div>
+        <div class="monitor-stat"><div><b>09:32</b><span>最近一次数据检查</span></div><div><b>100%</b><span>关键判断可追溯</span></div></div>
+        <div class="monitor-list">
+          <div class="monitor-item"><div><b>利润率</b><span> · 目标线</span></div><span>已触发问题</span></div>
+          <div class="monitor-item"><div><b>华东销售额</b><span> · 连续趋势</span></div><span>正常观察</span></div>
+          <div class="monitor-item"><div><b>客单价</b><span> · 增长趋势</span></div><span>机会候选</span></div>
+        </div>
+        <button class="btn" data-page="watch" style="margin-top:10px;width:100%">查看全部关注目标 →</button>
+      </div>
+      <div class="card monitor-card">
+        <div class="monitor-head"><h3>本轮 Dora 工作</h3><span class="tag ai">自动运行</span></div>
+        <div class="step done"><div class="step-icon">✓</div><div><b>读取与清洗数据</b><p>2,847 行 · 36 字段</p></div></div>
+        <div class="step done"><div class="step-icon">✓</div><div><b>建立经营口径</b><p>销售 / 利润 / 客单价 / 库存</p></div></div>
+        <div class="step active"><div class="step-icon">●</div><div><b>判断值得关注什么</b><p>3 问题 · 2 机会 · 4 变化</p></div></div>
+        <div class="auto"><div class="auto-title">自动编排 · 专家团能力说明</div><div class="auto-tags"><button class="auto-tag active" type="button" data-auto-expert="经营专家">经营专家</button><button class="auto-tag" type="button" data-auto-expert="趋势">趋势</button><button class="auto-tag" type="button" data-auto-expert="归因">归因</button><button class="auto-tag" type="button" data-auto-expert="零售知识">零售知识</button></div><div class="auto-note" id="autoNote">经营专家负责把原始经营信号整理成“问题 / 机会 / 变化”的业务脉络，并决定哪些内容值得优先看。</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card signal-board">
+    <div class="signal-board-head"><div><h3>其他经营信号</h3><p>这里承接主线之外的机会与变化，不与 P1 问题争夺视觉焦点。</p></div><div class="signal-tabs"><button class="signal-tab active" data-page="pulse">全部 6</button></div></div>
+    <div class="signal-list">
+      <div class="signal-row"><div class="signal-kind op">增长机会</div><div class="signal-main"><b>客单价连续 4 周增长</b><p>新品系列贡献 62%，值得判断是否可复制。</p></div><div class="signal-value"><span class="base">¥2,998</span><span class="delta pos">↑5.1%</span></div><div class="signal-action"><button class="btn" data-insight="opportunity">查看机会 →</button></div></div>
+      <div class="signal-row"><div class="signal-kind op">增长机会</div><div class="signal-main"><b>华东高客单门店形成集群</b><p>Top 10 中 7 家来自华东，可能存在共同经营动作。</p></div><div class="signal-value"><span class="base">7 / 10</span><span class="delta neutral">70%</span></div><div class="signal-action"><button class="btn" data-insight="opportunity">查看机会 →</button></div></div>
+      <div class="signal-row"><div class="signal-kind ch">重要变化</div><div class="signal-main"><b>华东订单量下降 1.8%</b><p>尚未达到 -3% 升级阈值，建议继续观察。</p></div><div class="signal-value"><span class="base">-1.8%</span><span class="delta neg">3 天偏弱</span></div><div class="signal-action"><button class="btn" data-insight="change">查看变化 →</button></div></div>
+      <div class="signal-row"><div class="signal-kind ch">重要变化</div><div class="signal-main"><b>新品销量连续 3 周增长</b><p>趋势明显，但尚未完成机会确认。</p></div><div class="signal-value"><span class="base">2,460</span><span class="delta pos">↑35.2%</span></div><div class="signal-action"><button class="btn" data-insight="change">查看变化 →</button></div></div>
+    </div>
+  </div>
+
+  <div class="ask">
+    <div class="ask-avatar">D</div>
+    <div class="ask-main"><div class="hint">问 Dora · 当前上下文：门店经营总览</div><input id="pulseAsk" placeholder="例如：今天最需要处理的是什么？ / 华东为什么值得关注？"></div>
+    <div class="ask-chips"><button class="ask-chip" data-ask="今天最需要处理的是什么？">最需要处理什么？</button><button class="ask-chip" data-ask="有哪些增长机会？">有哪些机会？</button></div>
+    <button class="btn" id="pulseAskBtn">发送 ↗</button>
+  </div>
+</section>
+
+<!-- INSIGHT -->
+<section class="page" id="page-insight">
+  <div class="head">
+    <div><div class="eyebrow">INSIGHT · MULTI-LAYER</div><div class="h1">Dora 的业务洞察</div><p class="sub">总览只是入口；真正的判断发生在这里。不同洞察拥有不同的图表、证据和可信度，不共用一套“模板答案”。</p></div>
+    <button class="btn" data-page="pulse">← 返回业务脉搏</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-type="problem">问题洞察 · 3</button>
+    <button class="tab" data-type="opportunity">机会洞察 · 2</button>
+    <button class="tab" data-type="change">变化洞察 · 4</button>
+  </div>
+
+  <div class="insight-shell">
+    <div class="card insight-list">
+      <div class="list-head"><b id="listTitle">问题列表</b><span id="listHint">按业务影响排序</span></div>
+      <div id="insightList"></div>
+    </div>
+
+    <div id="insightDetail"></div>
+  </div>
+
+  <div class="ask">
+    <div class="ask-avatar">D</div>
+    <div class="ask-main"><div class="hint" id="askContext">问 Dora · 当前上下文：问题洞察</div><input id="insightAsk" placeholder="例如：为什么它是主要原因？ / 哪些数据支持这个判断？"></div>
+    <div class="ask-chips" id="insightHints"></div>
+    <button class="btn" id="insightAskBtn">发送 ↗</button>
+  </div>
+</section>
+
+<!-- ACTION -->
+<section class="page" id="page-action">
+  <div class="head">
+    <div><div class="eyebrow">ACTION LOOP · CASES</div><div class="h1">问题与机会的行动回路</div><p class="sub">从洞察加入的问题和机会都会在这里形成行动回路，可随时切换查看，直到验证完成或问题解决。</p></div>
+    <span class="status"><span class="dot" style="background:var(--brand)"></span><span id="actionStatusText">PRF-0831 · 推进中</span></span>
+  </div>
+
+  <div class="action-switch" id="actionSwitch"></div>
+  <div id="actionEmpty" class="action-empty" style="display:none">还没有加入行动回路的问题或机会。前往「洞察」把问题或机会加入行动回路，这里才会出现对应的行动内容。</div>
+
+  <div class="action-layout">
+    <div class="card action-card">
+      <div class="problem-head"><span class="tag" id="actionTag">P1</span><b id="actionCaseTitle">利润率异常 · PRF-0831</b><span class="pid" id="actionCaseSource">来源：问题洞察</span></div>
+      <div class="action-evidence" id="actionEvidence">
+        <div class="ae-head"><b>数据链证据</b><button class="btn" id="actionTraceBtn">打开证据链 →</button></div>
+        <div class="ae-meta"><span id="aeSource">门店经营数据.xlsx · 09:32 更新</span><span id="aeHits">327 / 12,486 行</span></div>
+      </div>
+      <div class="timeline">
+        <div class="tl done"><div class="tldot">✓</div><div class="tl-body"><div class="tl-head"><h4 id="tl1t">发现问题</h4><button class="step-trace">溯源 →</button></div><p id="tl1p">8/31 起利润率连续 3 天低于 18.5% 目标。</p><span class="step-evidence" id="tl1src">门店经营数据.xlsx · 8/27—9/03</span></div></div>
+        <div class="tl done"><div class="tldot">✓</div><div class="tl-body"><div class="tl-head"><h4 id="tl2t">定位原因</h4><button class="step-trace">溯源 →</button></div><p id="tl2p">A 产品线成本上涨 8.3%，进一步定位到供应商 B。</p><span class="step-evidence" id="tl2src">采购数据 · 供应商 B</span></div></div>
+        <div class="tl active"><div class="tldot">●</div><div class="tl-body"><div class="tl-head"><h4 id="actionCurrentTitle">当前行动 · 检查采购价格</h4><button class="step-trace">溯源 →</button></div><p id="actionCurrentDesc">Dora 建议先验证供应商 B 是否为可干预因素。</p><div class="current"><b>为什么先做这一步？</b><p id="actionWhy">如果供应商 B 的采购价格变化与利润率下降同步，这一动作可以最快验证主要假设，并决定后续是否升级为采购议题。</p><div class="main-buttons" style="margin-top:7px"><button class="btn primary" id="runAction">立即执行</button><button class="btn" id="askAction">问 Dora 为什么</button></div></div><span class="step-evidence" id="actionCurrentSrc">采购价格明细 · 供应商 B</span></div></div>
+        <div class="tl"><div class="tldot">4</div><div class="tl-body"><div class="tl-head"><h4 id="tl4t">持续验证</h4><button class="step-trace">溯源 →</button></div><p id="tl4p">执行后自动观察未来 7 天利润率，判断是否回到目标线。</p><span class="step-evidence" id="tl4src">利润率日趋势</span></div></div>
+        <div class="tl"><div class="tldot">5</div><div class="tl-body"><div class="tl-head"><h4 id="tl5t">问题解决</h4><button class="step-trace">溯源 →</button></div><p id="tl5p">只有业务结果恢复，Dora 才结束 PRF-0831。</p><span class="step-evidence" id="tl5src">结果快照 · PRF-0831</span></div></div>
+      </div>
+    </div>
+
+    <div class="card orch">
+      <div class="orch-head"><h3>Dora 自动编排</h3><span class="tag ai">系统已选 · 可增补</span></div>
+      <div class="orch-section">
+        <div class="os-title"><span>专家团</span><button class="add-mini" id="addExpert">+ 添加专家</button></div>
+        <div class="expert-chips" id="expertChips"><span class="expert-chip"><i>👥</i>经营分析专家<em>系统已选</em></span><span class="expert-chip"><i>📊</i>财务专家<em>系统已选</em></span></div>
+      </div>
+      <div class="orch-section">
+        <div class="os-title"><span>数据</span><button class="add-mini" id="addData">+ 添加数据</button></div>
+        <div class="data-chips" id="dataChips"><span class="data-chip">门店经营数据.xlsx</span><span class="data-chip">采购数据</span></div>
+      </div>
+      <div class="orch-section">
+        <div class="os-title"><span>技能 / 知识 / 工具</span></div>
+        <div class="orow"><div class="oi">✦</div><div><b>趋势 / 归因分析</b><p>异常识别与影响因素排序</p></div></div>
+        <div class="orow"><div class="oi">◎</div><div><b>零售经营指标口径</b><p>利润率目标与业务解释</p></div></div>
+        <div class="orow"><div class="oi">⌁</div><div><b>MCP · 采购数据查询</b><p>获取供应商价格并生成分析结果</p></div></div>
+      </div>
+      <div class="archive" id="actionArchive"><b>问题档案</b><br>执行结果、数据快照、证据链、下一次验证时间都会回写到 PRF-0831。以后任何人接手，都能继续从同一问题上下文工作。</div>
+    </div>
+  </div>
+
+  <div class="ask">
+    <div class="ask-avatar">D</div>
+    <div class="ask-main"><div class="hint">问 Dora · 当前上下文：PRF-0831</div><input id="actionAskInput" placeholder="例如：为什么先验证供应商B？如果验证失败下一步怎么办？"></div>
+    <button class="btn" id="actionAskBtn">发送 ↗</button>
+  </div>
+</section>
+
+<!-- WATCH -->
+<section class="page" id="page-watch">
+  <div class="head">
+    <div><div class="eyebrow">CONTINUOUS WATCH · DELEGATE</div><div class="h1">把业务目标交给 Dora，后面不用一直盯</div><p class="sub">持续关注不是预警配置页，而是“业务目标委托”。委托产生变化后，Dora 再把事件送回业务脉搏，并进入对应洞察。</p></div>
+    <span class="status"><span class="dot"></span><span id="watchHeaderCount">6</span> 个业务目标持续关注中</span>
+  </div>
+
+  <div class="delegate">
+    <div class="card delegate-main">
+      <div class="delegate-kicker"><span>业务目标委托</span><span class="delegate-state">Dora 将持续检查</span></div>
+      <div class="d-title">用一句话托管一个业务目标</div>
+      <div class="d-sub" id="watchContextDesc">描述你要关注的指标、范围和触发条件，Dora 会理解意图并把变化送回业务脉搏。</div>
+      <label class="delegate-label" for="watchInput">告诉 Dora 你要关注什么</label>
+      <div class="input-line"><input id="watchInput" class="delegate-input" value="帮我关注华东销售额，如果连续三天下降就提醒我"><button class="btn primary" id="parseWatch">让 Dora 理解</button></div>
+      <div class="suggest-head">常用目标</div>
+      <div class="suggests"><button class="suggest">关注利润率</button><button class="suggest">关注库存周转</button><button class="suggest">关注华东销售</button><button class="suggest">关注新品增长</button><button class="suggest">关注退货率</button><button class="suggest">关注大额订单</button></div>
+      <div class="delegate-freq"><span class="freq-lbl">检查频率</span><button class="freq-chip active">每日 09:00</button><button class="freq-chip">数据更新时</button><button class="freq-chip">实时</button><button class="freq-chip">每周</button></div>
+      <div class="delegate-result" id="delegateResult"><b>✓ Dora 已理解你的业务委托</b><div class="intent-grid"><div class="k">业务目标</div><div id="watchTargetName">华东销售额</div><div class="k">指标口径</div><div>销售额 · 华东区域</div><div class="k">触发条件</div><div id="watchTrigger">连续 3 天下跌</div><div class="k">检查频率</div><div>每日 09:00 · 数据更新时</div><div class="k">升级路径</div><div>变化洞察 → 问题 / 机会</div><div class="k">主动反馈</div><div id="watchFlow">数据变化 → 业务脉搏 → 变化洞察</div><div class="k">依据数据</div><div id="watchSource">门店经营数据.xlsx · 华东区域</div></div><div class="main-buttons" style="margin-top:8px"><button class="btn primary" id="confirmWatch">开始持续关注</button><button class="btn" id="adjustWatch">调整一下</button></div></div>
+    </div>
+    <div class="card delegate-side">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:12px">Dora 接到委托后会做什么</b><span class="tag ai">自动完成</span></div>
+      <div class="mstep"><div class="mnum">1</div><div><b>理解目标</b><p>识别指标、范围、周期和触发条件</p></div></div>
+      <div class="mstep"><div class="mnum">2</div><div><b>选择数据与能力</b><p>自动匹配数据、知识、Skill 与工具</p></div></div>
+      <div class="mstep"><div class="mnum">3</div><div><b>持续检查</b><p>异常、趋势、数据更新触发主动判断</p></div></div>
+      <div class="mstep"><div class="mnum">4</div><div><b>回到业务脉络</b><p>形成事件并进入问题 / 机会 / 变化洞察</p></div></div>
+    </div>
+  </div>
+
+  <div class="card watch-table">
+    <div class="whead"><div>业务目标</div><div>当前状态</div><div>关注逻辑</div><div></div></div>
+    <div id="watchRows"></div>
+  </div>
+
+  <div class="ask">
+    <div class="ask-avatar">D</div>
+    <div class="ask-main"><div class="hint">问 Dora · 当前上下文：持续关注</div><input id="watchAsk" placeholder="例如：我正在关注哪些目标？为什么还没触发？"></div>
+    <button class="btn" id="watchAskBtn">发送 ↗</button>
+  </div>
+</section>
+</main>
+</div>
+
+<!-- evidence -->
+<div class="mask" id="mask"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"></aside>
+
+<div class="cap-panel" id="capPanel">
+  <button class="close" id="closeCap">×</button><h3 id="capTitle">Dora 能力</h3><p>这些能力仍然存在，但不再要求用户先理解产品结构。</p><div class="cap-grid2" id="capGrid"></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true">完成</div>
+
+<script>
+const data={
+problem:[
+ {id:'p1',type:'problem',tag:'问题 · 高影响',title:'利润率正在失速',desc:'连续3天低于18.5%，主要影响来自A产品线与供应商B。',confidence:86,metric:'18.7%',delta:'↓ 2.1%',source:'趋势 + 产品线 + 供应商',question:'为什么利润率会失速？'},
+ {id:'p2',type:'problem',tag:'问题 · 中影响',title:'华东退货率连续上升',desc:'退货率从3.2%升至4.6%，主要集中在两家门店。',confidence:78,metric:'4.6%',delta:'↑ 1.4pp',source:'退货明细 + 门店',question:'退货上升集中在哪些门店？'},
+ {id:'p3',type:'problem',tag:'问题 · 需复核',title:'订单量下降但销售额仍增长',desc:'订单量下降1.8%，但销售额增长3.2%，出现结构性变化。',confidence:72,metric:'4,286',delta:'↓ 1.8%',source:'订单 + 销售额 + 客单价',question:'是不是少量高价值订单拉高了销售额？'}
+],
+opportunity:[
+{id:'o1',type:'opportunity',tag:'增长机会',title:'客单价连续4周增长',desc:'客单价升至¥2,998，新品系列贡献62%的增长。',confidence:74,metric:'¥2,998',delta:'↑ 5.1%',source:'客单价 + 商品 + 门店',question:'这个增长能复制吗？'},
+{id:'o2',type:'opportunity',tag:'增长机会',title:'华东高客单门店形成集群',desc:'Top 10 高客单门店中有7家来自华东，可能存在可复制的经营模式。',confidence:68,metric:'7 / 10',delta:'华东占比70%',source:'门店画像 + 客单价',question:'这些门店做对了什么？'}
+],
+change:[
+{id:'c1',type:'change',tag:'观察中',title:'华东订单量下降1.8%',desc:'尚未达到-3%升级阈值，连续3天偏弱。',confidence:81,metric:'4,286',delta:'↓ 1.8%',source:'华东订单 + 阈值',question:'为什么还没有升级成问题？'},
+{id:'c2',type:'change',tag:'数据更新',title:'门店销售数据刚刚更新',desc:'09:32新增327条记录，Dora已重新计算主动发现。',confidence:99,metric:'+327',delta:'09:32 更新',source:'数据源状态',question:'这次更新影响了哪些指标？'},
+{id:'c3',type:'change',tag:'趋势出现',title:'新品销量连续3周增长',desc:'新品销量从1,820件升至2,460件，增长趋势尚未进入机会确认。',confidence:77,metric:'2,460',delta:'↑ 35.2%',source:'新品销量 + 周趋势',question:'哪些门店贡献了这次增长？'},
+{id:'c4',type:'change',tag:'结构变化',title:'高客单门店占比上升',desc:'高客单门店占比由18%升至24%，结构正在向高价值门店倾斜。',confidence:69,metric:'24%',delta:'↑ 6pp',source:'门店分层 + 客单价',question:'是哪些门店推动了结构变化？'}
+]};
+
+let type='problem', selected=0;
+let routeContext={kind:'problem', id:'p1'};
+let joinedAction=[]; let joinedWatch=[]; let currentActionId='p1';
+function saveJoinState(){try{localStorage.setItem('doraJoinedAction',JSON.stringify(joinedAction));localStorage.setItem('doraJoinedWatch',JSON.stringify(joinedWatch))}catch(e){}}
+function loadJoinState(){try{joinedAction=JSON.parse(localStorage.getItem('doraJoinedAction')||'[]');joinedWatch=JSON.parse(localStorage.getItem('doraJoinedWatch')||'[]')}catch(e){joinedAction=[];joinedWatch=[]}}
+function isInAction(id){return joinedAction.indexOf(id)>-1}
+function isInWatch(id){return joinedWatch.indexOf(id)>-1}
+function joinAction(id){if(joinedAction.indexOf(id)<0)joinedAction.push(id);saveJoinState()}
+function joinWatch(id){if(joinedWatch.indexOf(id)<0)joinedWatch.push(id);saveJoinState()}
+const actionCaseData={
+ p1:{id:'p1',kind:'problem',tag:'P1',tagCls:'red',case:'利润率异常 · PRF-0831',code:'PRF-0831',source:'来源：问题洞察 · 利润率正在失速',
+  s1:{t:'发现问题',p:'8/31 起利润率连续 3 天低于 18.5% 目标。'},
+  s2:{t:'定位原因',p:'A 产品线成本上涨 8.3%，进一步定位到供应商 B。'},
+  cur:{t:'当前行动 · 检查采购价格',p:'Dora 建议先验证供应商 B 是否为可干预因素。',why:'如果供应商 B 的采购价格变化与利润率下降同步，这一动作可以最快验证主要假设，并决定后续是否升级为采购议题。'},
+  s4:{t:'持续验证',p:'执行后自动观察未来 7 天利润率，判断是否回到目标线。'},
+  s5:{t:'问题解决',p:'只有业务结果恢复，Dora 才结束 PRF-0831。'},
+  expert:'专家团 · 经营分析专家',expertDesc:'问题拆解与影响判断',archive:'执行结果、数据快照、证据链、下一次验证时间都会回写到 PRF-0831。'},
+ p2:{id:'p2',kind:'problem',tag:'P2',tagCls:'red',case:'退货率异常 · RTN-0816',code:'RTN-0816',source:'来源：问题洞察 · 华东退货率连续上升',
+  s1:{t:'发现问题',p:'退货率从 3.2% 升至 4.6%，主要集中门店 08 / 16。'},
+  s2:{t:'定位原因',p:'门店 08 / 16 的高频退货商品与原因正在定位。'},
+  cur:{t:'当前行动 · 核查高频退货原因',p:'优先核查门店 08 / 16 的高频退货商品与原因。',why:'问题进入行动回路，要从“看见异常”走向“处理异常”，围绕可干预原因展开验证。'},
+  s4:{t:'持续验证',p:'处理后观察退货率是否回落至 3.2% 以下。'},
+  s5:{t:'问题解决',p:'退货率回到基线后，Dora 才结束 RTN-0816。'},
+  expert:'专家团 · 销售与门店分析',expertDesc:'门店问题拆解与高频原因定位',archive:'执行结果、退货原因、门店对比和后续验证结果都会回写到 RTN-0816。'},
+ p3:{id:'p3',kind:'problem',tag:'P3',tagCls:'red',case:'结构变化复核 · ORD-1022',code:'ORD-1022',source:'来源：问题洞察 · 订单量下降但销售额仍增长',
+  s1:{t:'发现问题',p:'订单量下降 1.8%，但销售额增长 3.2%，结构出现变化。'},
+  s2:{t:'定位原因',p:'拆解订单、客单价和商品结构，定位增长是否由少数大单贡献。'},
+  cur:{t:'当前行动 · 拆分订单结构',p:'先核查少数高价值订单是否拉升了销售额。',why:'关键不是指标本身，而是结构是否变了，需要拆开验证确认变化是不是短期错觉。'},
+  s4:{t:'持续验证',p:'设置订单量与客单价联动观察，避免销售额增长掩盖订单风险。'},
+  s5:{t:'问题解决',p:'确认结构变化原因后，Dora 才结束 ORD-1022。'},
+  expert:'专家团 · 经营分析专家',expertDesc:'订单结构与销售结果拆解',archive:'执行结果、结构拆分结果、证据链和后续验证结论都会回写到 ORD-1022。'},
+ o1:{id:'o1',kind:'opportunity',tag:'机会',tagCls:'green',case:'机会验证 · UPC-0418',code:'UPC-0418',source:'来源：机会洞察 · 客单价连续 4 周增长',
+  s1:{t:'发现机会',p:'客单价升至 ¥2,998，新品系列贡献 62% 的增长。'},
+  s2:{t:'拆解来源',p:'拆解新品系列对客单价的贡献，区分价格与销量因素。'},
+  cur:{t:'当前行动 · 拆解新品贡献',p:'先拆解新品系列对客单价的贡献。',why:'机会进入行动回路，目标是验证“增长来源是否可复制”，拆清楚来源、动作和门店差异才值得放大。'},
+  s4:{t:'小范围验证',p:'选择 3 家相似门店做两周小范围验证，再扩大推广。'},
+  s5:{t:'复制推广',p:'验证通过后把动作复制到更多门店，Dora 才结束 UPC-0418。'},
+  expert:'专家团 · 经营增长分析',expertDesc:'增长来源拆解与复制验证',archive:'执行结果、增长贡献、复制试点和验证结果都会回写到 UPC-0418。'},
+ o2:{id:'o2',kind:'opportunity',tag:'机会',tagCls:'green',case:'机会验证 · STO-0607',code:'STO-0607',source:'来源：机会洞察 · 华东高客单门店形成集群',
+  s1:{t:'发现机会',p:'Top 10 高客单门店中 7 家来自华东，形成高价值集群。'},
+  s2:{t:'拆解来源',p:'提炼 7 家高客单门店的共同经营动作。'},
+  cur:{t:'当前行动 · 提炼高客单动作',p:'先提炼 7 家门店的共同经营动作。',why:'机会不是看到好结果就结束，要进入行动回路验证可复制性，提炼出共性动作才可能推广。'},
+  s4:{t:'小范围验证',p:'选 2 家普通门店开展复制试点，以客单价和转化率验收。'},
+  s5:{t:'复制推广',p:'试点通过后扩大推广，Dora 才结束 STO-0607。'},
+  expert:'专家团 · 门店经营分析',expertDesc:'门店共性动作提炼与试点',archive:'执行结果、门店对比、试点结论和复制建议都会回写到 STO-0607。'}
+};
+function renderActionDetail(id){
+ const c=actionCaseData[id]; if(!c) return;
+ currentActionId=id;
+ const tag=document.getElementById('actionTag');
+ if(tag){tag.textContent=c.tag; tag.className='tag '+(c.tagCls||'red')}
+ const set=(eid,val)=>{const el=document.getElementById(eid); if(el) el.textContent=val};
+ set('actionCaseTitle',c.case); set('actionCaseSource',c.source);
+ set('tl1t',c.s1.t); set('tl1p',c.s1.p); set('tl2t',c.s2.t); set('tl2p',c.s2.p);
+ set('actionCurrentTitle',c.cur.t); set('actionCurrentDesc',c.cur.p); set('actionWhy',c.cur.why);
+ set('tl4t',c.s4.t); set('tl4p',c.s4.p); set('tl5t',c.s5.t); set('tl5p',c.s5.p);
+ const src=(actionStepSrc[id]||actionStepSrc.p1);
+ set('tl1src',src[0]); set('tl2src',src[1]); set('actionCurrentSrc',src[2]); set('tl4src',src[3]); set('tl5src',src[4]);
+ const ev=evidenceData[id];
+ if(ev){set('aeSource',ev.source+' · '+ev.updated); set('aeHits',ev.hits+' · '+ev.scope)}
+ renderActionOrch(id);
+ const archive=document.getElementById('actionArchive');
+ if(archive) archive.innerHTML='<b>'+(c.kind==='opportunity'?'机会档案':'问题档案')+'</b><br>'+c.archive+' 以后任何人接手，都能继续从同一上下文工作。';
+ set('actionStatusText',c.code+' · 推进中');
+ renderActionSwitch();
+}
+function renderActionSwitch(){
+ const box=document.getElementById('actionSwitch'); if(!box) return;
+ if(!joinedAction.length){box.innerHTML='<span class="lbl">已加入 · 0 项</span>';return;}
+ const html=joinedAction.map(id=>{const c=actionCaseData[id]; if(!c)return ''; return '<button class="action-tab '+(id===currentActionId?'active':'')+'" data-switch="'+id+'">'+(c.kind==='problem'?'问题':'机会')+' · '+c.case.split('·')[0].trim()+'<span class="badge">'+c.code+'</span></button>'}).join('');
+ box.innerHTML='<span class="lbl">已加入 · 切换查看</span>'+html;
+ box.querySelectorAll('.action-tab').forEach(b=>b.addEventListener('click',()=>renderActionDetail(b.dataset.switch)));
+}
+const watchItemData={
+ c1:{name:'华东订单量',value:'-1.8%',color:'var(--red)',logic:'连续 3 天偏弱 → 未达 -3% 升级阈值，持续观察'},
+ c2:{name:'门店销售数据更新',value:'+327 条',color:'var(--blue)',logic:'数据更新事件 → 重算核心指标，判断是否触发新洞察'},
+ c3:{name:'新品销量',value:'2,460',color:'var(--green)',logic:'连续 3 周增长 → 趋势出现，观察是否升级为机会'},
+ c4:{name:'高客单门店占比',value:'24%',color:'var(--green)',logic:'结构变化 → 观察是否稳定，评估升级为机会'}
+};
+function renderWatchTable(){
+ const box=document.getElementById('watchRows'); if(!box) return;
+ const count=document.getElementById('watchHeaderCount');
+ const pc=document.getElementById('pulseWatchCount'), mc=document.getElementById('monitorCount');
+ if(count) count.textContent=joinedWatch.length;
+ if(pc) pc.textContent=joinedWatch.length;
+ if(mc) mc.textContent=joinedWatch.length;
+ if(!joinedWatch.length){
+  box.innerHTML='<div class="watch-empty">还没有持续关注的目标。前往「洞察」把变化加入持续关注，这里才会出现对应目标。</div>';
+  return;
+ }
+ box.innerHTML=joinedWatch.map(id=>{
+  const w=watchItemData[id]; if(!w) return '';
+  return '<div class="wrow"><div><div class="wname">'+w.name+'</div><small>持续关注 · 由变化洞察加入</small></div><div class="wvalue" style="color:'+w.color+'">'+w.value+'</div><div class="wlogic">'+w.logic+'</div><button class="rowbtn" data-watch-insight="'+id+'">查看</button></div>';
+ }).join('');
+ box.querySelectorAll('[data-watch-insight]').forEach(b=>b.addEventListener('click',()=>{
+  const idx=data.change.findIndex(i=>i.id===b.dataset.watchInsight);
+  type='change'; selected=idx>=0?idx:0; go('insight'); renderList(); renderDetail(); updateHash('insight');
+ }));
+}
+function syncActionPage(){
+ const layout=document.querySelector('#page-action .action-layout');
+ const empty=document.getElementById('actionEmpty');
+ if(!joinedAction.length){
+  if(layout) layout.style.display='none';
+  if(empty) empty.style.display='block';
+ }else{
+  if(layout) layout.style.display='';
+  if(empty) empty.style.display='none';
+  if(joinedAction.indexOf(currentActionId)<0) currentActionId=joinedAction[0];
+  renderActionDetail(currentActionId);
+ }
+ renderActionSwitch();
+}
+const actionStepSrc={
+ p1:['门店经营数据.xlsx · 8/27—9/03 · 利润口径','采购数据 · 供应商 B 成本明细','采购价格明细 · 供应商 B · 近 30 天','利润率日趋势 · 未来 7 天','结果快照 · PRF-0831 档案'],
+ p2:['退货明细.xlsx · 近 8 周 · 华东','门店 08/16 高频退货原因','退货商品与原因明细','退货率周趋势 · 目标 3.2%','结果快照 · RTN-0816 档案'],
+ p3:['订单汇总 + 销售汇总 · 8/28—9/03','订单/客单价/商品结构拆分','高价值订单明细','订单量与客单价联动观察','结果快照 · ORD-1022 档案'],
+ o1:['商品周汇总 · 客单价口径','新品销售明细 · 价格/销量','新品贡献分解 · 商品组合','3 家相似门店 · 两周实验','复制结果 · UPC-0418 档案'],
+ o2:['门店画像 · Top 高客单门店','7 家华东门店共同动作','门店经营动作对比','2 家普通门店 · 复制试点','复制结果 · STO-0607 档案']
+};
+const actionOrchData={
+ p1:{experts:['经营分析专家','财务专家'],datas:['门店经营数据.xlsx','采购数据']},
+ p2:{experts:['销售专家','门店运营专家'],datas:['退货明细.xlsx','门店数据']},
+ p3:{experts:['经营分析专家','数据分析师'],datas:['订单汇总.xlsx','销售汇总.xlsx']},
+ o1:{experts:['经营增长专家','商品专家'],datas:['商品周汇总.xlsx','门店周汇总.xlsx']},
+ o2:{experts:['门店经营专家','会员运营专家'],datas:['门店画像.xlsx','会员数据']}
+};
+const expertPool=['供应链专家','数据分析师','会员运营专家','商品企划专家','渠道专家','定价专家'];
+const dataPool=['竞品价格数据','会员消费明细','客服工单','物流履约数据','促销活动数据'];
+function renderActionOrch(id){
+ const o=actionOrchData[id]||actionOrchData.p1;
+ const ec=document.getElementById('expertChips'), dc=document.getElementById('dataChips');
+ if(ec) ec.innerHTML=o.experts.map((e,i)=>'<span class="expert-chip"><i>👥</i>'+e+'<em>系统已选</em></span>').join('');
+ if(dc) dc.innerHTML=o.datas.map(d=>'<span class="data-chip">'+d+'</span>').join('');
+}
+function addExpert(){
+ const ec=document.getElementById('expertChips'); if(!ec) return;
+ const next=expertPool[Math.floor(Math.random()*expertPool.length)];
+ if(ec.textContent.indexOf(next)>-1){toast('“'+next+'” 已在专家团中');return;}
+ ec.insertAdjacentHTML('beforeend','<span class="expert-chip user"><i>👥</i>'+next+'<em>用户添加</em></span>');
+ toast('✓ 已邀请“'+next+'”加入分析');
+}
+function addData(){
+ const dc=document.getElementById('dataChips'); if(!dc) return;
+ const next=dataPool[Math.floor(Math.random()*dataPool.length)];
+ if(dc.textContent.indexOf(next)>-1){toast('“'+next+'” 已加入数据');return;}
+ dc.insertAdjacentHTML('beforeend','<span class="data-chip user">'+next+'</span>');
+ toast('✓ 已加入数据源：'+next);
+}
+
+const pulseProblemView={
+ p1:{copy:'8/31 起连续 3 天低于 18.5% 目标。Dora 判断这不是一次普通波动，当前主要影响来自 A 产品线的采购成本。',target:'目标 18.5%',facts:[['主要影响因素','A 产品线 · +8.3%'],['进一步定位','供应商 B · +11.7%']]},
+ p2:{copy:'退货率从 3.2% 升至 4.6%，连续趋势主要集中在华东门店 08 / 16。',target:'区域基线 3.2%',facts:[['主要影响因素','门店 08 / 16'],['进一步定位','退货率 · +1.4pp']]},
+ p3:{copy:'订单量下降 1.8%，但销售额增长 3.2%。Dora 将其列为问题，优先复核订单结构是否掩盖了需求走弱。',target:'销售额 ¥12.8M · ↑3.2%',facts:[['主要影响因素','订单量 · -1.8%'],['进一步定位','客单价 · ¥2,998']]}
+};
+function renderPulseProblem(id){
+ const x=data.problem.find(item=>item.id===id)||data.problem[0], view=pulseProblemView[x.id];
+ const title=document.getElementById('pulsePriorityTitle'), copy=document.getElementById('pulsePriorityCopy'), metric=document.getElementById('pulsePriorityMetric'), delta=document.getElementById('pulsePriorityDelta'), target=document.getElementById('pulsePriorityTarget'), facts=document.querySelectorAll('#pulsePriorityEvidence .fact');
+ if(!view||!title||!copy||!metric||!delta||!target||facts.length<2)return;
+ title.textContent=x.title; copy.textContent=view.copy; metric.textContent=x.metric; delta.textContent=x.delta; delta.classList.toggle('up',x.delta.indexOf('↑')===0); target.textContent=view.target;
+ facts.forEach((fact,i)=>{fact.querySelector('.k').textContent=view.facts[i][0];fact.querySelector('.v').textContent=view.facts[i][1]});
+ document.getElementById('pulseEvidence').textContent='查看当前问题证据链';
+ document.querySelectorAll('.problem-item').forEach(item=>item.classList.toggle('selected',item.dataset.problem===x.id));
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900)}
+function prefersReducedMotion(){return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches}
+function go(page, opt={}){
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ const el=document.getElementById('page-'+page); if(el) el.classList.add('active');
+ document.querySelectorAll('.navbtn').forEach(b=>{
+  const active=b.dataset.page===page; b.classList.toggle('active',active);
+  if(active){b.setAttribute('aria-current','page')} else {b.removeAttribute('aria-current')}
+ });
+ document.getElementById('crumb').textContent={pulse:'业务脉搏',insight:'洞察',action:'行动回路',watch:'持续关注'}[page]||'洞察';
+ window.scrollTo({top:0,behavior:prefersReducedMotion()?'auto':'smooth'});
+ if(!opt.skipHash) updateHash(page);
+}
+function goInsight(t){
+ type=t;selected=0;go('insight');renderList();renderDetail();updateHash('insight');
+}
+function getCurrentInsight(){ return data[type] && data[type][selected] ? data[type][selected] : data.problem[0]; }
+function applyRouteToWatch(x){
+ const desc=document.getElementById('watchContextDesc');
+ const target=document.getElementById('watchTargetName');
+ const trigger=document.getElementById('watchTrigger');
+ const flow=document.getElementById('watchFlow');
+ const source=document.getElementById('watchSource');
+ const result=document.getElementById('delegateResult');
+ if(!x||!desc||!target||!trigger||!flow||!source||!result) return;
+ const config={
+  c1:{title:'华东订单量', trigger:'连续 3 天偏弱就提醒我', flow:'数据变化 → 业务脉搏 → 变化洞察', source:'门店经营数据.xlsx · 华东区域', desc:'变化洞察更适合接到持续关注里，让 Dora 先观察，再决定是否升级。'},
+  c2:{title:'门店销售数据更新', trigger:'新增数据后自动重算核心指标', flow:'数据更新 → 业务脉搏 → 新变化洞察', source:'门店经营数据.xlsx · 全量数据', desc:'数据更新属于变化信号，重点是让 Dora 持续跟踪，而不是直接进入行动回路。'},
+  c3:{title:'新品销量', trigger:'连续 4 周增长就提醒我', flow:'趋势出现 → 持续关注 → 机会候选', source:'商品与门店经营数据.xlsx · 全区域', desc:'趋势尚未稳定成机会时，先放入持续关注，等增长更明确再考虑行动。'},
+  c4:{title:'高客单门店占比', trigger:'连续两周稳定上升再评估', flow:'结构变化 → 持续关注 → 机会候选', source:'门店画像数据.xlsx · 全国', desc:'结构变化通常需要观察一段时间，持续关注更适合承接这类信号。'}
+ };
+ const c0=config[x.id]||config.c1;
+ desc.textContent=c0.desc; target.textContent=c0.title; trigger.textContent=c0.trigger; flow.textContent=c0.flow; source.textContent=c0.source; result.classList.add('show');
+}
+document.querySelectorAll('[data-page]').forEach(b=>{
+ b.addEventListener('click',()=>go(b.dataset.page));
+ b.setAttribute('tabindex','0');
+ b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go(b.dataset.page)}});
+});
+document.querySelectorAll('[data-insight]').forEach(b=>{
+  b.addEventListener('click',()=>{
+   if(b.id==='mainProblemInsight'){
+    type='problem'; go('insight'); renderList(); renderDetail(); updateHash('insight');
+   }else goInsight(b.dataset.insight);
+  });
+ b.setAttribute('tabindex','0');
+ b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goInsight(b.dataset.insight)}});
+});
+
+function renderList(){
+ const list=document.getElementById('insightList'), arr=data[type];list.innerHTML='';
+ list.setAttribute('role','list');
+ document.getElementById('listTitle').textContent=(type==='problem'?'问题列表':type==='opportunity'?'机会列表':'变化列表');
+ document.getElementById('listHint').textContent=type==='problem'?'按业务影响排序':type==='opportunity'?'按增长潜力排序':'按重要性排序';
+ arr.forEach((x,i)=>{
+  const el=document.createElement('div');el.className='insight-item '+(i===selected?'active':'');
+  const cls=x.type==='problem'?'red':x.type==='opportunity'?'green':'blue';
+  el.setAttribute('role','listitem');
+  el.setAttribute('aria-selected', i===selected ? 'true' : 'false');
+  el.setAttribute('tabindex','0');
+  const status=x.type==='change'?(isInWatch(x.id)?'<span class="list-status watch">已加入持续关注</span>':'<span class="list-status none">未加入持续关注</span>'):(isInAction(x.id)?'<span class="list-status action">已加入行动回路</span>':'<span class="list-status none">未加入行动回路</span>');
+  el.innerHTML='<div class="itop"><span class="tag '+cls+'">'+x.tag+'</span><span class="confidence">置信 <b>'+x.confidence+'%</b></span></div><div class="iname">'+x.title+'</div><div class="idesc">'+x.desc+'</div>'+status;
+  const activate=()=>{selected=i;renderList();renderDetail();updateHash('insight')};
+  el.addEventListener('click',activate);
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate()}});
+  list.appendChild(el);
+ });
+}
+const chartData={
+ p1:{kind:'line',unit:'%',labels:['8/27','8/28','8/29','8/30','8/31','9/1','9/2','9/3'],series:[{name:'利润率',color:'#665cf5',values:[20.1,20.5,20.3,20.7,19.8,19.1,18.6,18.7]}],threshold:{value:18.5,label:'目标线 18.5%',color:'#d84d5e'}},
+ p2:{kind:'line',unit:'%',labels:['W1','W2','W3','W4','W5','W6','W7','W8'],series:[{name:'华东退货率',color:'#d84d5e',values:[3.2,3.4,3.5,3.7,3.9,4.1,4.4,4.6]},{name:'区域基线',color:'#9aa1b2',values:[3.1,3.1,3.2,3.2,3.3,3.3,3.4,3.4]}],threshold:{value:4,label:'关注线 4.0%',color:'#ad761a'}},
+ p3:{kind:'line',unit:'',labels:['8/28','8/29','8/30','8/31','9/1','9/2','9/3'],series:[{name:'销售额指数',color:'#665cf5',values:[100,101,101.8,102.4,102.9,103.1,103.2]},{name:'订单量指数',color:'#3975da',values:[100,99.8,99.5,99.1,98.8,98.4,98.2]}]},
+ o1:{kind:'barline',labels:['第1周','第2周','第3周','第4周'],bars:{name:'客单价',color:'#665cf5',values:[2812,2864,2923,2998]},line:{name:'新品贡献',color:'#1b966a',values:[38,46,54,62]}},
+ o2:{kind:'bubble',labels:['其他区域','华南','华东'],bubbles:[{name:'其他区域',size:44,color:'#e3e5ec',count:'2 家',value:'¥2,734'},{name:'华南',size:56,color:'#b6b1ff',count:'1 家',value:'¥2,920'},{name:'华东',size:80,color:'#665cf5',count:'7 家',value:'¥3,184'}]},
+ c1:{kind:'line',unit:'%',labels:['8/27','8/28','8/29','8/30','8/31','9/1','9/2','9/3'],series:[{name:'订单量环比',color:'#3975da',values:[-0.4,-0.9,-1.1,-1.4,-1.2,-1.6,-1.7,-1.8]}],threshold:{value:-3,label:'升级阈值 -3%',color:'#9aa1b2'}},
+ c2:{kind:'step',labels:['数据写入','完整性校验','指标重算','触发判断'],steps:[{name:'数据写入',note:'+327 行',done:true},{name:'完整性校验',note:'通过',done:true},{name:'指标重算',note:'4 指标刷新',done:true},{name:'触发判断',note:'等待规则',done:false}]},
+ c3:{kind:'line',unit:'件',labels:['第1周','第2周','第3周','第4周','第5周','第6周','第7周'],series:[{name:'新品销量',color:'#665cf5',values:[1820,1945,2060,2180,2260,2350,2460]}]},
+ c4:{kind:'bar',unit:'%',labels:['上月','本月初','当前'],series:[{name:'高客单门店占比',color:'#665cf5',values:[18,21,24]}]}
+};
+function chartFor(x){
+ const c=chartData[x.id]||chartData.p1;
+ const W=760,H=300,L=60,R=746,T=26,B=258,plotW=R-L,plotH=B-T;
+ const esc=v=>String(v).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+ const fmt=v=>{const n=Number(v); if(Math.abs(n)>=1000) return n.toLocaleString('en-US'); return Number.isInteger(n)?String(n):(Math.abs(n)<10?n.toFixed(1):n.toFixed(0));};
+ const cross='<line class="cross" x1="'+L+'" y1="'+T+'" x2="'+L+'" y2="'+B+'" stroke="#a8aec0" stroke-width="1" stroke-dasharray="3 3" opacity="0"/>';
+ const bg='<rect width="'+W+'" height="'+H+'" fill="#fbfcff"/>';
+ function grid(mn,mx,unit){let s='';const t=5;for(let i=0;i<=t;i++){const v=mn+(mx-mn)*i/t;const y=B-plotH*i/t;s+='<line x1="'+L+'" y1="'+y+'" x2="'+R+'" y2="'+y+'" stroke="'+(i===t?'#dfe3ea':'#eef0f4')+'"/><text x="'+(L-10)+'" y="'+(y+4)+'" fill="#9aa1b2" font-size="11" text-anchor="end">'+fmt(v)+unit+'</text>';}return s;}
+ function line(){
+  const all=c.series.flatMap(s=>s.values);const thv=c.threshold?c.threshold.value:null;
+  let mn=Math.min(...all,thv!=null?thv:Infinity),mx=Math.max(...all,thv!=null?thv:-Infinity);const span=(mx-mn)||1;mn-=span*0.15;mx+=span*0.15;
+  const ys=v=>B-((v-mn)/(mx-mn))*plotH;const step=plotW/(c.labels.length-1);const xs=i=>L+i*step;
+  let areas='',paths='',pts='';
+  c.series.forEach((s,si)=>{const xy=s.values.map((v,i)=>[xs(i),ys(v)]);const d='M'+xy.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' L');
+   if(si===0)areas+='<path d="'+d+' L'+xs(c.labels.length-1)+','+B+' L'+xs(0)+','+B+' Z" fill="url(#g'+si+')"/>';
+   paths+='<path d="'+d+'" fill="none" stroke="'+s.color+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+   pts+=xy.map((p,i)=>'<circle class="pt" data-si="'+si+'" data-i="'+i+'" data-color="'+s.color+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.5" fill="#fff" stroke="'+s.color+'" stroke-width="2"/>').join('');});
+  let th='';if(c.threshold){const ty=ys(c.threshold.value);th='<line x1="'+L+'" y1="'+ty+'" x2="'+R+'" y2="'+ty+'" stroke="'+c.threshold.color+'" stroke-width="1.5" stroke-dasharray="6 4"/><text x="'+(R-6)+'" y="'+(ty-6)+'" fill="'+c.threshold.color+'" font-size="11" text-anchor="end" font-weight="700">'+c.threshold.label+'</text>';}
+  const xt=c.labels.map((l,i)=>'<line x1="'+xs(i)+'" y1="'+B+'" x2="'+xs(i)+'" y2="'+(B+6)+'" stroke="#d5dae3"/>').join('');
+  const xl=c.labels.map((l,i)=>'<text x="'+xs(i)+'" y="'+(B+24)+'" fill="#9aa1b2" font-size="11" text-anchor="middle">'+esc(l)+'</text>').join('');
+  const lg=c.series.map((s,i)=>'<g><rect x="'+(L+6+i*132)+'" y="7" width="12" height="12" rx="3" fill="'+s.color+'"/><text x="'+(L+22+i*132)+'" y="17" fill="#5b6271" font-size="12">'+esc(s.name)+'</text></g>').join('');
+  const defs=c.series.map((s,i)=>'<linearGradient id="g'+i+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+s.color+'" stop-opacity="0.16"/><stop offset="1" stop-color="'+s.color+'" stop-opacity="0"/></linearGradient>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><defs>'+defs+'</defs>'+bg+grid(mn,mx,c.unit)+xt+areas+paths+th+pts+xl+lg+cross+'</svg>';
+ }
+ function bar(){
+  const vals=c.series[0].values,mx=Math.max(...vals);const n=vals.length,step=plotW/n,bw=Math.min(84,step*0.55);
+  let r='',v='',l='';
+  vals.forEach((val,i)=>{const x=L+step*i+step/2-bw/2;const y=B-(val/mx)*plotH*0.9;
+   r+='<rect class="pt" data-si="0" data-i="'+i+'" data-color="'+c.series[0].color+'" x="'+x+'" y="'+y+'" width="'+bw+'" height="'+(B-y)+'" rx="6" fill="'+c.series[0].color+'" opacity="'+(0.45+i*0.2)+'"/>';
+   v+='<text x="'+(x+bw/2)+'" y="'+(y-8)+'" fill="#5149dc" font-size="12" font-weight="800" text-anchor="middle">'+fmt(val)+c.unit+'</text>';
+   l+='<text x="'+(L+step*i+step/2)+'" y="'+(B+24)+'" fill="#9aa1b2" font-size="11" text-anchor="middle">'+esc(c.labels[i])+'</text>';});
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'+bg+grid(0,mx,c.unit)+r+v+l+cross+'</svg>';
+ }
+ function barline(){
+  const bars=c.bars,ln=c.line;const n=bars.values.length,step=plotW/n,bw=Math.min(82,step*0.5),bxMax=Math.max(...bars.values);
+  let r='',bv='';
+  bars.values.forEach((val,i)=>{const x=L+step*i+step/2-bw/2;const y=B-(val/bxMax)*plotH*0.8;
+   r+='<rect class="pt" data-si="0" data-i="'+i+'" data-color="'+bars.color+'" x="'+x+'" y="'+y+'" width="'+bw+'" height="'+(B-y)+'" rx="6" fill="'+bars.color+'" opacity="'+(0.45+i*0.17)+'"/>';
+   bv+='<text x="'+(x+bw/2)+'" y="'+(y-8)+'" fill="#5149dc" font-size="12" font-weight="800" text-anchor="middle">¥'+fmt(val)+'</text>';});
+  const lmin=Math.min(...ln.values)-6,lmax=Math.max(...ln.values)+6;const lys=v=>B-((v-lmin)/(lmax-lmin))*plotH*0.8;const lxs=i=>L+step*i+step/2;
+  const lpts=ln.values.map((v,i)=>[lxs(i),lys(v)]);const ld='M'+lpts.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' L');
+  let lc='',lv='';
+  lpts.forEach((p,i)=>{lc+='<circle class="pt" data-si="1" data-i="'+i+'" data-color="'+ln.color+'" cx="'+p[0]+'" cy="'+p[1]+'" r="3.5" fill="#fff" stroke="'+ln.color+'" stroke-width="2"/>';lv+='<text x="'+(p[0]+8)+'" y="'+(p[1]-6)+'" fill="'+ln.color+'" font-size="11" font-weight="700">'+ln.values[i]+'%</text>';});
+  const bl=c.labels.map((lab,i)=>'<text x="'+(L+step*i+step/2)+'" y="'+(B+24)+'" fill="#9aa1b2" font-size="11" text-anchor="middle">'+esc(lab)+'</text>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'+bg+grid(0,bxMax,'¥')+r+bv+'<path d="'+ld+'" fill="none" stroke="'+ln.color+'" stroke-width="2.5" stroke-linecap="round"/>'+lc+lv+bl+cross+'</svg>';
+ }
+ function bubble(){
+  const pos=[[190,168],[390,140],[600,102]];let s='';
+  c.bubbles.forEach((b,i)=>{const cx=pos[i][0],cy=pos[i][1];
+   s+='<circle class="pt" data-si="0" data-i="'+i+'" data-color="'+b.color+'" cx="'+cx+'" cy="'+cy+'" r="'+b.size+'" fill="'+b.color+'" opacity="0.9"/>';
+   s+='<text x="'+cx+'" y="'+(cy-4)+'" fill="'+(b.color==='#665cf5'?'#fff':'#3f4656')+'" font-size="15" font-weight="800" text-anchor="middle">'+b.count+'</text>';
+   s+='<text x="'+cx+'" y="'+(cy+18)+'" fill="'+(b.color==='#665cf5'?'#fff':'#5b6271')+'" font-size="12" text-anchor="middle">'+esc(b.name)+'</text>';});
+  s+='<text x="'+L+'" y="'+(B+24)+'" fill="#9aa1b2" font-size="11">气泡大小 = Top 高客单门店数量</text>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'+bg+s+'</svg>';
+ }
+ function step(){
+  const n=c.steps.length,step=plotW/n;let s='';
+  c.steps.forEach((st,i)=>{const cx=L+step*i+step/2,cy=T+plotH/2-26;const done=st.done;
+   s+='<circle class="pt" data-si="0" data-i="'+i+'" data-color="#3975da" cx="'+cx+'" cy="'+cy+'" r="'+(done?16:14)+'" fill="'+(done?'#edf4ff':'#f8f9fc')+'" stroke="'+(done?'#3975da':'#dfe4f0')+'" stroke-width="2"/>';
+   s+='<text x="'+cx+'" y="'+(cy+5)+'" fill="'+(done?'#2f66c4':'#9aa1b2')+'" font-size="13" font-weight="800" text-anchor="middle">'+(i+1)+'</text>';
+   s+='<text x="'+cx+'" y="'+(cy+34)+'" fill="#3f4656" font-size="12" font-weight="700" text-anchor="middle">'+esc(st.name)+'</text>';
+   s+='<text x="'+cx+'" y="'+(cy+50)+'" fill="#9aa1b2" font-size="11" text-anchor="middle">'+esc(st.note)+'</text>';
+   if(i<n-1)s+='<line x1="'+(cx+16)+'" y1="'+cy+'" x2="'+(L+step*(i+1)+step/2-16)+'" y2="'+cy+'" stroke="'+(done?'#3975da':'#dfe4f0')+'" stroke-width="2"/>';});
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'+bg+s+'</svg>';
+ }
+ if(c.kind==='bar')return bar();
+ if(c.kind==='barline')return barline();
+ if(c.kind==='bubble')return bubble();
+ if(c.kind==='step')return step();
+ return line();
+}
+function renderDetail(){
+ const x=data[type][selected], d=document.getElementById('insightDetail');
+ const color=x.type==='problem'?'red':x.type==='opportunity'?'green':'blue';
+ const joined=x.type==='change'?isInWatch(x.id):isInAction(x.id);
+ const statusTag=x.type==='change'?(joined?'<span class="insight-status watch"><span class="status-dot"></span>已加入持续关注</span>':'<span class="insight-status none"><span class="status-dot"></span>未加入持续关注</span>'):(joined?'<span class="insight-status action"><span class="status-dot"></span>已加入行动回路</span>':'<span class="insight-status none"><span class="status-dot"></span>未加入行动回路</span>');
+ const routeBtn=x.type==='change'?'<div class="main-buttons"><button class="btn primary" data-route="watch">'+(joined?'已加入持续关注 ✓':'加入持续关注 →')+'</button><button class="btn" onclick="toast(\'已设置升级条件\')">设置升级条件</button></div>':'<div class="main-buttons"><button class="btn '+(x.type==='opportunity'?'green':'primary')+'" data-route="action">'+(joined?'已加入行动回路 ✓':'加入行动回路 →')+'</button><button class="btn" onclick="openTrace(\''+x.id+'\')">查看证据链 →</button></div>';
+ let sideTitle=x.type==='problem'?'为什么值得处理？':x.type==='opportunity'?'为什么值得放大？':'为什么值得关注？';
+ let cause1=x.type==='problem'?(x.id==='p2'?'门店 08 / 16':'A 产品线'):(x.type==='opportunity'?(x.id==='o1'?'新品系列':'华东门店'):(x.id==='c1'?'华东区域':'当前变化'));
+ let cause2=x.type==='problem'?(x.id==='p2'?'两家门店':'供应商 B'):(x.type==='opportunity'?(x.id==='o1'?'高客单门店':'高价值画像'):(x.id==='c1'?'升级阈值':'新的经营信号'));
+ let n1=x.type==='problem'?(x.id==='p2'?'+1.4pp':'+8.3%'):(x.type==='opportunity'?(x.id==='o1'?'62%':'70%'):(x.id==='c1'?'-1.8%':x.delta));
+ let n2=x.type==='problem'?(x.id==='p2'?'4.6%':'+11.7%'):(x.type==='opportunity'?(x.id==='o1'?'¥2,998':'7 / 10'):(x.id==='c1'?'-3%':x.metric));
+ if(x.id==='o1') n2='¥2,998'; if(x.id==='o2') n2='7 / 10'; if(x.id==='c1') n2='-3%'; if(x.id==='c2') n2='327'; if(x.id==='c3') n2='2,460'; if(x.id==='c4') n2='24%';
+ const nextById={
+  p1:['核对供应商 B 最近 30 天采购价与合同价差','按 A 产品线拆分毛利影响，确认 ¥230,000 影响区间','进入行动回路，发起采购议价并连续 7 天跟踪利润率'],
+  p2:['提取门店 08 / 16 的退货商品、原因与批次','对比两家门店与其他门店的客服、物流和商品质量数据','先处理高频退货原因，再观察退货率是否回落至 3.2% 以下'],
+  p3:['拆分订单、客单价和商品结构，确认增长是否由少数大单贡献','核查高价值订单的客户、渠道和商品组合是否可持续','设置订单量与客单价联动观察，避免销售额增长掩盖订单风险'],
+  o1:['拆解新品系列对客单价增长的贡献，并区分价格与销量因素','筛选高客单门店复用的商品组合、陈列和销售动作','选择 3 家相似门店做两周小范围验证，再扩大推广'],
+  o2:['对比华东 Top 10 门店的商品、会员和导购经营特征','提炼 7 家高客单门店的共同动作并评估复制成本','选 2 家普通门店开展复制试点，以客单价和转化率验收'],
+  c1:['继续观察华东订单量 3 天，确认是否接近 -3% 升级阈值','同步检查客单价、流量和转化率，定位订单变化来源','若订单量跌破 -3%，自动升级为问题洞察并进入归因分析'],
+  c2:['核对新增 327 条记录的数据完整性和重复率','确认刷新后的利润率、订单量、库存等核心指标是否异常','保留本次更新为数据事件，若触发阈值则生成对应洞察'],
+  c3:['拆解新品销量增长来自哪些区域、门店和商品规格','核对增长门店的库存、补货和履约能力是否匹配','选择高潜门店复制新品经营动作，并设置周度增长目标'],
+  c4:['核对当前 24% 指标的统计口径与历史基线是否一致','定位增长主要来自门店、客户还是商品结构变化','建立周度跟踪，连续两周稳定后再评估是否扩大经营动作']
+ };
+ let next=nextById[x.id]||['补充核验数据依据','定位主要影响因素','根据验证结果进入下一步行动'];
+ let more=x.type==='problem'?'Dora 判断必须有数据依据，否则不升级。':x.type==='opportunity'?'机会判断关注“增长来源是否可复制”，而不是简单把上涨标成机会。':'变化判断关注“是否值得升级”，没有达到阈值时 Dora 不制造噪音。';
+ d.innerHTML=`<div class="card detail">
+   <div class="detail-top"><div><span class="tag ${color}">${x.tag}</span>${statusTag}<div class="detail-title">${x.title}</div><div class="detail-sub">${x.desc}</div></div><div class="detail-right"><span class="tag ai">可信度 ${x.confidence}%</span><button class="btn" data-page="pulse">返回总览</button></div></div>
+   <div class="chart-card card"><div class="chart-header"><span>${x.type==='problem'?'异常趋势':x.type==='opportunity'?'增长结构':'变化趋势'}</span><span class="muted">鼠标移动到图表区域查看具体数据</span></div><div class="chart-area">${chartFor(x)}<div class="chart-tooltip" id="chartTip"></div></div></div>
+   <div class="insight-route"><div class="route-node"><b>洞察页</b><p>${x.type==='change'?'先判断变化是否值得继续观察，并设置升级条件。':'先确认影响因素，再决定是否进入执行。'}</p></div><div class="route-arrow">→</div><div class="route-node"><b>${x.type==='change'?'持续关注':'行动回路'}</b><p>${x.type==='change'?'变化先进入持续关注，满足阈值后再升级为问题或机会。':'问题 / 机会直接进入行动回路，形成任务、验证和回写。'}</p></div></div>
+   ${x.type==='change'?`<div class="change-lifecycle"><h4>变化洞察的升级路径</h4><div class="level-row"><div class="level-badge watch">${x.id==='c2'?'数据事件':'观察中'}</div><div class="level-copy"><b>当前状态：</b>${x.id==='c2'?'数据更新已完成，先确认刷新是否带来新的经营变化。':'当前变化尚未达到升级阈值，先进入持续关注。'}</div></div><div class="level-row"><div class="level-badge op">机会升级</div><div class="level-copy"><b>满足条件：</b>${x.id==='c3'||x.id==='c4'?'连续增长或结构变化稳定后，可升级为机会洞察并进入行动回路。':'正向变化稳定后，可升级为机会洞察并进入行动回路。'}</div></div><div class="level-row"><div class="level-badge problem">问题升级</div><div class="level-copy"><b>风险条件：</b>变化继续恶化并突破阈值后，升级为问题洞察，转入行动回路处理。</div></div><div class="logic-strip"><span class="logic-pill">持续关注</span><span class="logic-pill">阈值判断</span><span class="logic-pill">升级为问题 / 机会</span></div></div>`:''}
+   <div class="detail-bottom">
+     <div class="panel"><h4>${sideTitle}</h4><div class="cause-map cause"><div class="cause-box hot"><div class="k">${x.type==='problem'?'主要因素':x.type==='opportunity'?'主要贡献':'当前变化'}</div><b>${cause1}</b><div class="n">${n1}</div></div><div class="arrow">→</div><div class="cause-box"><div class="k">进一步定位</div><b>${cause2}</b><div class="n">${n2}</div></div></div>
+     <div class="confidence-large"><div style="display:flex;justify-content:space-between;font-size:13px"><span>为什么相信这次判断</span><b>${x.confidence}%</b></div><div class="cbar"><i style="width:${x.confidence}%;background:${x.type==='problem'?'var(--red)':x.type==='opportunity'?'var(--green)':'var(--blue)'}"></i></div><div style="font-size:12px;color:var(--muted);margin-top:4px">${x.source}</div></div>
+     <div class="evidence"><div><b>这条洞察有自己的依据</b><br><span>${more}</span></div><button class="btn" onclick="openTrace('${x.id}')">打开证据链 →</button></div></div>
+     <div class="panel next-panel"><h4>下一步建议</h4><div class="suggested">${next.map((n,i)=>`<div><span>${i+1}</span>${n}</div>`).join('')}</div><div class="followup-mini"><div class="ask-avatar">D</div><div class="followup-content"><div class="hint">问 Dora · 当前洞察：${x.title}</div><p>${x.question}</p></div><div class="followup-actions"><button class="q" onclick="askFromInsight('${x.question}')">继续追问 ↗</button><button class="q" onclick="toast('已生成基于当前洞察的行动建议')">生成行动</button></div><div class="followup-footer"><span class="dot"></span><span>${x.type==='change'?'这条变化先进入持续关注，达到阈值后会自动升级为问题或机会。':'这条洞察会生成行动回路，并在行动页形成可切换的任务。'}</span></div></div></div>
+   </div>
+   ${routeBtn}
+ </div>`;
+ const back=d.querySelector('[data-page="pulse"]'); if(back) back.addEventListener('click',()=>go('pulse'));
+ d.querySelectorAll('[data-route]').forEach(btn=>btn.addEventListener('click',()=>{
+  routeContext={kind:x.type,id:x.id};
+  if(btn.dataset.route==='action'){
+   joinAction(x.id);
+   currentActionId=x.id;
+   syncActionPage();
+   go('action');
+  }else{
+   joinWatch(x.id);
+   applyRouteToWatch(x);
+   renderWatchTable();
+   go('watch');
+   toast('✓ 已加入持续关注；后续变化会回到业务脉搏');
+  }
+  renderList();
+  renderDetail();
+ }));
+  // 图表可访问性标签
+  const area=d.querySelector('.chart-area'); if(area){area.setAttribute('role','img'); area.setAttribute('aria-label', (x.type==='problem'?'异常趋势: ':'图表: ')+x.title+' '+x.metric+' '+x.delta)}
+  setupHover(x);
+}
+function setupHover(x){
+ const box=document.querySelector('.chart-area'), tip=document.getElementById('chartTip'); if(!box||!tip)return;
+ const c=chartData[x.id]||chartData.p1;
+ const W=760,L=60,R=746;
+ const cross=box.querySelector('.cross');
+ const pts=Array.from(box.querySelectorAll('.pt'));
+ const fmt=v=>{const n=Number(v); if(Math.abs(n)>=1000) return n.toLocaleString('en-US'); return Number.isInteger(n)?String(n):(Math.abs(n)<10?n.toFixed(1):n.toFixed(0));};
+ function tipFor(i){
+  const row=(color,name,val)=>'<div class="tt-row"><span class="tt-dot" style="background:'+color+'"></span>'+name+'：<b>'+val+'</b></div>';
+  if(c.kind==='line'){
+   let h='<div class="tt-title">'+c.labels[i]+'</div>'+c.series.map(s=>row(s.color,s.name,fmt(s.values[i])+(c.unit?c.unit:''))).join('');
+   if(c.threshold){const cur=c.series[0].values[i],tv=c.threshold.value;h+='<div class="tt-row"><span class="tt-label">阈值 '+tv+c.unit+'：</span>'+(cur>tv?'<b style="color:#ffb3bb">已触发</b>':'<b style="color:#8ce3c2">未触发</b>')+'</div>';}
+   return h;
+  }
+  if(c.kind==='bar') return '<div class="tt-title">'+c.labels[i]+'</div>'+row(c.series[0].color,c.series[0].name,fmt(c.series[0].values[i])+c.unit);
+  if(c.kind==='barline') return '<div class="tt-title">'+c.labels[i]+'</div>'+row(c.bars.color,c.bars.name,'¥'+fmt(c.bars.values[i]))+row(c.line.color,c.line.name,c.line.values[i]+'%');
+  if(c.kind==='bubble'){const b=c.bubbles[i];return '<div class="tt-title">'+b.name+'</div>'+row(b.color,'Top 门店',b.count)+row(b.color,'平均客单价',b.value);}
+  if(c.kind==='step'){const st=c.steps[i];return '<div class="tt-title">'+st.name+'</div><div class="tt-row">'+st.note+' '+(st.done?'<b style="color:#8ce3c2">已完成</b>':'<b style="color:#ffb3bb">等待中</b>')+'</div>';}
+  return '';
+ }
+ function highlight(i){
+  pts.forEach(p=>{
+   const pi=Number(p.getAttribute('data-i')),tag=p.tagName.toLowerCase();
+   if(pi===i){
+    if(tag==='circle'){p.setAttribute('r','6');p.setAttribute('fill',p.getAttribute('data-color')||'#665cf5');}
+    if(tag==='rect'){p.setAttribute('stroke','#3f4656');p.setAttribute('stroke-width','2');}
+   }else{
+    if(tag==='circle'){p.setAttribute('r','3.5');p.setAttribute('fill','#fff');}
+    if(tag==='rect'){p.setAttribute('stroke','none');}
+   }
+  });
+ }
+ const moveHandler=rafThrottle((e)=>{
+  const r=box.getBoundingClientRect();
+  const sx=(e.clientX-r.left)/r.width*W;
+  let n=c.labels?c.labels.length:0, i=0;
+  if(n>1){const step=(R-L)/(n-1);i=Math.round((sx-L)/step);i=Math.max(0,Math.min(n-1,i));}
+  highlight(i);
+  if(cross){cross.setAttribute('x1',sx);cross.setAttribute('x2',sx);cross.setAttribute('opacity','1');}
+  tip.innerHTML=tipFor(i);
+  tip.style.display='block';
+  let tx=e.clientX-r.left+14, ty=e.clientY-r.top-10;
+  if(tx+200>r.width)tx=e.clientX-r.left-200;
+  if(ty+90>r.height)ty=r.height-100;
+  tip.style.left=tx+'px';tip.style.top=ty+'px';
+ });
+ box.addEventListener('mousemove',moveHandler);
+ box.addEventListener('mouseleave',()=>{tip.style.display='none';if(cross)cross.setAttribute('opacity','0');pts.forEach(p=>{if(p.tagName.toLowerCase()==='circle'){p.setAttribute('r','3.5');p.setAttribute('fill','#fff');}if(p.tagName.toLowerCase()==='rect'){p.setAttribute('stroke','none');}});});
+}
+// rAF 节流，避免高频渲染
+function rafThrottle(fn){let ticking=false;return function(...args){if(!ticking){ticking=true;requestAnimationFrame(()=>{fn.apply(this,args);ticking=false})}}}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{type=b.dataset.type;selected=0;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));renderList();renderDetail()}));
+
+// 抽屉可访问性增强：打开时聚焦并锁定焦点，ESC 关闭
+let _prevFocus=null; let _untrap=null;
+function trapFocus(container){
+  const focusable=container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if(!focusable.length) return ()=>{}; const first=focusable[0], last=focusable[focusable.length-1];
+  function onKey(e){ if(e.key==='Tab'){ if(e.shiftKey){ if(document.activeElement===first){e.preventDefault(); last.focus()} } else { if(document.activeElement===last){e.preventDefault(); first.focus()} } } if(e.key==='Escape'){closeTrace()} }
+  container.addEventListener('keydown',onKey); return ()=>container.removeEventListener('keydown',onKey);
+}
+const evidenceData={
+ p1:{title:'利润率正在失速',source:'门店经营数据.xlsx',updated:'2026-09-03 09:32',sheet:'销售明细',scope:'8/27—9/03 · 华东 · A产品线',metric:'利润 ÷ 销售额',hits:'327 / 12,486 行',rows:[['09/03','A产品线','供应商B','¥128.4','华东'],['09/02','A产品线','供应商B','¥131.2','华东'],['09/01','A产品线','供应商B','¥132.6','华东'],['08/31','A产品线','供应商C','¥119.8','华东']],path:"SELECT product_line, supplier, AVG(purchase_price)\nFROM sales_detail\nWHERE region = '华东'\n  AND date BETWEEN '2026-08-27' AND '2026-09-03'\nGROUP BY product_line, supplier\nORDER BY AVG(purchase_price) DESC;",fact:'供应商 B 采购单价连续上涨。',judgment:'该变化是利润率下降的重要影响因素之一。',suggestion:'优先检查供应商 B 最近 30 天采购价格。'},
+ p2:{title:'华东退货率连续上升',source:'退货明细.xlsx',updated:'2026-09-03 09:28',sheet:'退货明细',scope:'近 8 周 · 华东 · 门店 08 / 16',metric:'退货订单 ÷ 总订单',hits:'184 / 4,012 单',rows:[['W8','门店08','鞋底开胶','4.9%','华东'],['W8','门店16','尺码不符','4.5%','华东'],['W7','门店08','鞋底开胶','4.6%','华东'],['W7','门店16','尺码不符','4.2%','华东']],path:"SELECT store_id, return_reason, AVG(return_rate)\nFROM return_detail\nWHERE region = '华东'\n  AND store_id IN ('08','16')\nGROUP BY store_id, return_reason\nORDER BY AVG(return_rate) DESC;",fact:'门店 08 / 16 的退货率持续高于区域基线。',judgment:'退货上升并非区域普遍波动，存在门店集中性。',suggestion:'优先核查两家门店的高频退货商品与原因。'},
+ p3:{title:'订单量下降但销售额仍增长',source:'订单与销售数据.xlsx',updated:'2026-09-03 09:32',sheet:'订单汇总 / 销售汇总',scope:'8/28—9/03 · 全区域',metric:'订单量 / 销售额 / 客单价',hits:'4,286 订单 · 12,486 销售记录',rows:[['09/03','订单','全部','4,286','↓1.8%'],['09/03','销售额','全部','¥12.8M','↑3.2%'],['09/03','客单价','全部','¥2,998','↑5.1%'],['09/02','大单占比','全部','18.4%','↑3.8pp']],path:"SELECT date, orders, sales_amount, avg_order_value\nFROM daily_business\nWHERE date BETWEEN '2026-08-28' AND '2026-09-03'\nORDER BY date;",fact:'订单量下降，但客单价同步上升。',judgment:'销售额增长可能由订单结构变化驱动。',suggestion:'拆分高价值订单，验证增长是否集中于少数大单。'},
+ o1:{title:'客单价连续 4 周增长',source:'商品与门店经营数据.xlsx',updated:'2026-09-03 09:32',sheet:'商品周汇总 / 门店周汇总',scope:'近 4 周 · 全区域',metric:'销售额 ÷ 订单量',hits:'1,248 个商品组合',rows:[['第1周','新品','全部','¥2,812','38%'],['第2周','新品','全部','¥2,864','46%'],['第3周','新品','全部','¥2,923','54%'],['第4周','新品','全部','¥2,998','62%']],path:"SELECT week, avg_order_value, new_product_share\nFROM weekly_product_store\nORDER BY week;",fact:'客单价连续 4 周上升，且新品贡献占比同步提升。',judgment:'增长来源具有明确结构，存在进一步验证复制性的价值。',suggestion:'筛选高客单门店复用的商品组合与销售动作。'},
+ o2:{title:'华东高客单门店形成集群',source:'门店画像数据.xlsx',updated:'2026-09-03 09:30',sheet:'门店画像',scope:'Top 10 高客单门店 · 全国',metric:'高客单门店区域占比',hits:'10 家 Top 门店',rows:[['Top1','门店 021','华东','¥3,412','高客单'],['Top3','门店 037','华东','¥3,288','高客单'],['Top6','门店 052','华东','¥3,176','高客单'],['Top9','门店 063','华东','¥3,102','高客单']],path:"SELECT region, store_id, avg_order_value\nFROM store_profile\nORDER BY avg_order_value DESC\nLIMIT 10;",fact:'Top 10 高客单门店中 7 家来自华东。',judgment:'华东存在高价值门店集群，值得提炼共同经营特征。',suggestion:'对比 7 家门店的商品、会员与导购经营动作。'},
+ c1:{title:'华东订单量下降 1.8%',source:'订单明细.xlsx',updated:'2026-09-03 09:32',sheet:'订单日报',scope:'8/27—9/03 · 华东',metric:'订单量环比',hits:'4,286 单',rows:[['09/03','订单量','华东','4,286','-1.8%'],['09/02','订单量','华东','4,318','-1.7%'],['09/01','订单量','华东','4,352','-1.6%'],['08/31','订单量','华东','4,401','-1.2%']],path:"SELECT date, order_count, mom_change\nFROM regional_orders\nWHERE region='华东'\nORDER BY date;",fact:'订单量连续 3 天偏弱，但仍高于 -3% 升级阈值。',judgment:'当前更适合持续观察，不足以制造新的问题事件。',suggestion:'同步检查客单价、流量和转化率，等待是否接近升级阈值。'},
+ c2:{title:'门店销售数据刚刚更新',source:'门店经营数据.xlsx',updated:'2026-09-03 09:32',sheet:'销售明细',scope:'全量 · 本次新增',metric:'数据更新量',hits:'+327 / 12,486 行',rows:[['09:32','新增记录','全量','327','已写入'],['09:32','利润率','全量','18.7%','刷新'],['09:32','订单量','全量','4,286','刷新'],['09:32','库存','全量','18.4 天','刷新']],path:"SELECT COUNT(*) AS new_rows\nFROM sales_detail\nWHERE updated_at='2026-09-03 09:32';",fact:'09:32 新增 327 条记录。',judgment:'数据刷新已完成，4 个核心指标重新计算。',suggestion:'核对新增记录完整性与重复率，再确认是否触发已有关注规则。'},
+ c3:{title:'新品销量连续 3 周增长',source:'新品销售数据.xlsx',updated:'2026-09-03 09:32',sheet:'新品周汇总',scope:'近 7 周 · 全区域',metric:'新品销量',hits:'2,460 件',rows:[['第4周','新品','全区域','2,180','+5.8%'],['第5周','新品','全区域','2,260','+3.7%'],['第6周','新品','全区域','2,350','+4.0%'],['第7周','新品','全区域','2,460','+4.7%']],path:"SELECT week, new_product_units, wow_change\nFROM new_product_weekly\nORDER BY week;",fact:'新品销量连续 3 周保持增长。',judgment:'趋势明确，但还需要确认增长是否集中在少数门店。',suggestion:'拆解区域、门店和商品规格，判断增长是否具备复制空间。'},
+ c4:{title:'高客单门店占比上升',source:'门店分层数据.xlsx',updated:'2026-09-03 09:30',sheet:'门店分层',scope:'上月—当前 · 全区域',metric:'高客单门店占比',hits:'24% · 112 家',rows:[['上月','高客单门店','全区域','18%','基线'],['本月初','高客单门店','全区域','21%','上升'],['当前','高客单门店','全区域','24%','+6pp'],['当前','华东贡献','华东','7 家','最明显']],path:"SELECT period, high_value_store_share, region_contribution\nFROM store_segment\nORDER BY period;",fact:'高客单门店占比由 18% 上升至 24%。',judgment:'结构正在向高价值门店倾斜，需确认增长来源。',suggestion:'定位主要来自门店、客户还是商品结构，再决定是否建立周度关注。'}
+};
+function openTrace(ctx){
+  const key=typeof ctx==='string'?ctx:(ctx&&ctx.id)||((data[type]||[])[selected]||{}).id||'p1';
+  const e=evidenceData[key]||evidenceData.p1;
+  const drawer=document.getElementById('drawer');
+  drawer.innerHTML=`<button class="close" id="closeDrawer">×</button><h3 id="drawerTitle" style="font-size:16px;margin:0">数据证据链 · ${e.title}</h3><div class="subline">Dora 的判断可以回溯、定位、复核。</div><div class="drawer-context">${e.source} · ${e.updated}</div><div class="source"><b>本条洞察的证据范围</b><div class="sg"><div class="si"><div class="k">数据源</div><div class="v">${e.source}</div></div><div class="si"><div class="k">更新时间</div><div class="v">${e.updated}</div></div><div class="si"><div class="k">工作表</div><div class="v">${e.sheet}</div></div><div class="si"><div class="k">分析范围</div><div class="v">${e.scope}</div></div><div class="si"><div class="k">指标口径</div><div class="v">${e.metric}</div></div><div class="si"><div class="k">命中记录</div><div class="v">${e.hits}</div></div></div></div><div class="source"><b>原始数据定位</b><table class="raw"><thead><tr><th>时间</th><th>对象</th><th>维度</th><th>数值</th><th>状态</th></tr></thead><tbody>${e.rows.map((r,i)=>`<tr class="${i<2?'hot':''}">${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table><button class="btn" id="locateRaw" style="margin-top:8px">定位到原始数据 →</button></div><div class="source"><b>Dora 分析路径</b><div class="code">${e.path}</div></div><div class="source"><b>事实 → 判断 → 建议</b><div style="font-size:12px;line-height:1.7;color:#606574;margin-top:6px"><b>事实：</b>${e.fact}<br><b>判断：</b>${e.judgment}<br><b>建议：</b>${e.suggestion}</div></div>`;
+  document.getElementById('mask').classList.add('open'); drawer.classList.add('open');
+  _prevFocus=document.activeElement; const closeBtn=document.getElementById('closeDrawer'); closeBtn.focus();
+  _untrap=trapFocus(drawer); closeBtn.addEventListener('click',closeTrace); document.getElementById('locateRaw').addEventListener('click',()=>toast('已定位到本条洞察对应的原始数据')); 
+}
+function closeTrace(){
+  const mask=document.getElementById('mask'), drawer=document.getElementById('drawer');
+  mask.classList.remove('open'); drawer.classList.remove('open');
+  if(_untrap) try{_untrap()}catch(e){} _untrap=null;
+  if(_prevFocus) try{_prevFocus.focus()}catch(e){} _prevFocus=null;
+}
+document.getElementById('traceBtn').addEventListener('click',()=>openTrace());document.getElementById('pulseEvidence').addEventListener('click',()=>openTrace((data.problem[selected]||data.problem[0]).id));
+document.getElementById('mask').addEventListener('click',closeTrace);
+
+document.getElementById('chainBtn').addEventListener('click',()=>toast('主动构建链：数据 → 口径 → 值得关注 → 洞察 → 行动 → 持续关注'));
+document.getElementById('followMain').addEventListener('click',()=>toast('✓ 已加入持续关注：利润率'));
+document.getElementById('runAction').addEventListener('click',()=>{toast('✓ 采购价格分析已执行');document.querySelector('.current p').textContent='分析已完成，结果已回写 PRF-0831。Dora 正在观察未来 7 天利润率。'});
+document.getElementById('actionTraceBtn').addEventListener('click',()=>openTrace(currentActionId));
+document.querySelectorAll('.step-trace').forEach(b=>b.addEventListener('click',()=>openTrace(currentActionId)));
+document.getElementById('addExpert').addEventListener('click',addExpert);
+document.getElementById('addData').addEventListener('click',addData);
+document.getElementById('askAction').addEventListener('click',()=>toast('Dora：先验证主要假设，因为这一步能最快降低不确定性。'));
+
+function askFromInsight(q){const input=document.getElementById('insightAsk'); if(input){input.value=q; input.focus(); toast('已带入当前洞察上下文，可继续追问');}}
+function doAsk(inputId){const v=document.getElementById(inputId).value.trim();toast(v?'Dora：已带入当前页面上下文继续分析。':'可以直接输入一个业务问题。')}
+document.getElementById('pulseAskBtn').addEventListener('click',()=>doAsk('pulseAsk'));document.getElementById('insightAskBtn').addEventListener('click',()=>doAsk('insightAsk'));document.getElementById('actionAskBtn').addEventListener('click',()=>doAsk('actionAskInput'));document.getElementById('watchAskBtn').addEventListener('click',()=>doAsk('watchAsk'));
+document.querySelectorAll('.ask-chip').forEach(b=>b.addEventListener('click',()=>{document.getElementById('pulseAsk').value=b.dataset.ask}));
+document.querySelectorAll('.suggest').forEach(b=>b.addEventListener('click',()=>{document.getElementById('watchInput').value='帮我'+b.textContent.replace('关注','关注')}));
+document.querySelectorAll('.problem-toggle').forEach(btn=>btn.addEventListener('click',()=>{
+ const item=btn.closest('.problem-item');
+ const active=item.classList.contains('active');
+ document.querySelectorAll('.problem-item').forEach(x=>x.classList.remove('active'));
+ if(!active) item.classList.add('active');
+  renderPulseProblem(item.dataset.problem);
+ document.querySelectorAll('.problem-item').forEach(x=>{
+  const arrow=x.querySelector('.problem-toggle .arrow');
+  if(!arrow) return;
+  arrow.textContent=x.classList.contains('active')?'▾':'▸';
+ });
+}));
+document.querySelectorAll('[data-problem-idx]').forEach(btn=>btn.addEventListener('click',()=>{
+ const idx=parseInt(btn.dataset.problemIdx,10)||0;
+ type='problem'; selected=idx;
+ go('insight');
+ renderList();
+ renderDetail();
+ updateHash('insight');
+}));
+document.querySelectorAll('[data-problem-evidence]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();openTrace(btn.dataset.problemEvidence)}));
+document.querySelectorAll('[data-auto-expert]').forEach(btn=>btn.addEventListener('click',()=>{
+ const expert=btn.dataset.autoExpert;
+ const noteMap={
+  '经营专家':'负责把原始经营信号整理成“问题 / 机会 / 变化”的业务脉络，并决定哪些内容值得优先看。',
+  '趋势':'负责识别连续上升、下降、拐点等时间趋势，判断变化是不是在变成新模式。',
+  '归因':'负责把结果往前追到关键因素，定位是商品、门店、区域还是供应商造成变化。',
+  '零售知识':'负责套用零售指标口径、阈值和经验规则，避免 Dora 只看数值不看业务含义。'
+ };
+ document.querySelectorAll('[data-auto-expert]').forEach(x=>x.classList.toggle('active',x===btn));
+ document.getElementById('autoNote').textContent=noteMap[expert]||'Dora 已切换到对应专家能力说明。';
+ toast('已查看『'+expert+'』能力说明');
+}));
+document.getElementById('parseWatch').addEventListener('click',()=>{document.getElementById('delegateResult').classList.add('show');toast('✓ Dora 已理解你的业务委托')});
+document.querySelectorAll('.freq-chip').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.freq-chip').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
+document.getElementById('confirmWatch').addEventListener('click',()=>toast('✓ 已开始持续关注；后续变化会回到业务脉搏'));
+document.getElementById('adjustWatch').addEventListener('click',()=>document.getElementById('watchInput').focus());
+
+
+const capData={'专家团':[['经营分析专家','问题拆解 / 经营判断'],['财务专家','利润与指标口径'],['销售专家','区域 / 渠道分析'],['供应链专家','采购 / 库存定位']],
+'资源':[['行业案例','航空 / 零售 / 供应链'],['模板','报告 / 预警 / 分析'],['历史产物','报告与任务'],['企业资源','组织与资料']],
+'数据':[['门店经营数据.xlsx','2,847 行 · 09:32'],['采购数据','供应商价格明细'],['订单数据','门店订单明细'],['实时数据','更新状态']],
+'知识':[['零售指标口径','利润率 / 客单价'],['企业规则','经营目标与制度'],['案例知识','问题 → 方法 → 结果'],['FAQ','常见经营问题']],
+'技能':[['趋势分析','连续变化检测'],['归因分析','影响因素排序'],['报告生成','结构化输出'],['异常检测','阈值 / 模式']],
+'模型':[['Dora Reasoning','复杂问题编排'],['通用模型','自然语言理解'],['企业模型','企业专属能力'],['多模态','表格 / 文档理解']],
+'MCP':[['采购查询','供应商价格工具'],['报告服务','生成与存储'],['IM推送','主动消息'],['外部系统','企业动作']],
+'定时任务':[['经营简报','每日09:00'],['异常复盘','每日09:30'],['周报','每周一'],['任务历史','可追溯']],
+'Dora发现':[['未读事件','问题 / 趋势 / 更新'],['主动消息','事件回到洞察'],['处理状态','待处理 / 跟进中'],['证据链','每条发现可追溯']],
+'执行记录':[['采购分析','已完成'],['经营日报','已生成'],['趋势复盘','执行中'],['最近操作','可回溯']]};
+document.querySelectorAll('[data-cap]').forEach(b=>b.addEventListener('click',()=>{const n=b.dataset.cap;document.getElementById('capTitle').textContent=n;const g=document.getElementById('capGrid');g.innerHTML='';(capData[n]||[]).forEach(([a,p])=>{const d=document.createElement('div');d.className='cap-card';d.innerHTML='<b>'+a+'</b><p>'+p+'</p>';g.appendChild(d)});document.getElementById('capPanel').classList.add('open')}));
+document.getElementById('closeCap').addEventListener('click',()=>document.getElementById('capPanel').classList.remove('open'));
+// 初始化：根据 URL Hash 恢复状态
+function updateHash(page){
+ try{
+  const p=new URLSearchParams(); p.set('page',page);
+  if(page==='insight'){p.set('type',type); p.set('idx',String(selected||0))}
+  location.hash=p.toString();
+ }catch(e){}
+}
+function applyFromHash(){
+ try{
+  const s=location.hash.startsWith('#')?location.hash.slice(1):location.hash; if(!s) return;
+  const p=new URLSearchParams(s); const page=p.get('page'); if(!page) return;
+  if(page==='insight'){
+    const t=p.get('type')||'problem'; const idx=parseInt(p.get('idx')||'0',10)||0; type=t; selected=idx;
+    go('insight',{skipHash:true}); renderList(); renderDetail();
+  }else{
+    go(page,{skipHash:true});
+  }
+ }catch(e){}
+}
+window.addEventListener('hashchange',applyFromHash);
+loadJoinState();
+applyFromHash();
+renderList();renderDetail();renderActionSwitch();renderWatchTable();syncActionPage();
+</script>
+</body>
+</html>

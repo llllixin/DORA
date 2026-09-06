@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Node / Vite（frontend）
+node_modules/
+dist/
+*.local
+frontend/.env
+frontend/.env.local
+
+# Python / FastAPI（backend）
+.venv/
+venv/
+__pycache__/
+*.pyc
+backend/.env
+
+# IDE
+.idea/
+*.iml
+
+# 日志
+*.log
+
+# tsc -b 构建产物（node 项目输出到 node_modules/.tmp；这里兜底）
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
