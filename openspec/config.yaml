@@ -1,32 +1,53 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+# 项目上下文：propose/apply 自动携带，用于生成贴合本项目的 artifacts
+context: |
+  # Dora · AI 主动经营驾驶舱（Full Stack）
+  - 定位：从原始经营数据主动发现问题/机会/变化，用可追溯证据解释判断，
+    推进「数据 → 洞察 → 决策 → 行动 → 验证」闭环，而不是传统 Dashboard。
+  - 领域词汇：Pulse(业务脉搏) / Insight(问题·机会·变化三类语义) /
+    Evidence(证据链) / Action Loop(行动回路) / Watch(业务目标委托+升级) /
+    semantics(引擎下发的"原因链+下一步建议"，D015)。
+  - 技术栈：React 19 + TypeScript + Vite（frontend/）；FastAPI + Pydantic
+    （backend/）；当前数据为内存 Mock/引擎，PostgreSQL + Redis 是规划目标。
+  - 关键架构原则：
+    1. 判断/规则/证据/AI 一律在后端；前端只表达后端判断结果（判断不残留页面）。
+    2. API 字段用 camelCase，与前端 TS 类型同源（D004）；不做 snake↔camel 适配层。
+    3. doraApi 三模式：auto=HTTP 优先失败回退 Mock / mock / http（D005）。
+    4. 未稳定前不引入 Agent/LangChain/调度（D009）；文案模板占位 Reasoning（D014）。
+    5. 冷启动=数据入口第 0 环（上传/样例→数据就绪→Pulse）；演示的上传不假装真解析。
+    6. 页面路由用 URL hash；localStorage 键：doraDataSource、doraJoinedAction。
+    7. tsc -b 构建产物必须进 node_modules/.tmp；根目录禁止提交 vite.config.js、
+       *.tsbuildinfo（D012）。
+  - 运行与验证：
+    - 后端：cd backend && python3 -m uvicorn app.main:app --port 8000
+    - 前端：cd frontend && npm run dev（5173；/api 代理到 8000）
+    - 类型/构建：cd frontend && npm run build
+    - 引擎自检：cd backend && python3 -m tests.engine_check
+    - 联调用 VITE_API_MODE=http 让接口问题显形（默认 auto 会静默回退 Mock）
+  - 文档约定：每个 OpenSpec change 收尾后，在 docs/开发过程记录.md 追加一条迭代；
+    踩坑→docs/开发问题与经验.md 的 P 系列；取舍决策→同一文件的 D 系列（含退出条件）。
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+# 各 artifact 的规则
+rules:
+  proposal:
+    - 使用领域词汇描述背景/范围/验收；明确"非目标"。
+    - 若会改变前端可见行为或后端契约，必须给出迁移/兼容说明。
+  specs:
+    - 只描述"系统必须做到什么"，不写实现细节。
+  tasks:
+    - 每条任务 ≤ 一次可独立验证的改动；必须写明验证命令或断言。
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+# apply / archive 的操作建议
+operations:
+  apply:
+    guidance:
+      - 每个任务完成后用对应验证命令（build / engine_check / curl）给出证据再勾选。
+      - 任务完成标准：后端行为或契约有变化时必须 curl 相关端点验证。
+      - 若实现暴露出超出 spec 的范围，停下来说明，不静默扩大/缩减。
+      - change 全部完成后，追加 docs/开发过程记录.md 迭代条目。
+  archive:
+    guidance:
+      - 归档前确认 specs 增量已合入、tasks 全勾选、docs 迭代条目已补。
+      - 有新决策则补 D 系列；有新问题则补 P 系列。
+
