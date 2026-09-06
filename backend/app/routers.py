@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from app.data import ACTIONS, EVIDENCE, INSIGHTS, PULSE, WATCH
+from app.data import ACTIONS, EVIDENCE, INSIGHTS, WATCH
 from app.schemas import ActionCaseModel, EvidenceModel, InsightSummary, Pulse, WatchItem
 
 router = APIRouter(prefix="/api")
@@ -12,17 +12,28 @@ def health():
 
 @router.get("/pulse", response_model=Pulse)
 def pulse():
-    return Pulse(**PULSE)
+    return Pulse(**run_engine()["pulse"])
 
 
 @router.get("/insights", response_model=list[InsightSummary])
 def list_insights(type: str = Query("problem", pattern="^(problem|opportunity|change)$")):
-    return [InsightSummary(**item) for item in INSIGHTS.get(type, [])]
+    items = [i for i in run_engine()["insights"] if i["type"] == type]
+    return [_to_summary(i) for i in items]
 
 
 @router.get("/insights/{insight_id}")
 def get_insight(insight_id: str):
-    for items in INSIGHTS.values():
+    for item in run_engine()["insights"]:
+        if item["id"] == insight_id:
+            return {
+                **_to_summary(item).model_dump(),
+                "route": "watch" if item["type"] == "change" else "action",
+                "evidenceId": insight_id,
+                "trigger": item["trigger"],
+                "factors": item["factors"],
+                "evidence": item["evidence"],
+            }
+    for items in INSIGHTS.values():  # 静态兜底：历史 id（如 o2 / c2）仍可读
         for item in items:
             if item["id"] == insight_id:
                 return {
@@ -35,7 +46,7 @@ def get_insight(insight_id: str):
 
 @router.get("/evidence/{evidence_id}", response_model=EvidenceModel)
 def get_evidence(evidence_id: str):
-    item = EVIDENCE.get(evidence_id)
+    item = engine_evidence(evidence_id) or EVIDENCE.get(evidence_id)
     if not item:
         raise HTTPException(status_code=404, detail="evidence not found")
     return EvidenceModel(**item)
@@ -71,7 +82,13 @@ def list_watch():
     return [WatchItem(**item) for item in WATCH]
 
 
-from app.engine.engine import run_engine
+from app.engine.engine import engine_evidence, run_engine
+
+MODEL_FIELDS = set(InsightSummary.model_fields)
+
+
+def _to_summary(item: dict) -> InsightSummary:
+    return InsightSummary(**{k: item[k] for k in MODEL_FIELDS})
 
 
 @router.get("/engine/run")

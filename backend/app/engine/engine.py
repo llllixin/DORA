@@ -207,3 +207,59 @@ def run_engine() -> dict:
     return {"snapshot": snap, "signals": signals, "insights": insights, "pulse": pulse}
 
 
+EVIDENCE_META = {
+    "margin": {"sheet": "经营日报 · 利润口径", "scope": "全门店 · A 产品线 · 供应商 B", "path": "sales → purchase → margin → trend detector → attribution"},
+    "returns": {"sheet": "退货日报 · 门店维度", "scope": "华东区域 · 高贡献门店", "path": "returns → store → trend → concentration"},
+    "orders": {"sheet": "订单日报", "scope": "全门店 · 近 7 天", "path": "orders → revenue → aov → structure check"},
+    "aov": {"sheet": "商品销售 · 客单价口径", "scope": "全门店 · 近 7 天", "path": "orders → aov → product mix"},
+    "east_orders": {"sheet": "区域经营日报", "scope": "华东 · 近 5 天", "path": "orders → region → threshold → escalation"},
+    "high_value": {"sheet": "门店分层", "scope": "全门店 · 周维度", "path": "store_profile → aov → segmentation"},
+}
+DEFAULT_META = {"sheet": "经营数据 · 引擎口径", "scope": "引擎计算范围", "path": "metric → rule → signal → insight"}
+
+_TYPE_COPY = {
+    "problem": {
+        "judgment": "满足问题判定条件：异常连续/偏离目标且存在可干预因素，应先定位原因再处理。",
+        "suggestion": "进入行动回路：先验证最关键的可干预因素，再决定是否升级处理。",
+    },
+    "opportunity": {
+        "judgment": "满足机会候选条件：正向趋势成立，但进入行动回路前需先验证来源是否可复制。",
+        "suggestion": "进入行动回路：先做小范围验证，再决定是否放大推广。",
+    },
+    "change": {
+        "judgment": "当前为观察状态：变化尚未达到升级阈值，不制造噪音、不提前升级。",
+        "suggestion": "保持持续关注，跌破阈值自动升级为问题、趋势稳定后评估是否升级为机会。",
+    },
+}
+
+
+def engine_evidence(insight_id: str) -> dict | None:
+    """由引擎洞察即时生成证据链（与前端 Evidence 契约同形状）。"""
+    insight = next((i for i in run_engine()["insights"] if i["id"] == insight_id), None)
+    if not insight:
+        return None
+    kind = insight["evidence"]["kind"]
+    rows = insight["evidence"]["rows"]
+    meta = EVIDENCE_META.get(kind, DEFAULT_META)
+    copy = _TYPE_COPY[insight["type"]]
+    metric = insight["metric"]
+    delta = insight["delta"]
+    return {
+        "id": insight_id,
+        "title": insight["title"],
+        "source": f"{meta['sheet']} + 规则引擎",
+        "updated": "2026-09-06 09:32",
+        "sheet": meta["sheet"],
+        "scope": meta["scope"],
+        "metric": f"{metric} · {delta}",
+        "hits": [insight["trigger"], *insight["factors"]],
+        "rows": f"{len(rows)} 行原始记录（引擎取样）",
+        "path": meta["path"],
+        "fact": f"引擎计算到指标 {metric}（{delta}）；触发条件：{insight['trigger']}。",
+        "judgment": copy["judgment"],
+        "suggestion": copy["suggestion"],
+        "rawRows": rows,
+    }
+
+
+
