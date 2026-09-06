@@ -16,13 +16,20 @@ def main() -> int:
     assert m["current"] < m["target"], "margin should be below target"
     assert m["streak_below"] >= 3, "margin should trigger streak rule"
     assert pulse["problems"] == 3, f"expected 3 problems, got {pulse['problems']}"
-    assert pulse["changes"] >= 2, "expected >=2 changes"
+    assert pulse["opportunities"] == 2, f"expected 2 opportunities, got {pulse['opportunities']}"
+    assert pulse["changes"] == 4, f"expected 4 changes, got {pulse['changes']}"
     assert pulse["watching"] == pulse["changes"], "watch should mirror changes"
 
     by_id = {i["id"]: i for i in insights}
     assert by_id["p1"]["type"] == "problem"
     assert by_id["p1"]["delta"].startswith("↓"), "problem delta should be negative"
     assert by_id["c3"]["type"] == "change" and by_id["c3"]["delta"].startswith("↑")
+    # C1：c2（数据更新事件）与 o2（高客单集群机会）必须由引擎覆盖
+    assert "c2" in by_id and "o2" in by_id, "engine must cover c2 and o2"
+    assert by_id["c2"]["type"] == "change" and by_id["c2"]["delta"] == "09:32 更新"
+    assert by_id["o2"]["type"] == "opportunity"
+    assert by_id["c2"]["semantics"] and by_id["c2"]["evidence"]["rows"], "c2 needs semantics + evidence rows"
+    assert by_id["o2"]["semantics"] and by_id["o2"]["evidence"]["rows"], "o2 needs semantics + evidence rows"
     assert all(0 <= i["confidence"] <= 99 for i in insights), "confidence out of range"
     assert all(i["evidence"]["rows"] for i in insights if i["evidence"]["kind"] != "margin"), "evidence rows expected"
 

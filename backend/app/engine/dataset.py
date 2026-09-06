@@ -41,6 +41,26 @@ EAST_ORDERS_DAYS = ["08/30", "08/31", "09/01", "09/02", "09/03"]
 EAST_ORDERS_VALUES = [4401, 4352, 4318, 4295, 4286]
 EAST_ORDERS_THRESHOLD = -3.0  # % 升级阈值
 
+# 数据更新事件元数据（c2：燃料事件，非经营指标序列）
+DS_UPDATE = {
+    "updated": "09:32",
+    "rows_added": 327,
+    "total_rows": 2847,
+    "metrics_affected": ["利润率", "订单量", "销售额", "库存"],
+}
+
+# 华东高客单门店集群（o2：集群检测源数据）
+STORE_CLUSTER = {
+    "region": "华东",
+    "top_total": 10,
+    "region_count": 7,
+    "region_ratio_pct": 70.0,
+    "top_stores": ["门店 021", "门店 037", "门店 052", "门店 063", "门店 078"],
+    "region_avg_aov": 3280,
+    "common_mix_name": "新品系列渗透率",
+    "common_mix_pct": 82.0,
+}
+
 
 def rows_for_evidence(kind: str) -> list[list[str]]:
     """为证据链提供可直接展示的原始行（与前端 Evidence.rawRows 同形状）。"""
@@ -57,4 +77,15 @@ def rows_for_evidence(kind: str) -> list[list[str]]:
         return [[d, "华东订单量", str(v)] for d, v in zip(EAST_ORDERS_DAYS, EAST_ORDERS_VALUES)]
     if kind == "high_value":
         return [[d, "高客单门店占比", f"{v}%"] for d, v in zip(HIGH_VALUE_WEEKS, HIGH_VALUE_VALUES)]
+    if kind == "data_event":
+        rows = [[DS_UPDATE["updated"], "新增记录", "全量", str(DS_UPDATE["rows_added"]), "已写入"]]
+        for m in DS_UPDATE["metrics_affected"]:
+            rows.append([DS_UPDATE["updated"], "重算指标", m, "--", "已刷新"])
+        return rows
+    if kind == "store_cluster":
+        sc = STORE_CLUSTER
+        rows = [[s, sc["region"], f"¥{sc['region_avg_aov']}", "高客单"] for s in sc["top_stores"]]
+        rows.append([sc["region"], "区域占比", f"{sc['region_count']} / {sc['top_total']}", f"{sc['region_ratio_pct']:.0f}%"])
+        return rows
     return []
+

@@ -75,6 +75,22 @@ def compute_snapshot() -> dict:
             "baseline": ds.HIGH_VALUE_VALUES[0],
             "delta_pp": round(ds.HIGH_VALUE_VALUES[-1] - ds.HIGH_VALUE_VALUES[0], 1),
         },
+        "data_event": {
+            "updated": ds.DS_UPDATE["updated"],
+            "rows_added": ds.DS_UPDATE["rows_added"],
+            "total_rows": ds.DS_UPDATE["total_rows"],
+            "metrics": ds.DS_UPDATE["metrics_affected"],
+        },
+        "store_cluster": {
+            "region": ds.STORE_CLUSTER["region"],
+            "top_total": ds.STORE_CLUSTER["top_total"],
+            "region_count": ds.STORE_CLUSTER["region_count"],
+            "ratio": ds.STORE_CLUSTER["region_ratio_pct"],
+            "threshold": 60.0,
+            "aov": ds.STORE_CLUSTER["region_avg_aov"],
+            "mix_name": ds.STORE_CLUSTER["common_mix_name"],
+            "mix_pct": ds.STORE_CLUSTER["common_mix_pct"],
+        },
         "supplier_b": {
             "current": ds.PURCHASE_PRICE["供应商B"][-1],
             "delta_pct": round(_pct(ds.PURCHASE_PRICE["供应商B"][-1], _mean(ds.PURCHASE_PRICE["供应商B"][:-1])), 1),
@@ -89,6 +105,7 @@ def evaluate_signals(snap: dict) -> list[dict]:
     m, r = snap["margin"], snap["returns"]
     o, rev, a = snap["orders"], snap["revenue"], snap["aov"]
     e, n, h, b = snap["east_orders"], snap["new_sku"], snap["high_value"], snap["supplier_b"]
+    u, sc = snap["data_event"], snap["store_cluster"]
 
     if m["streak_below"] >= 3:
         signals.append({
@@ -146,6 +163,23 @@ def evaluate_signals(snap: dict) -> list[dict]:
             "factors": ["与客单价/订单洞察联动观察"],
             "evidence_kind": "high_value",
         })
+    if u["rows_added"] > 0:
+        signals.append({
+            "id": "sig-data-event", "insight": "c2", "type": "change", "metric_key": "data_event",
+            "metric": f"+{u['rows_added']} 条", "delta": f"{u['updated']} 更新",
+            "trigger": f"数据更新事件：新增 {u['rows_added']} 条记录，Dora 已重算核心指标",
+            "factors": [f"受影响指标：{'、'.join(u['metrics'])}"],
+            "evidence_kind": "data_event",
+        })
+    if sc["ratio"] >= sc["threshold"]:
+        signals.append({
+            "id": "sig-store-cluster", "insight": "o2", "type": "opportunity", "metric_key": "store_cluster",
+            "metric": f"{sc['region_count']} / {sc['top_total']}",
+            "delta": f"{sc['region']}占比 {sc['ratio']:.0f}%",
+            "trigger": f"Top 高客单门店集中于{sc['region']}，形成可复制机会假设",
+            "factors": [f"{sc['mix_name']} {sc['mix_pct']:.0f}%"],
+            "evidence_kind": "store_cluster",
+        })
     return signals
 
 
@@ -158,6 +192,8 @@ INSIGHT_TEMPLATES = {
     "c1": {"tag": "观察中", "title": "华东订单量偏弱", "desc": "订单量下滑但未达升级阈值，保持观察。", "source": "华东订单 + 阈值规则（引擎计算）", "question": "为什么还没有升级成问题？"},
     "c3": {"tag": "趋势出现", "title": "新品销量快速增长", "desc": "新品销量高增但尚未完成机会确认。", "source": "新品销量 + 周趋势（引擎计算）", "question": "增长门店有没有共同动作？"},
     "c4": {"tag": "结构变化", "title": "高客单门店占比抬升", "desc": "门店结构正朝高价值方向迁移。", "source": "门店分层 + 客单价（引擎计算）", "question": "结构变化是否稳定？"},
+    "c2": {"tag": "数据更新", "title": "门店销售数据已更新", "desc": "09:32 新增 {rows_added} 条记录，Dora 已重新计算主动发现。", "source": "数据源状态（引擎计算）", "question": "这次更新影响了哪些指标？"},
+    "o2": {"tag": "增长机会", "title": "高客单门店形成集群", "desc": "Top 高客单门店集中于华东，存在可复制的经营假设。", "source": "门店画像 + 客单价（引擎计算）", "question": "这些门店做对了什么？"},
 }
 
 
@@ -244,6 +280,28 @@ def _semantics(iid: str, s: dict) -> dict | None:
                 "建立周度跟踪，连续稳定后再评估升级",
             ],
         }
+    if iid == "c2":
+        ue = s["data_event"]
+        return {
+            "causeA": {"name": "本次更新", "value": f"+{ue['rows_added']} 条"},
+            "causeB": {"name": "更新时间", "value": ue["updated"]},
+            "next": [
+                f"核对新增 {ue['rows_added']} 条记录的数据完整性与重复率",
+                f"确认重算后{'、'.join(ue['metrics'])}等核心指标是否异常",
+                "保留本次更新为数据事件，若触发阈值则生成对应洞察",
+            ],
+        }
+    if iid == "o2":
+        sc = s["store_cluster"]
+        return {
+            "causeA": {"name": "区域占比", "value": f"{sc['region']} {sc['region_count']} / {sc['top_total']}"},
+            "causeB": {"name": "共性商品", "value": f"{sc['mix_name']} {sc['mix_pct']:.0f}%"},
+            "next": [
+                f"对比{sc['region']} Top 门店的商品、会员与导购经营特征",
+                f"提炼 {sc['region_count']} 家高客单门店的共同动作并评估复制成本",
+                "选 2 家普通门店开展复制试点，以客单价与转化率验收",
+            ],
+        }
     return None
 
 
@@ -253,7 +311,11 @@ def build_insights(signals: list[dict]) -> tuple[list[dict], dict]:
     insights: list[dict] = []
     for sig in signals:
         tpl = INSIGHT_TEMPLATES[sig["insight"]]
-        extra = {"streak": snap["margin"]["streak_below"]}
+        extra = {
+            "streak": snap["margin"]["streak_below"],
+            "rows_added": snap["data_event"]["rows_added"],
+            "updated": snap["data_event"]["updated"],
+        }
         insights.append({
             "id": sig["insight"],
             "type": sig["type"],
@@ -296,6 +358,8 @@ EVIDENCE_META = {
     "aov": {"sheet": "商品销售 · 客单价口径", "scope": "全门店 · 近 7 天", "path": "orders → aov → product mix"},
     "east_orders": {"sheet": "区域经营日报", "scope": "华东 · 近 5 天", "path": "orders → region → threshold → escalation"},
     "high_value": {"sheet": "门店分层", "scope": "全门店 · 周维度", "path": "store_profile → aov → segmentation"},
+    "data_event": {"sheet": "数据源状态 · 更新日志", "scope": "全量 · 最近一次更新", "path": "ingest → validate → metric snapshot → signal refresh"},
+    "store_cluster": {"sheet": "门店画像 · Top 高客单", "scope": "Top 高客单门店", "path": "store_profile → cohort → aov → product_mix"},
 }
 DEFAULT_META = {"sheet": "经营数据 · 引擎口径", "scope": "引擎计算范围", "path": "metric → rule → signal → insight"}
 
