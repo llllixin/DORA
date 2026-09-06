@@ -69,3 +69,21 @@ def execute_action(action_id: str):
 @router.get("/watch", response_model=list[WatchItem])
 def list_watch():
     return [WatchItem(**item) for item in WATCH]
+
+
+from app.engine.engine import run_engine
+
+
+@router.get("/engine/run")
+def engine_run():
+    return run_engine()
+
+
+@router.get("/engine/pulse")
+def engine_pulse():
+    return run_engine()["pulse"]
+
+
+@router.get("/engine/insights")
+def engine_insights():
+    return run_engine()["insights"]
