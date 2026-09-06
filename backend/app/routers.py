@@ -15,10 +15,9 @@ def pulse():
     return Pulse(**run_engine()["pulse"])
 
 
-@router.get("/insights", response_model=list[InsightSummary])
+@router.get("/insights")
 def list_insights(type: str = Query("problem", pattern="^(problem|opportunity|change)$")):
-    items = [i for i in run_engine()["insights"] if i["type"] == type]
-    return [_to_summary(i) for i in items]
+    return [i for i in run_engine()["insights"] if i["type"] == type]
 
 
 @router.get("/insights/{insight_id}")
@@ -32,6 +31,7 @@ def get_insight(insight_id: str):
                 "trigger": item["trigger"],
                 "factors": item["factors"],
                 "evidence": item["evidence"],
+                "semantics": item["semantics"],
             }
     for items in INSIGHTS.values():  # 静态兜底：历史 id（如 o2 / c2）仍可读
         for item in items:

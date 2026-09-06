@@ -13,6 +13,13 @@ export interface Insight {
   delta: string;
   source: string;
   question: string;
+  semantics?: InsightSemantics;
+}
+
+export interface InsightSemantics {
+  causeA: { name: string; value: string };
+  causeB: { name: string; value: string };
+  next: string[];
 }
 
 export interface Evidence {
