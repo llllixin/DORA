@@ -8,8 +8,8 @@
 ## 2. 单一事实源（去哪查什么）
 | 问什么 | 去哪个文件 |
 |---|---|
-| 现在第几版 / backlog / V3-V5 规划 | `docs/版本路线图.md`（§3A = V3 已完成；**§3B = V4 Watch 已规划待开工**） |
-| 迭代历史（每步记录） | `docs/开发过程记录.md`（迭代 0–21） |
+| 现在第几版 / backlog / V3-V6 规划 | `docs/版本路线图.md`（V1–V4 ✅；**§3B V4 已归档、§3C = V5 Action 已规划待开工**） |
+| 迭代历史（每步记录） | `docs/开发过程记录.md`（迭代 0–27） |
 | 问题/决策/经验 | `docs/开发问题与经验.md`（P 系列 + D 系列 001–028） |
 | 能力 spec（最终态）+ 需求来源表 | `openspec/specs/`（business-engine/business-data-store/data-ingest/upload-mapping） |
 | change 导航 + 归档索引 | `openspec/README.md`；归档全量在 `openspec/changes/archive/` |
@@ -17,13 +17,14 @@
 | V3 验收清单 | `docs/V3_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅） |
 
 ## 3. 当前状态
-- **V1 ✅ / V2 ✅ / V3 ✅ / V4 已实现待人工验收（Watch）**；迭代 0–27 全归档，`run_all` **6 段**全绿。
+- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅（Watch 真实委托，sign-off 完成）**；迭代 0–27 全归档，`run_all` **6 段**全绿。
+- **V5（Action 真闭环）已规划**（路线图 §3C，T1–T5，每任务 = 一个 OpenSpec change）。
 - **真实 LLM 已接**：DeepSeek 官方 `deepseek-chat`（backend/.env=llm，本地 git-ignored）；LLM 兜底阶段 1 已落地（P011/D028/D030）。
 - 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（llm 模式）、frontend :5173。
 
 ## 4. 下一步（按优先级，任选）
-1. **开工 V4-T1（Watch 领域与持久化）**：V4 规划已定（路线图 **§3B** + P/D **D029**），V4-T1..T5 每任务 = 一个 OpenSpec change 按序执行；首个归档 change 新建能力 spec `business-watch`。开工前让用户 review §3B 规划。
-2. **LLM 刷新兜底**：**阶段 1 已完成**（迭代 27，P011/D028/D030：超时 10s/预算 20s/并发 3/熔断/优先级/单飞，change `llm-refresh-policy`）。阶段 2 = 异步 job + 状态接口 + 前端"更新中 n/m"+ SSE（待立项）。
+1. **开工 V5-T1（Action 领域与持久化）**：V5 规划已定（路线图 **§3C** + P/D **D031**），V5-T1..T5 每任务 = 一个 OpenSpec change 按序执行；首个归档 change 新建能力 spec `business-action`。开工前让用户 review §3C 规划。
+2. **LLM 刷新兜底 阶段 2**（异步 job + 状态接口 + 前端"更新中 n/m" + SSE 可选；P011/D028/D030 已把阶段 1 完成）。
 3. 可选收尾：路线图"引擎结论与页面数字一致性核对"（低优先）。
 
 ## 5. 本地运行 / 验证（新会话先跑）
