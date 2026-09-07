@@ -185,13 +185,87 @@ def section3_flow(repo: Repository) -> None:
     run_seed()  # 还原 seed 状态
 
 
+def section4_e2e(repo: Repository) -> None:
+    """V5-T5：Action 闭环 HTTP E2E（前置：后端在运行）。
+
+    Case4+1：watch→跌破→引擎 e2→建档→步骤 done→verify resolved（note 入 archive）。
+    Case2：o1 推进至 waiting_verify → verify continue → running（可复制验证→继续）。
+    """
+    from tests.e2e_api_check import east_breach_csv, get, post, post_file
+
+    def call(method: str, path: str, payload: dict | None = None):
+        import json
+        import urllib.error
+        import urllib.request
+        body = json.dumps(payload).encode() if payload is not None else None
+        req = urllib.request.Request(
+            'http://localhost:8000/api' + path, data=body, method=method,
+            headers={'Content-Type': 'application/json'} if body else {})
+        try:
+            with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=120) as r:
+                return r.status, json.load(r)
+        except urllib.error.HTTPError as e:
+            return e.code, json.loads(e.read())
+
+    def step(cid: str, seq: int, action: str, note: str = "", result: str = ""):
+        if action == "start":
+            return call("POST", f"/action/cases/{cid}/steps/{seq}/start")
+        if action == "blocked":
+            return call("POST", f"/action/cases/{cid}/steps/{seq}/blocked", {"note": note})
+        return call("POST", f"/action/cases/{cid}/steps/{seq}/done", {"note": note, "result": result})
+
+    def delete(path: str):
+        import urllib.request
+        req = urllib.request.Request('http://localhost:8000/api' + path, method='DELETE')
+        with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=15):
+            pass
+
+    post("/datasets/sample")
+    # Case4+1：升级 problem e2 → 真实建档 → 完整执行 → resolved
+    created_watch = post("/watch", {"text": "帮我关注华东销售额，如果连续三天下降就提醒我", "frequency": "on_update"})
+    assert created_watch["ok"]
+    watch_id = created_watch["target"]["id"]
+    before = get("/action/cases")
+    assert not any(c["id"] == "e2" for c in before["cases"]), "e2 not yet judged -> no case"
+    up = post_file("/datasets", "east_breach_v4.csv", east_breach_csv())
+    assert up.get("ok"), "breach upload failed"
+    probs = get("/insights?type=problem")
+    assert any(i["id"] == "e2" for i in probs), "engine problem e2 missing"
+    s, created = call("POST", "/action/cases", {"insight_id": "e2"})
+    assert s == 200 and created["ok"] and created["created"] is True and created["case"]["id"] == "e2"
+    cid = created["case"]["id"]
+    step(cid, 1, "done", note="定位完成", result="供应商 B 已确认")
+    step(cid, 2, "start"); step(cid, 2, "done", note="验证完成", result="阈值已回稳")
+    step(cid, 3, "start"); step(cid, 3, "done", note="收尾完成", result="ok")
+    s, v = call("POST", f"/action/cases/{cid}/verify", {"outcome": "resolved", "note": "华东订单量回到阈值内，验证通过"})
+    assert s == 200 and v["case"]["status"] == "resolved" and "验证通过" in v["case"]["archive"]
+    s2, _ = call("POST", f"/action/cases/{cid}/verify", {"outcome": "resolved", "note": "x"})
+    assert s2 == 400, "resolved case re-verify should 400"
+
+    # Case2：机会 o1 → 推进到 waiting_verify → verify continue（可复制验证→继续观察）
+    s, o = call("POST", "/action/cases", {"insight_id": "o1"})
+    assert s == 200 and o["ok"] and o["created"] is False and o["case"]["id"] == "o1"  # 静态 seed 档案幂等
+    ocid = "o1"
+    # seed o1: seq0/1 done、seq2 in_progress、seq3/4 pending → 全 done
+    step(ocid, 2, "done", note="拆解完成", result="新品贡献 62%")
+    step(ocid, 3, "start"); step(ocid, 3, "done", note="试点完成", result="2 家通过")
+    step(ocid, 4, "start"); step(ocid, 4, "done", note="复制推广完成", result="已扩 3 家")
+    s, cont = call("POST", f"/action/cases/{ocid}/verify", {"outcome": "continue", "note": "进入下一轮观察"})
+    assert s == 200 and cont["case"]["status"] == "running"
+
+    repo.delete_action_case("e2")  # 自清（sample 不重置 action 档案）
+    delete(f"/watch/{watch_id}")   # 清理测试 watch
+    post("/datasets/sample")  # 还原数据/事件（o1 seed 被 upsert 复位到 running 初始态）
+
+
 def main() -> int:
     run_seed()
     repo = Repository()
     section1_crud(repo)
     section2_builder(repo)
     section3_flow(repo)
-    print("action_check OK（第 1–3 节：CRUD/建档引擎/状态机服务 全绿）")
+    section4_e2e(repo)
+    print("action_check OK（第 1–4 节：CRUD/建档引擎/状态机服务/闭环 E2E 全绿）")
     return 0
 
 
