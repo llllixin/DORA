@@ -5,7 +5,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from app import db
-from app.models import DataUpdateLog, MetricSeries, RuleConfig, StoreClusterStore
+from app.models import DataUpdateLog, InsightReasoning, MetricSeries, RuleConfig, StoreClusterStore
 
 
 class DataSourceUnavailableError(Exception):
@@ -107,6 +107,46 @@ class Repository:
                 s.commit()
         self._wrap(_do)
 
+    def get_reasoning(self, insight_id: str) -> dict | None:
+        def _do():
+            with self._session_ctx() as s:
+                row = s.execute(
+                    select(InsightReasoning).where(InsightReasoning.insight_id == insight_id)
+                ).scalars().first()
+                if not row:
+                    return None
+                return {
+                    "semantics": row.semantics,
+                    "provider": row.provider,
+                    "generated_at": row.generated_at,
+                }
+        return self._wrap(_do)
+
+    def upsert_reasoning(self, insight_id: str, semantics: dict, provider: str, generated_at: str) -> None:
+        def _do():
+            with self._session_ctx() as s:
+                existing = s.execute(
+                    select(InsightReasoning).where(InsightReasoning.insight_id == insight_id)
+                ).scalars().first()
+                if existing:
+                    existing.semantics = semantics
+                    existing.provider = provider
+                    existing.generated_at = generated_at
+                else:
+                    s.add(InsightReasoning(
+                        insight_id=insight_id, semantics=semantics,
+                        provider=provider, generated_at=generated_at,
+                    ))
+                s.commit()
+        self._wrap(_do)
+
+    def delete_all_reasoning(self) -> None:
+        def _do():
+            with self._session_ctx() as s:
+                s.execute(delete(InsightReasoning))
+                s.commit()
+        self._wrap(_do)
+
     def delete_all_series(self) -> None:
         """清空全部时间序列（样例/重置用，保证还原到出厂状态）。"""
 
@@ -179,6 +219,7 @@ class Repository:
             "store_cluster_store": StoreClusterStore,
             "data_update_log": DataUpdateLog,
             "rule_config": RuleConfig,
+            "insight_reasoning": InsightReasoning,
         }[table]
 
         def _do():

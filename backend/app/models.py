@@ -45,3 +45,13 @@ class RuleConfig(Base):
     key = Column(String(64), primary_key=True)
     value = Column(String(256), nullable=False)
     value_type = Column(String(16), nullable=False, default="str")
+
+
+class InsightReasoning(Base):
+    """洞察解释语义缓存（V3-T2）。"""
+    __tablename__ = "insight_reasoning"
+    id = Column(Integer, primary_key=True)
+    insight_id = Column(String(64), nullable=False, unique=True)
+    semantics = Column(JSON, nullable=False, default=dict)
+    provider = Column(String(16), nullable=False, default="template")
+    generated_at = Column(String(32), nullable=False, default="")

@@ -42,17 +42,17 @@ class TemplateProvider:
     kind = "template"
 
     def explain(self, context: ReasoningContext) -> ReasoningResult:
-        # 延迟导入：避免 reasoning ↔ engine 的启动期循环依赖（T2 重接时再收编逻辑）
-        from app.engine.engine import _semantics
+        # semantics 由 reasoning 包提供（V3-T2 收编，不再依赖引擎私有函数）
+        from app.reasoning.semantics import template_semantics
         semantics = None
         try:
-            semantics = _semantics(context.insight_id, context.snapshot) or {}
-        except KeyError:  # 引擎无该 id 模板时保持空语义（不会用于列表装配）
+            semantics = template_semantics(context.insight_id, context.snapshot) or {}
+        except KeyError:  # 引擎无该 id 模板时保持空语义
             semantics = {}
         return ReasoningResult(
             semantics=semantics,
             provider=self.kind,
-            note="模板解释（V3-T1 基线，与引擎默认输出一致）",
+            note="模板解释（V3-T2，与引擎默认输出一致）",
         )
 
 

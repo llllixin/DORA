@@ -6,12 +6,14 @@
 import sys
 
 from app.engine.engine import run_engine
+from app.reasoning.cache import refresh
 from app.reasoning.provider import (
     ReasoningContext,
     ReasoningResult,
     TemplateProvider,
     resolve_provider,
 )
+from app.repository import Repository
 from app.seed import run_seed
 
 
@@ -48,7 +50,25 @@ def main() -> int:
     except ValueError:
         pass
 
-    print(f"reasoning_check OK (parity on {checked} insights)")
+    # T2：语义缓存合并与来源标注
+    repo = Repository()
+    repo.delete_all_reasoning()
+    before = {i["id"]: i["semantics"] for i in res["insights"]}
+    for i in res["insights"]:
+        assert i["reasonSource"] == "template", "no-cache should mark reasonSource=template"
+        assert "generatedAt" not in i
+    refresh(repo, res["insights"], res["snapshot"])
+    res2 = run_engine()
+    for i in res2["insights"]:
+        assert i["reasonSource"] == "template"  # 默认 provider 即 template
+        assert "generatedAt" in i, "cache hit should carry generatedAt"
+        assert i["semantics"] == before[i["id"]], f"cache must not change semantics for {i['id']}"
+    repo.delete_all_reasoning()
+    res3 = run_engine()
+    for i in res3["insights"]:
+        assert i["reasonSource"] == "template" and "generatedAt" not in i, "clear cache -> template again"
+
+    print(f"reasoning_check OK (parity on {checked} insights; T2 cache merge OK)")
     return 0
 
 
