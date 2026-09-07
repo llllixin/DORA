@@ -1,6 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from datetime import datetime
+
 from app.data import ACTIONS, EVIDENCE, INSIGHTS, WATCH
 from app.schemas import ActionCaseModel, EvidenceModel, InsightSummary, Pulse, WatchItem
+from app.ingest import IngestValidationError, parse_dataset
+from app.repository import Repository
+from app.seed import run_seed
 
 router = APIRouter(prefix="/api")
 
@@ -104,3 +109,47 @@ def engine_pulse():
 @router.get("/engine/insights")
 def engine_insights():
     return run_engine()["insights"]
+
+
+MAX_UPLOAD = 10 * 1024 * 1024  # 10MB
+
+
+@router.post("/datasets/sample")
+def upload_sample():
+    counts = run_seed()
+    return {"ok": True, "counts": counts}
+
+
+@router.get("/datasets/current")
+def current_dataset():
+    repo = Repository()
+    latest = repo.get_latest_update() or {}
+    counts = {t: repo.count_rows(t) for t in ("metric_series", "store_cluster_store", "data_update_log", "rule_config")}
+    return {"latest": latest, "counts": counts}
+
+
+@router.post("/datasets")
+async def upload_dataset(file: UploadFile = File(...)):
+    name = file.filename or "upload.csv"
+    if not (name.lower().endswith(".csv") or name.lower().endswith(".xlsx")):
+        raise HTTPException(status_code=400, detail="仅支持 .csv / .xlsx 文件")
+    content = await file.read()
+    if len(content) > MAX_UPLOAD:
+        raise HTTPException(status_code=413, detail="文件超过 10MB 上限")
+    try:
+        items = parse_dataset(name, content)
+    except IngestValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not items:
+        raise HTTPException(status_code=400, detail="文件内容为空")
+    keys = sorted({it["metric_key"] for it in items})
+    repo = Repository()
+    repo.replace_series(keys, items)
+    now = datetime.now().strftime("%H:%M")
+    repo.upsert_data_update({
+        "updated_at": now,
+        "rows_added": len(items),
+        "total_rows": repo.count_rows("metric_series"),
+        "metrics": keys,
+    })
+    return {"ok": True, "name": name, "rows": len(items), "affectedMetrics": keys, "updated": now}

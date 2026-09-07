@@ -36,8 +36,8 @@ export function OnboardingPage({ onReady }: { onReady: (ds: DataSource) => void 
         <DataSourcePicker onPick={onReady} />
 
         <div className="boot-note">
-          <Tag tone="ai">演示模式</Tag>
-          <span>上传任意文件后，本演示会以内置「门店经营」样例运行完整流程；真实文件解析将随后端上线接入。</span>
+          <Tag tone="ai">数据源</Tag>
+          <span>后端在线：上传按「引擎规范格式」真实解析入库、样例由服务端提供；离线或无后端时回退本地演示，行为与之前一致。</span>
         </div>
       </div>
     </div>

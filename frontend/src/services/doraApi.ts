@@ -108,6 +108,36 @@ export function getApiBase() {
 }
 
 // ---------------------------------------------------------------------------
+// 数据集接口（C3）：样例服务端化 + 真实文件上传入库
+// ---------------------------------------------------------------------------
+export async function loadSampleDataset() {
+  return apiPost('/datasets/sample', {}, () => ({ ok: true, counts: {} }));
+}
+
+export async function uploadDataset(file: File) {
+  if (MODE === 'mock') {
+    await wait(160);
+    return { ok: true, name: file.name, rows: 0, affectedMetrics: [] as string[], updated: '' };
+  }
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(`${BASE}/datasets`, { method: 'POST', body: fd, signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as { ok: boolean; name: string; rows: number; affectedMetrics: string[]; updated: string };
+  } catch (err) {
+    if (MODE === 'http') throw err;
+    console.warn('[doraApi] 数据集上传失败，已回退本地演示：', err);
+    await wait(120);
+    return { ok: true, name: file.name, rows: 0, affectedMetrics: [] as string[], updated: '' };
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 页面级数据同步：App 启动时探测后端并把 /insights /actions /watch 结果原位刷
 // 新到 data.ts 的持有结构（insights / actionCases / watchItems）。
 // 说明：页面组件全部读取 data.ts 的同一批数组/对象引用，因此刷新后页面即显示

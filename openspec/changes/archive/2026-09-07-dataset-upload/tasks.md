@@ -13,11 +13,11 @@
 
 ## 3. 前端接通冷启动入口
 
-- [ ] 3.1 `doraApi.ts` 增 `uploadDataset(file)` 与 `loadSampleDataset()`（FormData POST，三模式），验证：类型检查通过且 mock 分支返回原行为
-- [ ] 3.2 `OnboardingPage/DataSourcePicker/App`：非 mock 分支"载入样例"调真实接口、上传调真实接口并回写 `doraDataSource` + 触发同步；mock 分支不变，验证：`cd frontend && npm run build`
-- [ ] 3.3 端到端手工冒烟（后端运行）：上传样例→Pulse/Tab 计数由引擎驱动；上传自定义 margin 数据→p1 数值变化，验证：`python3 /tmp/dora_smoke.py` 仍全绿
+- [x] 3.1 `doraApi.ts` 增 `uploadDataset(file)` 与 `loadSampleDataset()`（FormData POST，三模式），验证：类型检查通过且 mock 分支返回原行为
+- [x] 3.2 `OnboardingPage/DataSourcePicker/App`：非 mock 分支"载入样例"调真实接口、上传调真实接口并回写 `doraDataSource` + 触发同步；mock 分支不变，验证：`cd frontend && npm run build`
+- [x] 3.3 端到端手工冒烟（后端运行）：上传样例→Pulse/Tab 计数由引擎驱动；上传自定义 margin 数据→p1 数值变化，验证：`python3 /tmp/dora_smoke.py` 仍全绿
 
 ## 4. 文档与看板
 
-- [ ] 4.1 `docs/开发过程记录.md` 追加迭代条目（含测试证据与反思）；`docs/版本路线图.md` 勾选 C3
-- [ ] 4.2 `backend/README.md` 补充上传 API 与格式说明；`docs/开发问题与经验.md` 记录新决策 D017（规范格式+openpyxl+事务替换；若 upload 揭示新坑则入 P 系列）
+- [x] 4.1 `docs/开发过程记录.md` 追加迭代条目（含测试证据与反思）；`docs/版本路线图.md` 勾选 C3
+- [x] 4.2 `backend/README.md` 补充上传 API 与格式说明；`docs/开发问题与经验.md` 记录新决策 D017（规范格式+openpyxl+事务替换；若 upload 揭示新坑则入 P 系列）

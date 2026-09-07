@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { DataSource } from '../../types';
+import { loadSampleDataset, uploadDataset } from '../../services/doraApi';
 
 const SAMPLE = '门店经营数据.xlsx';
 const PHASES = ['读取与清洗数据', '建立经营口径', '检测趋势 / 阈值 / 结构变化'];
@@ -24,7 +25,7 @@ export function DataSourcePicker({ onPick }: { onPick: (ds: DataSource) => void 
 
   useEffect(() => clearTimers, []);
 
-  const run = (name: string, kind: 'sample' | 'upload') => {
+  const run = async (name: string, kind: 'sample' | 'upload', file?: File) => {
     if (busy) return;
     clearTimers();
     setBusy(true);
@@ -33,9 +34,21 @@ export function DataSourcePicker({ onPick }: { onPick: (ds: DataSource) => void 
     timers.current.push(window.setTimeout(() => setPhase(1), 600));
     timers.current.push(window.setTimeout(() => setPhase(2), 1200));
     timers.current.push(
-      window.setTimeout(() => {
+      window.setTimeout(async () => {
+        let rows = kind === 'sample' ? 2847 : 0;
+        try {
+          if (kind === 'sample') {
+            const r = await loadSampleDataset();
+            rows = (r as { counts?: { metric_series?: number } }).counts?.metric_series ?? 2847;
+          } else if (file) {
+            const r = await uploadDataset(file);
+            rows = (r as { rows?: number }).rows ?? 0;
+          }
+        } catch (err) {
+          console.warn('[DataSourcePicker] 后端接口失败（离线回退本地）', err);
+        }
         setBusy(false);
-        onPick({ name, kind, at: kind === 'sample' ? '09:32' : nowHHmm(), rows: 2847, fields: 36 });
+        onPick({ name, kind, at: kind === 'sample' ? '09:32' : nowHHmm(), rows, fields: 36 });
       }, 1900),
     );
   };
@@ -43,7 +56,7 @@ export function DataSourcePicker({ onPick }: { onPick: (ds: DataSource) => void 
   const pickFile = (f: File | undefined | null) => {
     if (!f) return;
     if (inputRef.current) inputRef.current.value = '';
-    run(f.name, 'upload');
+    void run(f.name, 'upload', f);
   };
 
   return (
@@ -82,7 +95,7 @@ export function DataSourcePicker({ onPick }: { onPick: (ds: DataSource) => void 
       ) : (
         <>
           <div className="up-or">或</div>
-          <button className="btn up-sample" onClick={() => run(SAMPLE, 'sample')}>
+          <button className="btn up-sample" onClick={() => void run(SAMPLE, 'sample')}>
             载入内置样例数据（{SAMPLE} · 09:32 更新）
           </button>
         </>

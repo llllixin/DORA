@@ -36,3 +36,20 @@ python3 -m tests.engine_check   # 引擎自检（需要数据库已 seed）
 
 规则阈值存于 `rule_config` 表（种子默认值见 `app/seed.py`），修改后触发重算即生效。
 
+## 数据上传（C3）
+
+```bash
+# 服务端载入/重置演示样例（出厂状态）
+curl -X POST http://localhost:8000/api/datasets/sample
+
+# 上传规范格式文件（csv/xlsx），事务替换其指标 key 并登记更新事件
+curl -F 'file=@/path/to/data.csv' http://localhost:8000/api/datasets
+
+# 当前数据源摘要
+curl http://localhost:8000/api/datasets/current
+```
+
+**引擎输入规范格式**：表头 `metric_key,label,dimension,value,unit`。
+支持 metric_key：`margin / returns / orders / revenue / aov / east_orders / new_sku / high_value / supplier_price`。
+限制：≤10MB；非法内容返回 400；数据库离线返回 503。任意业务口径的映射向导属后续迭代（C4）。
+

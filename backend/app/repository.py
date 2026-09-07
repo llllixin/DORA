@@ -1,7 +1,7 @@
 """数据访问层：引擎从 Repository 读取原始数据与规则配置（默认 PostgreSQL）。"""
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from app import db
@@ -94,6 +94,37 @@ class Repository:
                         existing.value = it["value"]
                         existing.unit = it.get("unit", "")
                     else:
+                        s.add(MetricSeries(**it))
+                s.commit()
+        self._wrap(_do)
+
+    def delete_all_updates(self) -> None:
+        """清空数据更新日志（样例/重置用，恢复出厂事件）。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                s.execute(delete(DataUpdateLog))
+                s.commit()
+        self._wrap(_do)
+
+    def delete_all_series(self) -> None:
+        """清空全部时间序列（样例/重置用，保证还原到出厂状态）。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                s.execute(delete(MetricSeries))
+                s.commit()
+        self._wrap(_do)
+
+    def replace_series(self, metric_keys: list[str], items: list[dict[str, Any]]) -> None:
+        """同事务替换指定指标 key 的系列（上传=换数据源语义）。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                if metric_keys:
+                    s.execute(delete(MetricSeries).where(MetricSeries.metric_key.in_(metric_keys)))
+                for it in items:
+                    if it.get("metric_key") in metric_keys:
                         s.add(MetricSeries(**it))
                 s.commit()
         self._wrap(_do)
