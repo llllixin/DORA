@@ -9,6 +9,7 @@ import sys
 STEPS = [
     ("engine_check", ["python3", "-m", "tests.engine_check"]),
     ("ingest_check", ["python3", "-m", "tests.ingest_check"]),
+    ("reasoning_check", ["python3", "-m", "tests.reasoning_check"]),
     ("e2e_api_check", ["python3", "-m", "tests.e2e_api_check"]),
 ]
 
