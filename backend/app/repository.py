@@ -527,8 +527,11 @@ class Repository:
                 return _action_step_dict(step)
         return self._wrap(_do)
 
-    def verify_action_case(self, case_id: str, outcome: str) -> dict[str, Any] | None:
-        """验证归档：resolved → case resolved；continue → case running（D031-3，只改档案态）。"""
+    def verify_action_case(self, case_id: str, outcome: str, note: str = "") -> dict[str, Any] | None:
+        """验证归档：resolved → case resolved；continue → case running（D031-3，只改档案态）。
+
+        note 追加进 archive（形成验证记录，不改引擎判定/reasonSource）。
+        """
         if outcome not in ("resolved", "continue"):
             raise ValueError(f"invalid verify outcome: {outcome}")
 
@@ -538,6 +541,24 @@ class Repository:
                 if row is None:
                     return None
                 row.status = "resolved" if outcome == "resolved" else "running"
+                row.updated_at = _now_iso()
+                if note:
+                    row.archive = f"{row.archive}\n[{_now_iso()}] {outcome}: {note}"
+                s.commit()
+                return _action_case_dict(row)
+        return self._wrap(_do)
+
+    def set_action_case_status(self, case_id: str, status: str) -> dict[str, Any] | None:
+        """直接置档案状态（状态机服务层推导用；不做迁移校验）。"""
+        if status not in ACTION_CASE_STATUSES:
+            raise ValueError(f"invalid action case status: {status}")
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(ActionCase, case_id)
+                if row is None:
+                    return None
+                row.status = status
                 row.updated_at = _now_iso()
                 s.commit()
                 return _action_case_dict(row)

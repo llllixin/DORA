@@ -111,12 +111,87 @@ def section2_builder(repo: Repository) -> None:
     run_seed()  # 还原
 
 
+def section3_flow(repo: Repository) -> None:
+    """V5-T3：状态机服务层（start/done/blocked/verify + 冻结/非法迁移拒绝）。"""
+    from app.action import flow
+
+    # 临时档案：3 步全 pending，走完整链路到 resolved
+    created = repo.create_action_case(
+        case={"id": "flow-test", "kind": "problem", "code": "TST-0901",
+              "case_title": "流程测试", "tag_cls": "red", "source": "测试"},
+        steps=[{"seq": 0, "title": "A", "desc": "d", "evidence": "e", "status": "pending"},
+               {"seq": 1, "title": "B", "desc": "d", "evidence": "e", "status": "pending"},
+               {"seq": 2, "title": "C", "desc": "d", "evidence": "e", "status": "pending"}],
+        status="open",
+    )
+    assert created["status"] == "open"
+    # 非法：pending 直接 done
+    try:
+        flow.done_step(repo, "flow-test", 0)
+        raise AssertionError("pending->done must be rejected")
+    except flow.ActionFlowError:
+        pass
+    # start→done 推进
+    c1 = flow.start_step(repo, "flow-test", 0)
+    assert c1["status"] == "running" and c1["steps"][0]["status"] == "in_progress"
+    c2 = flow.done_step(repo, "flow-test", 0, note="A 完成", result="已核对")
+    assert c2["steps"][0]["status"] == "done" and c2["steps"][0]["result"] == "已核对"
+    # blocked → start 恢复
+    flow.start_step(repo, "flow-test", 1)
+    c3 = flow.block_step(repo, "flow-test", 1, note="等外部数据")
+    assert c3["steps"][1]["status"] == "blocked" and c3["steps"][1]["note"] == "等外部数据"
+    c4 = flow.start_step(repo, "flow-test", 1)
+    assert c4["steps"][1]["status"] == "in_progress"
+    flow.done_step(repo, "flow-test", 1)
+    # resolved 需全 done + note：先验（有 pending）应拒绝
+    try:
+        flow.verify(repo, "flow-test", "resolved", note="x")
+        raise AssertionError("resolved before all done must be rejected")
+    except flow.ActionFlowError:
+        pass
+    flow.start_step(repo, "flow-test", 2)
+    c5 = flow.done_step(repo, "flow-test", 2, note="全部完成", result="收尾")
+    assert c5["status"] == "waiting_verify"
+    try:
+        flow.verify(repo, "flow-test", "resolved", note="")
+        raise AssertionError("resolved without note must be rejected")
+    except flow.ActionFlowError:
+        pass
+    c6 = flow.verify(repo, "flow-test", "resolved", note="利润率回到 18.6%，验证通过")
+    assert c6["status"] == "resolved"
+    assert "验证通过" in c6["archive"], "verify note should append to archive"
+    # 已 resolved 冻结
+    for fn, args in ((flow.start_step, (repo, "flow-test", 0)),
+                     (flow.done_step, (repo, "flow-test", 0)),
+                     (flow.verify, (repo, "flow-test", "resolved", "x"))):
+        try:
+            fn(*args)
+            raise AssertionError("resolved case transitions must be rejected")
+        except flow.ActionFlowError:
+            pass
+
+    # continue 路径：全 done 后 continue → running（人工继续）
+    created2 = repo.create_action_case(
+        case={"id": "flow-cont", "kind": "opportunity", "code": "TST-0902", "case_title": "继续测试", "tag_cls": "green", "source": "测试"},
+        steps=[{"seq": 0, "title": "A", "desc": "d", "evidence": "e", "status": "pending"}], status="open")
+    assert created2["status"] == "open"
+    flow.start_step(repo, "flow-cont", 0)
+    flow.done_step(repo, "flow-cont", 0)
+    cont = flow.verify(repo, "flow-cont", "continue", note="进入下一轮观察")
+    assert cont["status"] == "running"
+
+    repo.delete_action_case("flow-test")
+    repo.delete_action_case("flow-cont")
+    run_seed()  # 还原 seed 状态
+
+
 def main() -> int:
     run_seed()
     repo = Repository()
     section1_crud(repo)
     section2_builder(repo)
-    print("action_check OK（第 1 节 CRUD + seed 迁移幂等；第 2 节 建档引擎 全绿）")
+    section3_flow(repo)
+    print("action_check OK（第 1–3 节：CRUD/建档引擎/状态机服务 全绿）")
     return 0
 
 

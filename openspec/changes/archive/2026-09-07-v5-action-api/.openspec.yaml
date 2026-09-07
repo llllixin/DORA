@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-09-07
+goal: V5-T3 执行/验证状态机 API（flow 服务层 + /api/action/cases REST，非法迁移 4xx）

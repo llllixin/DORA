@@ -6,9 +6,12 @@ import threading
 from app.data import ACTIONS, EVIDENCE, INSIGHTS
 from app.schemas import (
     ActionCaseModel,
+    ActionCreateRequest,
     EvidenceModel,
     InsightSummary,
     Pulse,
+    StepBodyRequest,
+    VerifyRequest,
     WatchCreateRequest,
     WatchParseRequest,
     WatchStatusRequest,
@@ -27,6 +30,8 @@ from app.seed import run_seed
 from app.watch.evaluator import evaluate_all as watch_evaluate_all
 from app.watch.evaluator import evaluate_one as watch_evaluate_one
 from app.watch.parser import parse_watch_text
+from app.action.builder import create_case_from_insight as action_build_case
+from app.action import flow as action_flow
 
 router = APIRouter(prefix="/api")
 
@@ -385,4 +390,90 @@ def check_watch(watch_id: str):
     out = watch_evaluate_one(repo, target)
     repo.touch_watch_target(watch_id, datetime.now(timezone.utc).isoformat(timespec="seconds"))
     return {"ok": True, **out}
+
+
+# ---------------------------------------------------------------------------
+# V5-T3：/api/action/cases 真执行 REST（旧 /actions 静态端点保留到 T5）
+# ---------------------------------------------------------------------------
+def _action_detail_or_404(case_id: str):
+    repo = Repository()
+    case = repo.get_action_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="action case not found")
+    return repo, case
+
+
+@router.post("/action/cases")
+def create_action_case(req: ActionCreateRequest):
+    repo = Repository()
+    engine_insights = run_engine(repo)["insights"]
+    insight = next(
+        (x for x in engine_insights if x["id"] == req.insight_id
+         and x["type"] in ("problem", "opportunity")),
+        None,
+    )
+    if insight is None:
+        raise HTTPException(
+            status_code=400,
+            detail="只允许为当前引擎判定的 problem/opportunity 洞察建档",
+        )
+    try:
+        out = action_build_case(repo, insight)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"ok": True, "created": out["created"], "case": out["case"]}
+
+
+@router.get("/action/cases")
+def list_action_cases():
+    repo = Repository()
+    return {"ok": True, "cases": repo.list_action_cases()}
+
+
+@router.get("/action/cases/{case_id}")
+def get_action_case(case_id: str):
+    repo = Repository()
+    case = repo.get_action_case(case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="action case not found")
+    return {"ok": True, "case": case}
+
+
+def _step_action(case_id: str, seq: int, action: str, note: str = "", result: str = "") -> dict:
+    repo, _ = _action_detail_or_404(case_id)
+    try:
+        if action == "start":
+            updated = action_flow.start_step(repo, case_id, seq)
+        elif action == "done":
+            updated = action_flow.done_step(repo, case_id, seq, note=note, result=result)
+        else:
+            updated = action_flow.block_step(repo, case_id, seq, note=note)
+    except action_flow.ActionFlowError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"ok": True, "case": updated}
+
+
+@router.post("/action/cases/{case_id}/steps/{seq}/start")
+def action_step_start(case_id: str, seq: int):
+    return _step_action(case_id, seq, "start")
+
+
+@router.post("/action/cases/{case_id}/steps/{seq}/done")
+def action_step_done(case_id: str, seq: int, body: StepBodyRequest):
+    return _step_action(case_id, seq, "done", note=body.note, result=body.result)
+
+
+@router.post("/action/cases/{case_id}/steps/{seq}/blocked")
+def action_step_blocked(case_id: str, seq: int, body: StepBodyRequest):
+    return _step_action(case_id, seq, "blocked", note=body.note)
+
+
+@router.post("/action/cases/{case_id}/verify")
+def action_verify(case_id: str, body: VerifyRequest):
+    repo, _ = _action_detail_or_404(case_id)
+    try:
+        updated = action_flow.verify(repo, case_id, body.outcome, note=body.note)
+    except action_flow.ActionFlowError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"ok": True, "case": updated}
 

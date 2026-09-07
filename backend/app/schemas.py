@@ -88,3 +88,17 @@ class WatchCreateRequest(BaseModel):
 
 class WatchStatusRequest(BaseModel):
     status: str
+
+
+class ActionCreateRequest(BaseModel):
+    insight_id: str
+
+
+class StepBodyRequest(BaseModel):
+    note: str = ""
+    result: str = ""
+
+
+class VerifyRequest(BaseModel):
+    outcome: str  # resolved|continue
+    note: str = ""
