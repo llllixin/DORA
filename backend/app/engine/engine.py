@@ -139,12 +139,14 @@ def evaluate_signals(snap: dict) -> list[dict]:
             "factors": ["需拆解价格与商品结构贡献"],
             "evidence_kind": "aov",
         })
-    if e["threshold"] <= e["delta_pct"] < -1.0:
+    if e["delta_pct"] < -1.0:
+        breached = e["delta_pct"] <= e["threshold"]
         signals.append({
             "id": "sig-east-orders", "insight": "c1", "type": "change", "metric_key": "east_orders",
             "metric": f"{e['current']:,}", "delta": f"↓ {abs(e['delta_pct'])}%",
-            "trigger": f"未达升级阈值 {e['threshold']}%，保持观察",
-            "factors": ["继续观察，跌破阈值自动升级问题"],
+            "trigger": (f"已跌破升级阈值 {e['threshold']}%，等待升级机制接入（V4）" if breached
+                        else f"未达升级阈值 {e['threshold']}%，保持观察"),
+            "factors": ["跌破阈值将自动升级为问题（V4 接入）"] if breached else ["继续观察，跌破阈值自动升级问题"],
             "evidence_kind": "east_orders",
         })
     if n["delta_pct"] >= 30:

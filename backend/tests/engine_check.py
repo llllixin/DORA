@@ -25,6 +25,7 @@ def main() -> int:
     assert by_id["p1"]["delta"].startswith("↓"), "problem delta should be negative"
     assert by_id["c3"]["type"] == "change" and by_id["c3"]["delta"].startswith("↑")
     # C1：c2（数据更新事件）与 o2（高客单集群机会）必须由引擎覆盖
+    assert "c1" in by_id, "engine must keep east-orders change visible (incl. breach case)"
     assert "c2" in by_id and "o2" in by_id, "engine must cover c2 and o2"
     assert by_id["c2"]["type"] == "change" and by_id["c2"]["delta"] == "09:32 更新"
     assert by_id["o2"]["type"] == "opportunity"
