@@ -31,8 +31,12 @@ python3 -m uvicorn app.main:app --reload --port 8000
 ## 验证
 
 ```bash
-python3 -m tests.engine_check   # 引擎自检（需要数据库已 seed）
+python3 -m tests.run_all   # 一键门禁：engine_check + ingest_check + e2e_api_check（需 DB + 后端 :8000 在线）
 ```
+
+- `python3 -m tests.engine_check`：引擎判定回归。
+- `python3 -m tests.ingest_check`：上传/映射入库回归。
+- `python3 -m tests.e2e_api_check`：文档第 36 章 4 个核心用例（Problem/Opportunity/Change→Watch/Watch→自动升级 Problem）。
 
 规则阈值存于 `rule_config` 表（种子默认值见 `app/seed.py`），修改后触发重算即生效。
 

@@ -200,15 +200,23 @@ def evaluate_signals(snap: dict) -> list[dict]:
             "evidence_kind": "aov",
         })
     if e["delta_pct"] < -1.0:
-        breached = e["delta_pct"] <= e["threshold"]
-        signals.append({
-            "id": "sig-east-orders", "insight": "c1", "type": "change", "metric_key": "east_orders",
-            "metric": f"{e['current']:,}", "delta": f"↓ {abs(e['delta_pct'])}%",
-            "trigger": (f"已跌破升级阈值 {e['threshold']}%，等待升级机制接入（V4）" if breached
-                        else f"未达升级阈值 {e['threshold']}%，保持观察"),
-            "factors": ["跌破阈值将自动升级为问题（V4 接入）"] if breached else ["继续观察，跌破阈值自动升级问题"],
-            "evidence_kind": "east_orders",
-        })
+        if e["delta_pct"] <= e["threshold"]:
+            # Watch→升级：跌破阈值自动升级为问题（文档 Case 4）
+            signals.append({
+                "id": "sig-east-breach", "insight": "e2", "type": "problem", "metric_key": "east_orders",
+                "metric": f"{e['current']:,}", "delta": f"↓ {abs(e['delta_pct'])}%",
+                "trigger": f"华东订单量跌破升级阈值 {e['threshold']}%，自动升级为问题",
+                "factors": ["跌破阈值，已自动升级；建议进入行动回路定位原因"],
+                "evidence_kind": "east_orders",
+            })
+        else:
+            signals.append({
+                "id": "sig-east-orders", "insight": "c1", "type": "change", "metric_key": "east_orders",
+                "metric": f"{e['current']:,}", "delta": f"↓ {abs(e['delta_pct'])}%",
+                "trigger": f"未达升级阈值 {e['threshold']}%，保持观察",
+                "factors": ["继续观察，跌破阈值自动升级问题"],
+                "evidence_kind": "east_orders",
+            })
     if n["delta_pct"] >= 30:
         signals.append({
             "id": "sig-new-sku", "insight": "c3", "type": "change", "metric_key": "new_sku",
@@ -254,6 +262,7 @@ INSIGHT_TEMPLATES = {
     "c1": {"tag": "观察中", "title": "华东订单量偏弱", "desc": "订单量下滑但未达升级阈值，保持观察。", "source": "华东订单 + 阈值规则（引擎计算）", "question": "为什么还没有升级成问题？"},
     "c3": {"tag": "趋势出现", "title": "新品销量快速增长", "desc": "新品销量高增但尚未完成机会确认。", "source": "新品销量 + 周趋势（引擎计算）", "question": "增长门店有没有共同动作？"},
     "c4": {"tag": "结构变化", "title": "高客单门店占比抬升", "desc": "门店结构正朝高价值方向迁移。", "source": "门店分层 + 客单价（引擎计算）", "question": "结构变化是否稳定？"},
+    "e2": {"tag": "问题 · 自动升级", "title": "华东订单量跌破升级阈值", "desc": "连续下滑已突破升级阈值，Dora 自动升级为问题。", "source": "华东订单 + 阈值规则（引擎计算）", "question": "如何遏制华东订单量下滑？"},
     "c2": {"tag": "数据更新", "title": "门店销售数据已更新", "desc": "09:32 新增 {rows_added} 条记录，Dora 已重新计算主动发现。", "source": "数据源状态（引擎计算）", "question": "这次更新影响了哪些指标？"},
     "o2": {"tag": "增长机会", "title": "高客单门店形成集群", "desc": "Top 高客单门店集中于华东，存在可复制的经营假设。", "source": "门店画像 + 客单价（引擎计算）", "question": "这些门店做对了什么？"},
 }
@@ -351,6 +360,16 @@ def _semantics(iid: str, s: dict) -> dict | None:
                 f"核对新增 {ue['rows_added']} 条记录的数据完整性与重复率",
                 f"确认重算后{'、'.join(ue['metrics'])}等核心指标是否异常",
                 "保留本次更新为数据事件，若触发阈值则生成对应洞察",
+            ],
+        }
+    if iid == "e2":
+        return {
+            "causeA": {"name": "华东订单量", "value": f"{e['current']:,}"},
+            "causeB": {"name": "跌破阈值", "value": f"{e['threshold']}%"},
+            "next": [
+                f"定位华东订单下滑来源（当前 {e['current']:,}）",
+                "核查流量、转化、商品结构与区域活动差异",
+                "进入行动回路并设置订单量周度恢复目标",
             ],
         }
     if iid == "o2":

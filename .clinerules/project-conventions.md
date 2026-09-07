@@ -45,6 +45,7 @@
   - 后端：`cd backend && python3 -m tests.engine_check`
   - 前端：`cd frontend && npm run build`
   - 端点：curl 相关端点（绕代理环境变量，见速查 P 系列）
+  - **一键门禁**：`cd backend && python3 -m tests.run_all`（engine_check + ingest_check + e2e_api_check，需 DB 与后端在线）；change 归档/提交前默认跑一次
 - 代码行为改变的任务，勾选前必须补对应断言（把"任务自测"与"spec 场景"对齐，杜绝再次出现 c1 阈值跌破漏测）。
 - C5（E2E 四用例）落地后纳入归档前自动 gate。
 
