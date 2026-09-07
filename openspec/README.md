@@ -12,11 +12,11 @@
 | `.clinerules/workflows` + `.cline/skills` | propose/apply/update/archive 工作流 | 流程操作 |
 
 ## 查找三步
-1. **系统要什么** → `openspec/specs/`（4 个能力：business-engine / business-data-store / data-ingest / upload-mapping）。
+1. **系统要什么** → `openspec/specs/`（5 个能力：business-engine / business-data-store / data-ingest / upload-mapping / business-watch）。
 2. **某条需求谁加的/验证证据** → 打开对应 spec，顶部「需求来源表」给出 change 归档目录与迭代号。
 3. **逐任务细节** → 进 `openspec/changes/archive/<date>-<id>/tasks.md`（每条任务含验证命令），proposal=为什么、design=怎么做。
 
-## 归档 Change 索引（13 个）
+## 归档 Change 索引（14 个）
 | Change | 归档目录（date-<id>） | 影响的 spec（+需求数） | 迭代 | 备注/决策 |
 |---|---|---|---|---|
 | C1 引擎覆盖 | 2026-09-07-extend-engine-coverage | business-engine +3 | 9 | 基线建 spec |
@@ -32,6 +32,7 @@
 | V3-T3 LLM + 失效 | 2026-09-07-v3-llm-provider | business-engine +2 | 19 | D025 |
 | V3-T4 前端入口 | 2026-09-07-v3-reasoning-ui | skip_specs（0） | 20 | D026 |
 | V3-T5 验收收尾 | 2026-09-07-v3-acceptance | skip_specs（0） | 21 | D027 |
+| V4-T1 Watch 领域 | 2026-09-07-v4-watch-domain | business-watch +1 | 22 | D029 |
 
 ## V2 → 能力 → Change 覆盖矩阵
 | 能力 | 需求数 | 建立于 | 后续补充自 |
@@ -40,6 +41,7 @@
 | business-data-store | 3 | C2 | — |
 | data-ingest | 2 | C3 | — |
 | upload-mapping | 2 | C4 | — |
+| **business-watch** | 1 | V4-T1（2026-09-07-v4-watch-domain） | — |
 
 ## 与外部文档的对应
 - 版本/backlog：`docs/版本路线图.md`（V2=迭代 6–16）

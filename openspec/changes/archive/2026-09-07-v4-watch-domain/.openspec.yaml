@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-09-07
+goal: V4-T1 Watch 领域与持久化：watch_target/watch_event 表 + Repository CRUD（待 review 后
+  apply）

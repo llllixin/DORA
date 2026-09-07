@@ -1,11 +1,39 @@
 """数据访问层：引擎从 Repository 读取原始数据与规则配置（默认 PostgreSQL）。"""
+from datetime import datetime, timezone
 from typing import Any
+from uuid import uuid4
 
 from sqlalchemy import delete, select
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from app import db
-from app.models import DataUpdateLog, InsightReasoning, MetricSeries, RuleConfig, StoreClusterStore
+from app.models import (
+    DataUpdateLog,
+    InsightReasoning,
+    MetricSeries,
+    RuleConfig,
+    StoreClusterStore,
+    WatchEvent,
+    WatchTarget,
+)
+
+# watch 领域枚举（V4-T1）：契约早暴露，非法值在 Repository 层拒绝
+WATCH_STATUSES = {"watching", "paused"}
+WATCH_FREQUENCIES = {"on_update", "daily 09:00", "weekly"}
+WATCH_EVENT_KINDS = {"change", "escalate"}
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _target_dict(row: WatchTarget) -> dict[str, Any]:
+    return {
+        "id": row.id, "text": row.raw_text, "intent": row.intent,
+        "status": row.status, "frequency": row.frequency,
+        "last_checked_at": row.last_checked_at, "last_event_at": row.last_event_at,
+        "created_at": row.created_at,
+    }
 
 
 class DataSourceUnavailableError(Exception):
@@ -220,11 +248,139 @@ class Repository:
             "data_update_log": DataUpdateLog,
             "rule_config": RuleConfig,
             "insight_reasoning": InsightReasoning,
+            "watch_target": WatchTarget,
+            "watch_event": WatchEvent,
         }[table]
 
         def _do():
             with self._session_ctx() as s:
                 return int(s.execute(select(func.count()).select_from(model)).scalar())
+        return self._wrap(_do)
+
+    # ---------- 持续关注：watch_target / watch_event（V4-T1） ----------
+    def create_watch_target(
+        self,
+        text: str,
+        intent: dict[str, Any] | None = None,
+        status: str = "watching",
+        frequency: str = "on_update",
+    ) -> dict[str, Any]:
+        """创建委托；校验 status/frequency 枚举，返回带 id 的完整记录。"""
+        if status not in WATCH_STATUSES:
+            raise ValueError(f"invalid watch status: {status}")
+        if frequency not in WATCH_FREQUENCIES:
+            raise ValueError(f"invalid watch frequency: {frequency}")
+        now = _now_iso()
+        target_id = f"w-{uuid4().hex[:12]}"
+
+        def _do():
+            with self._session_ctx() as s:
+                s.add(WatchTarget(
+                    id=target_id, raw_text=text, intent=intent or {},
+                    status=status, frequency=frequency, created_at=now,
+                ))
+                s.commit()
+        self._wrap(_do)
+        return {
+            "id": target_id, "text": text, "intent": intent or {},
+            "status": status, "frequency": frequency,
+            "last_checked_at": "", "last_event_at": "", "created_at": now,
+        }
+
+    def list_watch_targets(self) -> list[dict[str, Any]]:
+        def _do():
+            with self._session_ctx() as s:
+                rows = s.execute(
+                    select(WatchTarget).order_by(WatchTarget.created_at.desc(), WatchTarget.id.desc())
+                ).scalars().all()
+                return [_target_dict(r) for r in rows]
+        return self._wrap(_do)
+
+    def get_watch_target(self, target_id: str) -> dict[str, Any] | None:
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(WatchTarget, target_id)
+                return _target_dict(row) if row else None
+        return self._wrap(_do)
+
+    def set_watch_status(self, target_id: str, status: str) -> dict[str, Any] | None:
+        """暂停/恢复；目标不存在返回 None（幂等语义由调用方处理）。"""
+        if status not in WATCH_STATUSES:
+            raise ValueError(f"invalid watch status: {status}")
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(WatchTarget, target_id)
+                if row is None:
+                    return None
+                row.status = status
+                s.commit()
+                return _target_dict(row)
+        return self._wrap(_do)
+
+    def delete_watch_target(self, target_id: str) -> bool:
+        """删除委托并级联清理其全部事件；目标不存在返回 False（幂等）。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(WatchTarget, target_id)
+                if row is None:
+                    return False
+                s.execute(delete(WatchEvent).where(WatchEvent.target_id == target_id))
+                s.delete(row)
+                s.commit()
+                return True
+        return self._wrap(_do)
+
+    def delete_all_watch_targets(self) -> None:
+        """清空全部委托与事件（出厂重置/T3 接线备用）。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                s.execute(delete(WatchEvent))
+                s.execute(delete(WatchTarget))
+                s.commit()
+        self._wrap(_do)
+
+    def add_watch_event(
+        self,
+        target_id: str,
+        kind: str,
+        summary: str,
+        values: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """记录一次命中事件；kind 校验，target 不存在抛 ValueError。"""
+        if kind not in WATCH_EVENT_KINDS:
+            raise ValueError(f"invalid watch event kind: {kind}")
+        now = _now_iso()
+
+        def _do():
+            with self._session_ctx() as s:
+                if s.get(WatchTarget, target_id) is None:
+                    raise ValueError(f"watch target not found: {target_id}")
+                ev = WatchEvent(
+                    target_id=target_id, triggered_at=now, kind=kind,
+                    summary=summary, values=values or {},
+                )
+                s.add(ev)
+                row = s.get(WatchTarget, target_id)
+                row.last_event_at = now
+                s.commit()
+                return {"id": ev.id, "target_id": target_id, "triggered_at": now,
+                        "kind": kind, "summary": summary, "values": values or {}}
+        return self._wrap(_do)
+
+    def list_watch_events(self, target_id: str) -> list[dict[str, Any]]:
+        def _do():
+            with self._session_ctx() as s:
+                rows = s.execute(
+                    select(WatchEvent).where(WatchEvent.target_id == target_id).order_by(WatchEvent.id)
+                ).scalars().all()
+                return [
+                    {"id": r.id, "target_id": r.target_id, "triggered_at": r.triggered_at,
+                     "kind": r.kind, "summary": r.summary, "values": r.values}
+                    for r in rows
+                ]
         return self._wrap(_do)
 
 

@@ -55,3 +55,27 @@ class InsightReasoning(Base):
     semantics = Column(JSON, nullable=False, default=dict)
     provider = Column(String(16), nullable=False, default="template")
     generated_at = Column(String(32), nullable=False, default="")
+
+
+class WatchTarget(Base):
+    """持续关注委托（V4-T1）：一句话委托原文 + 解析结果 + 状态/频率。"""
+    __tablename__ = "watch_target"
+    id = Column(String(20), primary_key=True)  # w- + uuid4 hex[:12]
+    raw_text = Column(String(500), nullable=False, default="")
+    intent = Column(JSON, nullable=False, default=dict)  # {metric_key,dimension,condition,frequency}
+    status = Column(String(16), nullable=False, default="watching")  # watching|paused
+    frequency = Column(String(16), nullable=False, default="on_update")  # on_update|daily 09:00|weekly
+    last_checked_at = Column(String(32), nullable=False, default="")
+    last_event_at = Column(String(32), nullable=False, default="")
+    created_at = Column(String(32), nullable=False, default="")
+
+
+class WatchEvent(Base):
+    """持续关注命中事件（V4-T1）：某次评估命中（change/escalate）的时点与前后值。"""
+    __tablename__ = "watch_event"
+    id = Column(Integer, primary_key=True)
+    target_id = Column(String(20), nullable=False, index=True)
+    triggered_at = Column(String(32), nullable=False, default="")
+    kind = Column(String(16), nullable=False, default="change")  # change|escalate
+    summary = Column(String(500), nullable=False, default="")
+    values = Column(JSON, nullable=False, default=dict)  # {prev,cur,metric,dimension}
