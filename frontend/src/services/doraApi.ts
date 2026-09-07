@@ -1,5 +1,5 @@
 import { actionCases, evidence, insights, watchItems } from '../data';
-import type { ActionCase, Evidence, Insight, InsightType, WatchItem, WatchParseResult, WatchTargetCard } from '../types';
+import type { ActionCase, ActionCaseDetail, Evidence, Insight, InsightType, WatchItem, WatchParseResult, WatchTargetCard } from '../types';
 
 // API 地址：开发环境默认走 Vite 代理 /api → http://localhost:8000（见 vite.config.ts proxy）；
 // 生产部署可用环境变量 VITE_API_BASE_URL 覆盖为后端绝对地址。
@@ -351,5 +351,65 @@ export async function syncRemoteData(): Promise<boolean> {
   Object.assign(actionCases, actionMap);
   replaceList(watchItems, watch);
   return true;
+}
+
+
+export interface CaseStepBody {
+  note?: string;
+  result?: string;
+}
+
+/** V5-T4：行动档案 REST（真数据；业务 4xx 显式上抛）。 */
+export async function createAction(insightId: string): Promise<{ ok: boolean; created: boolean; case: ActionCaseDetail | null }> {
+  if (MODE === 'mock') {
+    await wait(160);
+    return { ok: true, created: false, case: null };
+  }
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(`${BASE}/action/cases`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ insight_id: insightId }),
+      signal: ctrl.signal,
+    });
+    const body = (await res.json().catch(() => null)) as { detail?: string; ok?: boolean; created?: boolean; case?: ActionCaseDetail } | null;
+    if (!res.ok) throw new Error(body?.detail || `HTTP ${res.status}`);
+    return { ok: true, created: !!body?.created, case: body?.case ?? null };
+  } catch (err) {
+    if (MODE === 'http') throw err;
+    if (err instanceof Error && /HTTP|detail/.test(err.message)) throw err; // 业务 4xx：不静默 mock
+    await wait(120);
+    return { ok: true, created: false, case: null }; // 断网演示路径
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+export async function listActionCases(): Promise<ActionCaseDetail[]> {
+  const r = await apiGet('/action/cases', () => ({ ok: true, cases: [] as ActionCaseDetail[] }));
+  return (r as { cases: ActionCaseDetail[] }).cases;
+}
+
+export async function fetchActionCase(id: string): Promise<ActionCaseDetail | null> {
+  const r = await apiGet(`/action/cases/${id}`, () => ({ ok: true, case: null as ActionCaseDetail | null }));
+  return (r as { case: ActionCaseDetail | null }).case;
+}
+
+export function startStep(id: string, seq: number) {
+  return apiSend('POST', `/action/cases/${id}/steps/${seq}/start`, {}, () => ({ ok: true }));
+}
+
+export function doneStep(id: string, seq: number, body: CaseStepBody = {}) {
+  return apiSend('POST', `/action/cases/${id}/steps/${seq}/done`, body, () => ({ ok: true }));
+}
+
+export function blockStep(id: string, seq: number, note = '') {
+  return apiSend('POST', `/action/cases/${id}/steps/${seq}/blocked`, { note }, () => ({ ok: true }));
+}
+
+export function verifyAction(id: string, outcome: 'resolved' | 'continue', note = '') {
+  return apiSend('POST', `/action/cases/${id}/verify`, { outcome, note }, () => ({ ok: true }));
 }
 

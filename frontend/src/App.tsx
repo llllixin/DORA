@@ -11,7 +11,7 @@ import { PulsePage } from "./features/pulse/PulsePage";
 import { InsightPage } from "./features/insight/InsightPage";
 import { ActionPage } from "./features/action/ActionPage";
 import { WatchPage } from "./features/watch/WatchPage";
-import { getEvidence, refreshReasoningApi, syncRemoteData } from './services/doraApi';
+import { createAction, getEvidence, refreshReasoningApi, syncRemoteData } from './services/doraApi';
 import type { Evidence } from "./types";
 
 const readHash = (): { page: Page; type: InsightType; idx: number } => {
@@ -118,14 +118,23 @@ export default function App() {
     };
   }, [dataSrc]);
   const onInsight = (t: InsightType, idx = 0) => navigate("insight", t, idx);
-  const route = (t: InsightType, id: string) => {
+  const route = async (t: InsightType, id: string) => {
     if (t === "change") {
       navigate("watch");
       notify("✓ 已加入持续关注；后续变化会回到业务脉搏");
-    } else {
-      setJoinedAction((p) => (p.includes(id) ? p : [...p, id]));
+      return;
+    }
+    try {
+      const r = await createAction(id);
       navigate("action", t, 0);
-      notify("✓ 已加入行动回路；行动任务已创建");
+      notify(r.created ? `✓ 已建档并加入行动回路：${r.case?.code ?? id}` : `✓ 已加入行动回路（档案已存在）`);
+    } catch (err) {
+      // 后端明确拒绝（不在引擎判定集等）：展示原因，不伪造本地加入
+      notify(`✗ 无法加入行动回路：${err instanceof Error ? err.message : String(err)}`);
+      if (!(err instanceof Error && /HTTP|detail/.test(err.message))) {
+        setJoinedAction((p) => (p.includes(id) ? p : [...p, id]));
+        navigate("action", t, 0);
+      }
     }
   };
   const handleReady = (ds: DataSource) => {

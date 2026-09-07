@@ -1,16 +1,210 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { actionCases } from '../../data';
-import type { ActionCase } from '../../types';
+import type { ActionCase, ActionCaseDetail } from '../../types';
 import { Tag } from '../../components/ui/Tag';
-import { AskBar } from '../../components/dora/AskBar';
+import {
+  blockStep, doneStep, fetchActionCase, listActionCases, startStep, verifyAction,
+} from '../../services/doraApi';
 
-export function ActionPage({joined,onTrace,onNotice,onExecute,onAddExpert,onAddData}:{joined:string[];onTrace:(id:string)=>void;onNotice:(m:string)=>void;onExecute:(id:string)=>void;onAddExpert:()=>void;onAddData:()=>void}){
- const [current,setCurrent]=useState(joined[0]??'p1');const c:ActionCase=actionCases[current]??actionCases.p1;
- const list=joined.map(id=>actionCases[id]).filter(Boolean); const empty=!list.length;
- return <section className="page active"><div className="head"><div><div className="eyebrow">ACTION LOOP · CASE OBJECT</div><div className="h1">问题与机会的行动回路</div><p className="sub">从洞察加入的问题和机会都会在这里形成行动回路，可随时切换查看，直到验证完成或问题解决。</p></div><span className="status"><span className="dot"/> {c.code} · 推进中</span></div>
-  <div className="action-switch"><span className="lbl">{empty?'已加入 · 0 项':'已加入 · 切换查看'}</span>{list.map(x=><button key={x.id} className={'action-tab '+(x.id===current?'active':'')} onClick={()=>setCurrent(x.id)}>{x.kind==='problem'?'问题':'机会'} · {x.caseTitle.split('·')[0].trim()}<span className="badge">{x.code}</span></button>)}</div>
-  {empty?<div className="action-empty">还没有加入行动回路的问题或机会。前往「洞察」把问题或机会加入行动回路，这里才会出现对应的行动内容。</div>:<div className="action-layout"><div className="card action-card"><div className="problem-head"><Tag tone={c.tagCls}>{c.tag}</Tag><b>{c.caseTitle}</b><span className="pid">{c.source}</span></div><div className="action-evidence"><div className="ae-head"><b>数据链证据</b><button className="btn" onClick={()=>onTrace(c.id)}>打开证据链 →</button></div><div className="ae-meta"><span>门店经营数据.xlsx · 09:32 更新</span><span>{c.code} · 可追溯</span></div></div><div className="timeline"><Timeline title={c.steps[0].title} text={c.steps[0].desc} evidence={c.steps[0].evidence} done onTrace={()=>onTrace(c.id)}/><Timeline title={c.steps[1].title} text={c.steps[1].desc} evidence={c.steps[1].evidence} done onTrace={()=>onTrace(c.id)}/><Timeline title={c.current.title} text={c.current.desc} evidence={c.current.evidence} active onTrace={()=>onTrace(c.id)} currentWhy={c.current.why} onExecute={()=>onExecute(c.id)} onAsk={()=>onNotice('Dora：先验证最关键且最可干预的假设，因为这一步能最快降低不确定性。')}/><Timeline title={c.steps[2].title} text={c.steps[2].desc} evidence={c.steps[2].evidence} onTrace={()=>onTrace(c.id)}/><Timeline title={c.steps[3].title} text={c.steps[3].desc} evidence={c.steps[3].evidence} onTrace={()=>onTrace(c.id)}/></div></div><div className="card orch"><div className="orch-head"><h3>Dora 自动编排</h3><Tag tone="ai">系统已选 · 可增补</Tag></div><div className="orch-section"><div className="os-title"><span>专家团</span><button className="add-mini" onClick={onAddExpert}>+ 添加专家</button></div><div className="expert-chips">{c.experts.map(e=><span className="expert-chip" key={e}><i>👥</i>{e}<em>系统已选</em></span>)}</div></div><div className="orch-section"><div className="os-title"><span>数据</span><button className="add-mini" onClick={onAddData}>+ 添加数据</button></div><div className="data-chips">{c.data.map(d=><span className="data-chip" key={d}>{d}</span>)}</div></div><div className="orch-section"><div className="os-title"><span>技能 / 知识 / 工具</span></div><div className="orow"><div className="oi">✦</div><div><b>趋势 / 归因分析</b><p>{c.expertDesc}</p></div></div><div className="orow"><div className="oi">◎</div><div><b>零售经营指标口径</b><p>利润率目标与业务解释</p></div></div><div className="orow"><div className="oi">⌁</div><div><b>MCP · 业务数据查询</b><p>获取数据并生成分析结果</p></div></div></div><div className="archive"><b>{c.kind==='opportunity'?'机会档案':'问题档案'}</b><br/>{c.archive} 以后任何人接手，都能继续从同一上下文工作。</div></div></div>}
-  <AskBar context={`${c.code} · ${c.caseTitle}`} onSubmit={(q)=>onNotice(q?`Dora：已带入 ${c.code} 上下文继续分析。`:'可以直接输入一个业务问题。')} suggestions={['为什么先做这一步？','如果验证失败下一步怎么办？']}/>
- </section>
+type Props = {
+  joined: string[];
+  onTrace: (id: string) => void;
+  onNotice: (m: string) => void;
+  onExecute: (id: string) => void;
+  onAddExpert: () => void;
+  onAddData: () => void;
+};
+
+const STEP_LABEL: Record<string, string> = {
+  pending: '待办', in_progress: '进行中', done: '已完成', blocked: '受阻',
+};
+const CASE_LABEL: Record<string, string> = {
+  open: '已建档', running: '执行中', waiting_verify: '待验证', resolved: '已归档',
+};
+
+export function ActionPage({ joined, onTrace, onNotice }: Props) {
+  const [cases, setCases] = useState<ActionCaseDetail[]>([]);
+  const [demo, setDemo] = useState(false);
+  const [currentId, setCurrentId] = useState('');
+  const [detail, setDetail] = useState<ActionCaseDetail | null>(null);
+  const [verifyNote, setVerifyNote] = useState('');
+  const [stepNote, setStepNote] = useState('');
+
+  const loadList = async () => {
+    try {
+      const list = await listActionCases();
+      if (list.length) {
+        setDemo(false);
+        setCases(list);
+        setCurrentId((cur) => cur || list[0].id);
+      } else {
+        setCases([]);
+        setDemo(true);
+      }
+    } catch {
+      setCases([]);
+      setDemo(true);
+    }
+  };
+
+  useEffect(() => {
+    void loadList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!currentId) return;
+    let alive = true;
+    void (async () => {
+      const d = await fetchActionCase(currentId);
+      if (alive && d) setDetail(d);
+    })();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId]);
+
+  const reload = async () => {
+    const d = await fetchActionCase(currentId);
+    if (d) setDetail(d);
+    void loadList();
+  };
+
+  const act = async (fn: () => Promise<unknown>, msg: string) => {
+    try {
+      await fn();
+      onNotice(msg);
+      void reload();
+    } catch (err) {
+      onNotice(`✗ ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const demoCases = joined
+    .map((id) => actionCases[id])
+    .filter((x): x is ActionCase => Boolean(x));
+
+  if (demo) {
+    return (
+      <section className="page active">
+        <div className="head">
+          <div>
+            <div className="eyebrow">ACTION LOOP · CASE</div>
+            <div className="h1">把问题 / 机会推进成可验证的行动档案</div>
+            <p className="sub">离线演示：显示本地演示档案（data.ts）。启动后端后这里显示真实行动档案。</p>
+          </div>
+          <span className="status"><span className="dot" />{demoCases.length} 份行动档案（离线演示）</span>
+        </div>
+        <div className="card" style={{ padding: 16 }}>
+          {demoCases.length === 0 && <div className="action-empty">还没有行动档案。前往「洞察」加入问题 / 机会。</div>}
+          {demoCases.map((it) => (
+            <div key={it.id} style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
+              <Tag tone={it.tagCls as 'red' | 'green'}>{it.kind === 'problem' ? '问题' : '机会'}</Tag>
+              <b> {it.caseTitle}</b> <small style={{ opacity: 0.6 }}>{it.code}</small>
+              <button className="btn" onClick={() => onTrace(it.id)}>打开证据链 →</button>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="page active">
+      <div className="head">
+        <div>
+          <div className="eyebrow">ACTION LOOP · CASE</div>
+          <div className="h1">把问题 / 机会推进成可验证的行动档案</div>
+          <p className="sub">档案来自引擎判定的洞察；步骤执行与验证结果都会回写档案。</p>
+        </div>
+        <span className="status"><span className="dot" />{cases.length} 份行动档案</span>
+      </div>
+      <div className="action-layout">
+        <div className="card" style={{ padding: 12, maxWidth: 300 }}>
+          <b style={{ display: 'block', margin: '6px 4px 8px' }}>档案列表</b>
+          {cases.length === 0 && <div className="action-empty">还没有行动档案。前往「洞察」把问题 / 机会加入行动回路。</div>}
+          {cases.map((it) => (
+            <button key={it.id} className="suggest" style={{ width: '100%', textAlign: 'left', marginBottom: 6 }}
+                    onClick={() => { setCurrentId(it.id); setDetail(null); }}>
+              <Tag tone={it.kind === 'problem' ? 'red' : 'green'}>{it.kind === 'problem' ? '问题' : '机会'}</Tag>{' '}
+              {it.case_title} <small style={{ opacity: 0.6 }}> · {it.code} · {CASE_LABEL[it.status]}</small>
+            </button>
+          ))}
+        </div>
+        <div className="card" style={{ flex: 1, padding: 16 }}>
+          {!detail && <div className="action-empty">选择左侧档案查看详情（或从洞察加入行动回路）。</div>}
+          {detail && (
+            <>
+              <div className="problem-head">
+                <Tag tone={detail.tag_cls === 'red' ? 'red' : 'green'}>{detail.tag}</Tag>
+                <b>{detail.case_title}</b>
+                <span className="pid">{detail.code}</span>
+              </div>
+              <div style={{ margin: '6px 0' }}>
+                <small>{detail.source}</small> · <small>状态 · {CASE_LABEL[detail.status]}</small>
+              </div>
+              <button className="btn" onClick={() => onTrace(detail.id)}>打开证据链 →</button>
+
+              {detail.steps.map((st) => (
+                <div key={st.seq} style={{ borderTop: '1px solid #eee', padding: '8px 0' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Tag tone={st.status === 'done' ? 'green' : st.status === 'blocked' ? 'red' : st.status === 'in_progress' ? 'blue' : 'blue'}>
+                      {STEP_LABEL[st.status]}
+                    </Tag>
+                    <b>{st.title}</b>
+                    <small style={{ opacity: 0.6 }}>#{st.seq}</small>
+                  </div>
+                  <p style={{ margin: '4px 0' }}>{st.desc}</p>
+                  {st.why && <small style={{ opacity: 0.7 }}>为什么：{st.why}</small>}
+                  {st.note && <div style={{ opacity: 0.85 }}>备注：{st.note}</div>}
+                  {st.result && <div style={{ opacity: 0.85 }}>结果：{st.result}</div>}
+                  {(st.status === 'pending' || st.status === 'blocked') && (
+                    <button className="btn" onClick={() => act(() => startStep(detail.id, st.seq), `已开始「${st.title}」`)}>开始</button>
+                  )}
+                  {st.status === 'in_progress' && (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn primary" onClick={() => act(() => doneStep(detail.id, st.seq, { note: stepNote || '完成', result: stepNote }), `已完成「${st.title}」`)}>完成</button>
+                      <button className="btn" onClick={() => act(() => blockStep(detail.id, st.seq, stepNote || '受阻待处理'), `「${st.title}」已标记受阻`)}>受阻</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {detail.status === 'waiting_verify' && (
+                <div style={{ border: '1px solid #cfe3ff', borderRadius: 8, padding: 10, marginTop: 8 }}>
+                  <b>验证这一步（结果决定关闭）</b>
+                  <input className="delegate-input" style={{ width: '100%' }} placeholder="填写验证说明（如：利润率回到 18.6%，验证通过）"
+                         value={verifyNote} onChange={(e) => setVerifyNote(e.target.value)} />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    <button className="btn primary" onClick={() => act(() => verifyAction(detail.id, 'resolved', verifyNote), '✓ 已归档（resolved）')}>归档 · 问题解决</button>
+                    <button className="btn" onClick={() => act(() => verifyAction(detail.id, 'continue', verifyNote || '继续观察'), '已选择继续观察（continue）')}>继续观察</button>
+                  </div>
+                </div>
+              )}
+
+              {detail.status === 'resolved' && (
+                <div style={{ border: '1px solid #cde8cd', background: '#f4fbf4', borderRadius: 8, padding: 10, marginTop: 8 }}>
+                  <b>✓ 已归档</b>
+                  <pre style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0', font: 'inherit' }}>{detail.archive}</pre>
+                </div>
+              )}
+
+              <div style={{ marginTop: 12 }}>
+                <div className="os-title"><span>专家团</span></div>
+                <div className="expert-chips">
+                  {(detail.orchestration?.experts ?? []).map((e) => (
+                    <span className="expert-chip" key={e}><i>👥</i>{e}<em>系统已选</em></span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <input className="delegate-input" style={{ width: '100%' }} placeholder="当前步骤备注 / 结果（选填，用于“完成 / 受阻”）"
+                       value={stepNote} onChange={(e) => setStepNote(e.target.value)} />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
 }
-function Timeline({title,text,evidence,onTrace,done,active,currentWhy,onExecute,onAsk}:{title:string;text:string;evidence:string;onTrace:()=>void;done?:boolean;active?:boolean;currentWhy?:string;onExecute?:()=>void;onAsk?:()=>void}){return <div className={'tl '+(done?'done ':'')+(active?'active':'')}><div className="tldot">{done?'✓':active?'●':'4'}</div><div className="tl-body"><div className="tl-head"><h4>{title}</h4><button className="step-trace" onClick={onTrace}>溯源 →</button></div><p>{text}</p>{active&&<div className="current"><b>为什么先做这一步？</b><p>{currentWhy}</p><div className="main-buttons"><button className="btn primary" onClick={onExecute}>立即执行</button><button className="btn" onClick={onAsk}>问 Dora 为什么</button></div></div>}<span className="step-evidence">{evidence}</span></div></div>}
+

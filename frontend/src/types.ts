@@ -110,3 +110,32 @@ export type ChartData =
   | { kind: 'barline'; labels: string[]; bars: ChartPointSeries; line: ChartPointSeries }
   | { kind: 'bubble'; labels: string[]; bubbles: { name: string; size: number; count: string; value: string; color: string }[] }
   | { kind: 'step'; labels: string[]; steps: { name: string; note: string; done: boolean }[] };
+
+/** V5：行动档案真实数据（/api/action/cases） */
+export interface CaseStep {
+  id: number;
+  case_id: string;
+  seq: number;
+  title: string;
+  desc: string;
+  evidence: string;
+  why: string;
+  status: 'pending' | 'in_progress' | 'done' | 'blocked';
+  note: string;
+  result: string;
+  finished_at: string;
+}
+
+export interface ActionCaseDetail {
+  id: string;
+  kind: 'problem' | 'opportunity';
+  tag: string;
+  tag_cls: string;
+  case_title: string;
+  code: string;
+  source: string;
+  status: 'open' | 'running' | 'waiting_verify' | 'resolved';
+  orchestration: { experts: string[]; data: string[]; expertDesc: string };
+  archive: string;
+  steps: CaseStep[];
+}
