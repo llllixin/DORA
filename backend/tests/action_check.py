@@ -63,10 +63,60 @@ def section1_crud(repo: Repository) -> None:
     assert repo.count_rows("action_case") == 5
 
 
+def section2_builder(repo: Repository) -> None:
+    """V5-T2：洞察→档案（引擎判定校验 / 幂等 / 模板）。"""
+    from app.action.builder import create_case_from_insight
+    from app.engine.engine import run_engine
+
+    def engine_by(insight_id: str) -> dict:
+        return next(i for i in run_engine(repo)["insights"] if i["id"] == insight_id)
+
+    # 注入跌破 → 引擎产出 problem e2（当前判定集内）
+    repo.replace_series(["east_orders"], [
+        {"metric_key": "east_orders", "label": f"T{i}", "dimension": "华东",
+         "value": float(v), "unit": ""}
+        for i, v in enumerate([105.0, 103.0, 100.0, 97.0, 93.0])
+    ])
+    e2 = engine_by("e2")
+    out = create_case_from_insight(repo, e2)
+    assert out["created"] is True, "e2 should create new case"
+    case = out["case"]
+    assert case["kind"] == "problem" and case["id"] == "e2"
+    assert case["code"].startswith("PRB-") and case["status"] == "open"
+    assert len(case["steps"]) == 4 and case["steps"][0]["status"] == "done"
+    assert case["steps"][1]["status"] == "in_progress"
+
+    # 幂等：重复建档返回既有
+    again = create_case_from_insight(repo, e2)
+    assert again["created"] is False and again["case"]["id"] == "e2"
+
+    # change / 伪造 / 已静态 seed 的 p1（已有档案 → 返回既有 created=False）
+    c3 = engine_by("c3")
+    assert c3["type"] == "change"
+    try:
+        create_case_from_insight(repo, c3)
+        raise AssertionError("change insight must not be archived")
+    except ValueError:
+        pass
+    try:
+        create_case_from_insight(repo, {"id": "w-fake", "type": "problem", "title": "x"})
+        raise AssertionError("non-engine id must not be archived")
+    except ValueError:
+        pass
+    p1 = engine_by("p1")
+    existing = create_case_from_insight(repo, p1)
+    assert existing["created"] is False and existing["case"]["id"] == "p1"
+
+    repo.delete_action_case("e2")
+    run_seed()  # 还原
+
+
 def main() -> int:
     run_seed()
-    section1_crud(Repository())
-    print("action_check OK（第 1 节 领域 CRUD + seed 迁移幂等）")
+    repo = Repository()
+    section1_crud(repo)
+    section2_builder(repo)
+    print("action_check OK（第 1 节 CRUD + seed 迁移幂等；第 2 节 建档引擎 全绿）")
     return 0
 
 
