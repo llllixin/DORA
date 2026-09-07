@@ -14,6 +14,7 @@ STEPS = [
     ("golden_check", ["python3", "-m", "tests.golden_check"]),
     ("e2e_api_check", ["python3", "-m", "tests.e2e_api_check"]),
     ("watch_check", ["python3", "-m", "tests.watch_check"]),
+    ("action_check", ["python3", "-m", "tests.action_check"]),
 ]
 
 

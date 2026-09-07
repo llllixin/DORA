@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-09-07
+goal: V5-T1 Action 领域与持久化：action_case/action_step 表 + Repository CRUD + 5 例静态
+  ACTIONS 迁移 seed

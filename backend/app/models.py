@@ -79,3 +79,36 @@ class WatchEvent(Base):
     kind = Column(String(16), nullable=False, default="change")  # change|escalate
     summary = Column(String(500), nullable=False, default="")
     values = Column(JSON, nullable=False, default=dict)  # {prev,cur,metric,dimension}
+
+
+class ActionCase(Base):
+    """行动档案（V5-T1）：一条档案 = 一个引擎判定的 problem/opportunity 洞察（id=insight_id）。"""
+    __tablename__ = "action_case"
+    id = Column(String(32), primary_key=True)  # insight_id（p1/o1/e2…）
+    kind = Column(String(16), nullable=False, default="problem")  # problem|opportunity
+    tag = Column(String(32), nullable=False, default="")
+    tag_cls = Column(String(16), nullable=False, default="red")
+    case_title = Column(String(200), nullable=False, default="")
+    code = Column(String(32), nullable=False, default="")
+    source = Column(String(200), nullable=False, default="")
+    status = Column(String(16), nullable=False, default="open")  # open|running|waiting_verify|resolved
+    orchestration = Column(JSON, nullable=False, default=dict)  # {experts, data, expertDesc}
+    archive = Column(String(500), nullable=False, default="")
+    created_at = Column(String(32), nullable=False, default="")
+    updated_at = Column(String(32), nullable=False, default="")
+
+
+class ActionStep(Base):
+    """行动步骤（V5-T1）：归属 case，按 seq 排序，携带执行/验证回填位。"""
+    __tablename__ = "action_step"
+    id = Column(Integer, primary_key=True)
+    case_id = Column(String(32), nullable=False, index=True)
+    seq = Column(Integer, nullable=False, default=0)
+    title = Column(String(200), nullable=False, default="")
+    desc = Column(String(500), nullable=False, default="")
+    evidence = Column(String(300), nullable=False, default="")
+    why = Column(String(500), nullable=False, default="")
+    status = Column(String(16), nullable=False, default="pending")  # pending|in_progress|done|blocked
+    note = Column(String(500), nullable=False, default="")
+    result = Column(String(1000), nullable=False, default="")
+    finished_at = Column(String(32), nullable=False, default="")

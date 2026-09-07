@@ -60,6 +60,38 @@ def rule_items() -> list[dict]:
     ]
 
 
+def action_cases_from_static() -> list[tuple[dict, list[dict]]]:
+    """把 app.data.ACTIONS 5 例拍平成 (case, steps) —— steps[0]/[1]=done、current=in_progress、steps[2]/[3]=pending。"""
+    from app.data import ACTIONS
+    out = []
+    for act in ACTIONS.values():
+        steps_src = act["steps"]
+        cur = act["current"]
+        steps = [
+            {"seq": 0, **steps_src[0], "status": "done"},
+            {"seq": 1, **steps_src[1], "status": "done"},
+            {"seq": 2, "title": cur["title"], "desc": cur["desc"], "evidence": cur["evidence"],
+             "why": cur.get("why", ""), "status": "in_progress"},
+            {"seq": 3, **steps_src[2], "status": "pending"},
+            {"seq": 4, **steps_src[3], "status": "pending"},
+        ]
+        case = {
+            "id": act["id"], "kind": act["kind"], "tag": act["tag"],
+            "tag_cls": act["tagCls"], "case_title": act["caseTitle"],
+            "code": act["code"], "source": act["source"], "status": "running",
+            "orchestration": {"experts": act["experts"], "data": act["data"], "expertDesc": act["expertDesc"]},
+            "archive": act["archive"],
+        }
+        out.append((case, steps))
+    return out
+
+
+def seed_action_cases(repo: Repository) -> None:
+    """V5-T1：静态 ACTIONS 5 例迁移为 action_case/action_step 种子（幂等）。"""
+    for case, steps in action_cases_from_static():
+        repo.upsert_seed_case(case, steps)
+
+
 def run_seed() -> dict[str, int]:
     db.init_db()
     repo = Repository()
@@ -78,11 +110,14 @@ def run_seed() -> dict[str, int]:
         "metrics": ds.DS_UPDATE["metrics_affected"],
     })
     repo.upsert_rules(rule_items())
+    seed_action_cases(repo)
     return {
         "metric_series": repo.count_rows("metric_series"),
         "store_cluster_store": repo.count_rows("store_cluster_store"),
         "data_update_log": repo.count_rows("data_update_log"),
         "rule_config": repo.count_rows("rule_config"),
+        "action_case": repo.count_rows("action_case"),
+        "action_step": repo.count_rows("action_step"),
     }
 
 

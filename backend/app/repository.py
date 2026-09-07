@@ -8,6 +8,8 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from app import db
 from app.models import (
+    ActionCase,
+    ActionStep,
     DataUpdateLog,
     InsightReasoning,
     MetricSeries,
@@ -21,6 +23,10 @@ from app.models import (
 WATCH_STATUSES = {"watching", "paused"}
 WATCH_FREQUENCIES = {"on_update", "daily 09:00", "weekly"}
 WATCH_EVENT_KINDS = {"change", "escalate"}
+
+# action 领域枚举（V5-T1）
+ACTION_CASE_STATUSES = {"open", "running", "waiting_verify", "resolved"}
+ACTION_STEP_STATUSES = {"pending", "in_progress", "done", "blocked"}
 
 
 def _now_iso() -> str:
@@ -250,6 +256,8 @@ class Repository:
             "insight_reasoning": InsightReasoning,
             "watch_target": WatchTarget,
             "watch_event": WatchEvent,
+            "action_case": ActionCase,
+            "action_step": ActionStep,
         }[table]
 
         def _do():
@@ -404,6 +412,185 @@ class Repository:
                 s.execute(delete(WatchEvent))
                 s.commit()
         self._wrap(_do)
+
+
+    # ---------- 行动档案：action_case / action_step（V5-T1） ----------
+    def create_action_case(
+        self, case: dict[str, Any], steps: list[dict[str, Any]],
+        status: str = "open",
+    ) -> dict[str, Any]:
+        """建案（单事务 case+首步集）；同 id 已存在抛 ValueError（幂等由调用方处理）。"""
+        if status not in ACTION_CASE_STATUSES:
+            raise ValueError(f"invalid action case status: {status}")
+        now = _now_iso()
+        case_id = case["id"]
+
+        def _do():
+            with self._session_ctx() as s:
+                if s.get(ActionCase, case_id) is not None:
+                    raise ValueError(f"action case exists: {case_id}")
+                s.add(ActionCase(
+                    id=case_id, kind=case.get("kind", "problem"),
+                    tag=case.get("tag", ""), tag_cls=case.get("tag_cls", "red"),
+                    case_title=case.get("case_title", ""), code=case.get("code", ""),
+                    source=case.get("source", ""), status=status,
+                    orchestration=case.get("orchestration") or {},
+                    archive=case.get("archive", ""), created_at=now, updated_at=now,
+                ))
+                _insert_steps(s, case_id, steps)
+                s.commit()
+        self._wrap(_do)
+        return self.get_action_case(case_id) or {}
+
+    def upsert_seed_case(self, case: dict[str, Any], steps: list[dict[str, Any]]) -> None:
+        """seed 迁移用幂等 upsert：同事务重建 case+steps，不翻倍。"""
+        now = _now_iso()
+        case_id = case["id"]
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(ActionCase, case_id)
+                if row is None:
+                    s.add(ActionCase(
+                        id=case_id, kind=case.get("kind", "problem"),
+                        tag=case.get("tag", ""), tag_cls=case.get("tag_cls", "red"),
+                        case_title=case.get("case_title", ""), code=case.get("code", ""),
+                        source=case.get("source", ""), status=case.get("status", "running"),
+                        orchestration=case.get("orchestration") or {},
+                        archive=case.get("archive", ""), created_at=now, updated_at=now,
+                    ))
+                else:
+                    row.kind = case.get("kind", row.kind)
+                    row.tag = case.get("tag", row.tag)
+                    row.tag_cls = case.get("tag_cls", row.tag_cls)
+                    row.case_title = case.get("case_title", row.case_title)
+                    row.code = case.get("code", row.code)
+                    row.source = case.get("source", row.source)
+                    row.status = case.get("status", row.status)
+                    row.orchestration = case.get("orchestration") or row.orchestration
+                    row.archive = case.get("archive", row.archive)
+                    row.updated_at = now
+                s.execute(delete(ActionStep).where(ActionStep.case_id == case_id))
+                _insert_steps(s, case_id, steps)
+                s.commit()
+        self._wrap(_do)
+
+    def list_action_cases(self) -> list[dict[str, Any]]:
+        def _do():
+            with self._session_ctx() as s:
+                rows = s.execute(
+                    select(ActionCase).order_by(ActionCase.kind, ActionCase.code)
+                ).scalars().all()
+                return [_action_case_dict(r) for r in rows]
+        return self._wrap(_do)
+
+    def get_action_case(self, case_id: str) -> dict[str, Any] | None:
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(ActionCase, case_id)
+                if row is None:
+                    return None
+                steps = s.execute(
+                    select(ActionStep).where(ActionStep.case_id == case_id).order_by(ActionStep.seq)
+                ).scalars().all()
+                return {**_action_case_dict(row), "steps": [_action_step_dict(x) for x in steps]}
+        return self._wrap(_do)
+
+    def set_action_step_status(
+        self, case_id: str, seq: int, status: str,
+        note: str | None = None, result: str | None = None,
+    ) -> dict[str, Any] | None:
+        """置步骤状态；done 自动写 finished_at；case/step 不存在返回 None。"""
+        if status not in ACTION_STEP_STATUSES:
+            raise ValueError(f"invalid action step status: {status}")
+        now = _now_iso()
+
+        def _do():
+            with self._session_ctx() as s:
+                step = s.execute(
+                    select(ActionStep).where(
+                        ActionStep.case_id == case_id, ActionStep.seq == seq)
+                ).scalars().first()
+                if step is None:
+                    return None
+                step.status = status
+                if note is not None:
+                    step.note = note
+                if result is not None:
+                    step.result = result
+                if status == "done" and not step.finished_at:
+                    step.finished_at = now
+                case = s.get(ActionCase, case_id)
+                if case is not None:
+                    case.updated_at = now
+                s.commit()
+                return _action_step_dict(step)
+        return self._wrap(_do)
+
+    def verify_action_case(self, case_id: str, outcome: str) -> dict[str, Any] | None:
+        """验证归档：resolved → case resolved；continue → case running（D031-3，只改档案态）。"""
+        if outcome not in ("resolved", "continue"):
+            raise ValueError(f"invalid verify outcome: {outcome}")
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(ActionCase, case_id)
+                if row is None:
+                    return None
+                row.status = "resolved" if outcome == "resolved" else "running"
+                row.updated_at = _now_iso()
+                s.commit()
+                return _action_case_dict(row)
+        return self._wrap(_do)
+
+    def delete_action_case(self, case_id: str) -> bool:
+        """删除档案并级联清理步骤；不存在返回 False（幂等）。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                if s.get(ActionCase, case_id) is None:
+                    return False
+                s.execute(delete(ActionStep).where(ActionStep.case_id == case_id))
+                s.delete(s.get(ActionCase, case_id))
+                s.commit()
+                return True
+        return self._wrap(_do)
+
+    def delete_all_action_cases(self) -> None:
+        def _do():
+            with self._session_ctx() as s:
+                s.execute(delete(ActionStep))
+                s.execute(delete(ActionCase))
+                s.commit()
+        self._wrap(_do)
+
+
+def _insert_steps(s, case_id: str, steps: list[dict[str, Any]]) -> None:
+    for i, st in enumerate(steps):
+        s.add(ActionStep(
+            case_id=case_id, seq=st.get("seq", i), title=st.get("title", ""),
+            desc=st.get("desc", ""), evidence=st.get("evidence", ""), why=st.get("why", ""),
+            status=st.get("status", "pending"), note=st.get("note", ""),
+            result=st.get("result", ""), finished_at=st.get("finished_at", ""),
+        ))
+
+
+def _action_case_dict(row: ActionCase) -> dict[str, Any]:
+    return {
+        "id": row.id, "kind": row.kind, "tag": row.tag, "tag_cls": row.tag_cls,
+        "case_title": row.case_title, "code": row.code, "source": row.source,
+        "status": row.status, "orchestration": row.orchestration,
+        "archive": row.archive, "created_at": row.created_at, "updated_at": row.updated_at,
+    }
+
+
+def _action_step_dict(row: ActionStep) -> dict[str, Any]:
+    return {
+        "id": row.id, "case_id": row.case_id, "seq": row.seq,
+        "title": row.title, "desc": row.desc, "evidence": row.evidence,
+        "why": row.why, "status": row.status, "note": row.note,
+        "result": row.result, "finished_at": row.finished_at,
+    }
 
 
 class _Ctx:
