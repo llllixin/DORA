@@ -13,19 +13,21 @@
 | 问题/决策/经验 | `docs/开发问题与经验.md`（P 系列 + D 系列 001–028） |
 | 能力 spec（最终态）+ 需求来源表 | `openspec/specs/`（business-engine/business-data-store/data-ingest/upload-mapping） |
 | change 导航 + 归档索引 | `openspec/README.md`；归档全量在 `openspec/changes/archive/` |
-| V2 / V3 阶段总结 | `RELEASE_NOTES_V2.md` / `RELEASE_NOTES_V3.md` |
+| V2 / V3 / V4 / V5 阶段总结 | `RELEASE_NOTES_V2.md` / `RELEASE_NOTES_V3.md` / `RELEASE_NOTES_V4.md` / `RELEASE_NOTES_V5.md` |
+| V5 验收清单 | `docs/V5_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅，V5 已完成） |
 | V3 验收清单 | `docs/V3_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅） |
 
 ## 3. 当前状态
-- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅（Watch 真实委托，sign-off 完成）**；迭代 0–27 全归档，`run_all` **6 段**全绿。
-- **V5（Action 真闭环）已规划**（路线图 §3C，T1–T5，每任务 = 一个 OpenSpec change）。
-- **真实 LLM 已接**：DeepSeek 官方 `deepseek-chat`（backend/.env=llm，本地 git-ignored）；LLM 兜底阶段 1 已落地（P011/D028/D030）。
+- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；迭代 0–33 全归档，`run_all` **7 段**全绿。
+- **V5 之后 = 候选方向（§3C.6，不占版本号）**：工具/Agent 执行层、Redis/Celery、SSE/异步（LLM 兜底阶段2）、多数据源、Docker、生产部署。另立版本需先 §3D backlog/planning。
+- **真实 LLM 已接**：DeepSeek 官方 `deepseek-chat`（backend/.env=llm，本地 git-ignored）；LLM 兜底阶段 1 已落地；前端 refresh 超时 Bug1 已收口（30s）。
 - 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（llm 模式）、frontend :5173。
 
-## 4. 下一步（按优先级，任选）
-1. **开工 V5-T1（Action 领域与持久化）**：V5 规划已定（路线图 **§3C** + P/D **D031**），V5-T1..T5 每任务 = 一个 OpenSpec change 按序执行；首个归档 change 新建能力 spec `business-action`。开工前让用户 review §3C 规划。
-2. **LLM 刷新兜底 阶段 2**（异步 job + 状态接口 + 前端"更新中 n/m" + SSE 可选；P011/D028/D030 已把阶段 1 完成）。
-3. 可选收尾：路线图"引擎结论与页面数字一致性核对"（低优先）。
+## 4. 下一步（候选方向 §3C.6，任选做 backlog/planning）
+1. **LLM 兜底阶段 2**（异步 job + 状态接口 + 前端"更新中 n/m" + SSE；P011/D028/D030 阶段 1 已完成，Bug1 已收口）。
+2. **工具/Agent 执行层**（真实外部动作接入 Action 步骤，D031-1 预留口）。
+3. **Redis/Celery 分布式调度**（D009 推迟项）／Docker 全家桶（搭建文档 37）／生产部署（38）。
+4. 维护清理：旧 `/api/actions` 静态端点 + `data.ts` ACTIONS/actionCases 下线（V5 sign-off 后可做，先改 e2e/前端 sync）；"引擎结论与页面数字一致性核对"（低优先）。
 
 ## 5. 本地运行 / 验证（新会话先跑）
 ```bash
