@@ -1,6 +1,6 @@
 # AGENT.md —— Dora 交接与速查（context 恢复后从这里继续）
 
-> 更新：2026-09-07 ｜ 分支 `main` HEAD `ba1ad68`（origin/main 同步）
+> 更新：2026-09-07 ｜ 分支 `main`，HEAD 与 origin/main 同步（最新提交看 `git log -1`）
 
 ## 1. 项目是什么
 把 v9 单文件 HTML Demo 演进为 **React + FastAPI + PostgreSQL 的 AI 主动经营系统**。判断由确定性引擎（Metric→Rule→Signal→Insight→Evidence）计算；V3 起"解释文案"可接 LLM（默认模板，永不改判定）。
@@ -8,7 +8,7 @@
 ## 2. 单一事实源（去哪查什么）
 | 问什么 | 去哪个文件 |
 |---|---|
-| 现在第几版 / backlog / V3-V5 规划 | `docs/版本路线图.md`（§3A = V3 规划；V3 已完成） |
+| 现在第几版 / backlog / V3-V5 规划 | `docs/版本路线图.md`（§3A = V3 已完成；**§3B = V4 Watch 已规划待开工**） |
 | 迭代历史（每步记录） | `docs/开发过程记录.md`（迭代 0–21） |
 | 问题/决策/经验 | `docs/开发问题与经验.md`（P 系列 + D 系列 001–028） |
 | 能力 spec（最终态）+ 需求来源表 | `openspec/specs/`（business-engine/business-data-store/data-ingest/upload-mapping） |
@@ -21,9 +21,9 @@
 - 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（template 模式）、frontend :5173。
 
 ## 4. 下一步（按优先级，任选）
-1. **V4（Watch 真实委托）planning**：进入条件已满足（看板 §3A.5）→ 在 `docs/版本路线图.md` 加 §V4 详细规划（参照 §3A 结构：范围/任务/接口/验收）；每任务=一个 OpenSpec change。
-2. **LLM 刷新兜底 阶段 1**（纯后端，建议先做）：实现 P011/D028——超时拆分(3/10s) + 整批预算 20s + 并发 2–3 + 熔断(3 失败→30s) + 优先级(P1→机会→变化) + 连点合并；前端不变。阶段 2 = 异步 job/SSE + 前端"更新中 n/m"。
-3. 可选收尾：路线图"收尾杂项"核对行（数据源名称已下沉 dataLabel，数字一致性核对未做）。
+1. **开工 V4-T1（Watch 领域与持久化）**：V4 规划已定（路线图 **§3B** + P/D **D029**），V4-T1..T5 每任务 = 一个 OpenSpec change 按序执行；首个归档 change 新建能力 spec `business-watch`。开工前让用户 review §3B 规划。
+2. **LLM 刷新兜底 阶段 1**（纯后端，可选插队）：实现 P011/D028——超时拆分(3/10s) + 整批预算 20s + 并发 2–3 + 熔断(3 失败→30s) + 优先级(P1→机会→变化) + 连点合并；前端不变。阶段 2 = 异步 job/SSE + 前端"更新中 n/m"。
+3. 可选收尾：路线图"引擎结论与页面数字一致性核对"（低优先）。
 
 ## 5. 本地运行 / 验证（新会话先跑）
 ```bash
