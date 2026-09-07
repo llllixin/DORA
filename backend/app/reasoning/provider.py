@@ -61,4 +61,7 @@ def resolve_provider(name: str | None = None) -> ReasoningProvider:
     chosen = (name or os.environ.get("DORA_REASONING_PROVIDER") or "template").strip().lower()
     if chosen == "template":
         return TemplateProvider()
-    raise ValueError(f"暂不支持的 reasoning provider：{chosen}（当前可用 template）")
+    if chosen == "llm":
+        from app.reasoning.llm import LLMProvider
+        return LLMProvider()
+    raise ValueError(f"暂不支持的 reasoning provider：{chosen}（当前可用 template / llm）")

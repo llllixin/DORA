@@ -63,9 +63,10 @@ def rule_items() -> list[dict]:
 def run_seed() -> dict[str, int]:
     db.init_db()
     repo = Repository()
-    # 出厂重置：先清空系列与更新日志，再写入规范种子（上传残留不污染演示数据）
+    # 出厂重置：先清空系列/更新日志/语义缓存，再写入规范种子
     repo.delete_all_series()
     repo.delete_all_updates()
+    repo.delete_all_reasoning()
     repo.upsert_series(series_items())
     repo.upsert_cluster_stores(
         [{"store": name, "region": region, "aov": float(aov)} for name, region, aov in CLUSTER_STORES]

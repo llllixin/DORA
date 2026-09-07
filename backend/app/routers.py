@@ -11,6 +11,8 @@ from app.ingest import (
     preview_rows,
     read_rows,
 )
+from app.reasoning.cache import refresh as reasoning_refresh
+from app.reasoning.provider import resolve_provider
 from app.repository import Repository
 from app.seed import run_seed
 
@@ -151,6 +153,7 @@ async def upload_dataset(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="文件内容为空")
     keys = sorted({it["metric_key"] for it in items})
     repo = Repository()
+    repo.delete_all_reasoning()  # 数据变更 → 旧解释失效
     repo.replace_series(keys, items)
     now = datetime.now().strftime("%H:%M")
     repo.upsert_data_update({
@@ -199,6 +202,7 @@ async def mapped_dataset(file: UploadFile = File(...), mapping: str = Form(...))
         raise HTTPException(status_code=400, detail=str(exc))
     keys = sorted({it["metric_key"] for it in items})
     repo = Repository()
+    repo.delete_all_reasoning()  # 数据变更 → 旧解释失效
     repo.replace_series(keys, items)
     now = datetime.now().strftime("%H:%M")
     repo.upsert_data_update({
@@ -208,3 +212,14 @@ async def mapped_dataset(file: UploadFile = File(...), mapping: str = Form(...))
         "metrics": keys,
     })
     return {"ok": True, "name": name, "rows": len(items), "affectedMetrics": keys, "updated": now}
+
+@router.post("/reason/refresh")
+def reason_refresh():
+    repo = Repository()
+    provider = resolve_provider()
+    res = run_engine(repo)
+    if not res["insights"]:
+        return {"ok": True, "updated": [], "fallback": [], "provider": provider.kind}
+    out = reasoning_refresh(repo, res["insights"], res["snapshot"], provider)
+    return {"ok": True, **out}
+

@@ -7,6 +7,7 @@ import sys
 
 from app.engine.engine import run_engine
 from app.reasoning.cache import refresh
+from app.reasoning.llm import LLMProvider, _merge_with_numeric_stability
 from app.reasoning.provider import (
     ReasoningContext,
     ReasoningResult,
@@ -45,10 +46,31 @@ def main() -> int:
     assert resolve_provider("template").kind == "template"
 
     try:
-        resolve_provider("llm")
+        resolve_provider("nope")
         raise AssertionError("unknown provider should raise")
     except ValueError:
         pass
+
+    # T3：LLM provider 解析与无 key fallback / 数值稳定
+    llm = resolve_provider("llm")
+    assert isinstance(llm, LLMProvider) and llm.kind == "llm"
+    repo2 = Repository()
+    repo2.delete_all_reasoning()
+    no_key_result = refresh(repo2, res["insights"], res["snapshot"], provider=llm)
+    assert not no_key_result["updated"] and len(no_key_result["fallback"]) == len(res["insights"]), \
+        "no key -> all fallback"
+    repo2.delete_all_reasoning()
+    base = {"causeA": {"name": "旧名", "value": "较期初 2.2%"}, "causeB": {"name": "旧定位", "value": "高 10.9%"},
+            "next": ["a", "b", "c"]}
+    llm_ok = {"causeA": {"name": "A 产品线采购成本", "value": "999%"}, "causeB": {"name": "供应商 B", "value": "任意"},
+             "next": ["第一步", "第二步", "第三步"]}
+    merged = _merge_with_numeric_stability(base, llm_ok)
+    assert merged["causeA"]["value"] == "较期初 2.2%" and merged["causeB"]["value"] == "高 10.9%", \
+        "LLM must not change numeric values"
+    assert merged["causeA"]["name"] == "A 产品线采购成本" and merged["next"] == llm_ok["next"]
+    llm_bad_next = {"next": "not-a-list"}
+    merged2 = _merge_with_numeric_stability(base, llm_bad_next)
+    assert merged2["next"] == base["next"], "invalid next must fall back to template"
 
     # T2：语义缓存合并与来源标注
     repo = Repository()
