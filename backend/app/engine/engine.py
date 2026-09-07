@@ -1,13 +1,12 @@
 """V2 确定性业务引擎（Metric → Rule → Signal → Insight）。
 
 定位：
-- 纯 Python + 内存数据集，不依赖 DB/LLM（对应 D009：引擎稳定前不上 Agent）。
-- 产出与前端契约同形状的 Insights / Pulse，但数值全部由本模块计算，
-  不是 app/data.py 的"快照"。
-- 后续迭代：把 dataset 替换为 PostgreSQL Repository、把文案模板替换为
-  Insight Engine + Reasoning（V3）即可，本模块的判定逻辑保持复用。
+- 数据源：Repository（默认 PostgreSQL）；`dataset.py` 仅作种子源。
+- 规则阈值默认值收敛在 RULE_DEFAULTS（engine），DB `rule_config` 有值优先（_rule_map）。
+- 判定为确定性计算；叙事文案用模板占位，待 V3 Reasoning 替换文本层。
+- 引擎不依赖 LLM / Agent（D009/D014），证据行由 Repository 数据生成。
 """
-from app.engine import dataset as ds
+from app.repository import Repository  # noqa: F401 (engine_evidence 默认数据源)
 
 
 def _pct(cur: float, prev: float) -> float:
@@ -411,7 +410,7 @@ def build_insights(signals: list[dict], snap: dict) -> tuple[list[dict], dict]:
             "factors": sig["factors"],
             "evidence": {
                 "kind": sig["evidence_kind"],
-                "rows": ds.rows_for_evidence(sig["evidence_kind"]),
+                "rows": [],  # 证据行由 engine_evidence 从 Repository 实时生成（cleanup）
             },
             "semantics": _semantics(sig["insight"], snap),
         })
@@ -463,13 +462,64 @@ _TYPE_COPY = {
 }
 
 
-def engine_evidence(insight_id: str) -> dict | None:
-    """由引擎洞察即时生成证据链（与前端 Evidence 契约同形状）。"""
-    insight = next((i for i in run_engine()["insights"] if i["id"] == insight_id), None)
+def _evidence_rows(kind: str, repo) -> list[list[str]]:
+    """从 Repository 生成证据原始行（与种子数据等价；cleanup 后不再读 dataset 常量）。"""
+
+    def srows(key: str, dim: str | None = None):
+        return [r for r in repo.get_series(key) if dim is None or r["dimension"] == dim]
+
+    if kind == "margin":
+        rs = srows("margin", "全国")[-4:]
+        return [[r["label"], "利润率", "全国", f"{r['value']}%",
+                 "低于目标" if r["value"] < 18.5 else "正常"] for r in rs]
+    if kind == "returns":
+        out = []
+        for store in dict.fromkeys(r["dimension"] for r in srows("returns")):
+            vals = [r for r in srows("returns") if r["dimension"] == store]
+            out.append(["最新", store, f"{vals[-1]['value']}%", "华东"])
+        return out
+    if kind == "orders":
+        return [[r["label"], "订单量", str(int(r["value"]))] for r in srows("orders", "全国")[-4:]]
+    if kind == "aov":
+        return [[r["label"], "客单价", f"¥{int(r['value'])}"] for r in srows("aov", "全国")[-4:]]
+    if kind == "east_orders":
+        return [[r["label"], "华东订单量", str(int(r["value"]))] for r in srows("east_orders", "华东")]
+    if kind == "high_value":
+        return [[r["label"], "高客单门店占比", f"{r['value']}%"] for r in srows("high_value", "全国")]
+    if kind == "new_sku":
+        out, prev = [], None
+        for r in srows("new_sku", "全区域"):
+            delta = "" if prev is None else f"{(r['value'] / prev - 1) * 100:+.1f}%"
+            out.append(["新品销量", r["label"], f"{int(r['value']):,}", delta or "—"])
+            prev = r["value"]
+        return out
+    if kind == "data_event":
+        ev = repo.get_latest_update() or {}
+        rows = [[ev.get("updated", "--"), "新增记录", "全量", str(ev.get("rows_added", 0)), "已写入"]]
+        for m in ev.get("metrics", []):
+            rows.append([ev.get("updated", "--"), "重算指标", m, "--", "已刷新"])
+        return rows
+    if kind == "store_cluster":
+        from collections import Counter
+        stores = repo.get_cluster_stores()
+        rows = [[s["store"], s["region"], f"¥{s['aov']:,.0f}", "高客单"] for s in stores]
+        if stores:
+            region, count = Counter(s["region"] for s in stores).most_common(1)[0]
+            rows.append([region, "区域占比", f"{count} / {len(stores)}", f"{count / len(stores) * 100:.0f}%"])
+        return rows
+    return []
+
+
+def engine_evidence(insight_id: str, repo=None) -> dict | None:
+    """由引擎洞察即时生成证据链（与前端 Evidence 契约同形状；行来自 Repository）。"""
+    if repo is None:
+        from app.repository import Repository
+        repo = Repository()
+    insight = next((i for i in run_engine(repo)["insights"] if i["id"] == insight_id), None)
     if not insight:
         return None
     kind = insight["evidence"]["kind"]
-    rows = insight["evidence"]["rows"]
+    rows = _evidence_rows(kind, repo)
     meta = EVIDENCE_META.get(kind, DEFAULT_META)
     copy = _TYPE_COPY[insight["type"]]
     metric = insight["metric"]

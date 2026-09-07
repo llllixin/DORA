@@ -196,35 +196,21 @@ export async function mappedDataset(file: File, mapping: UploadMapping) {
 // 说明：页面组件全部读取 data.ts 的同一批数组/对象引用，因此刷新后页面即显示
 //      后端数据，视觉与契约完全一致；后端不可用时不刷新（本地 Mock 兜底）。
 // ---------------------------------------------------------------------------
-let apiLive = false;
-let liveSet = false;
-
-export function isApiLive() {
-  return apiLive;
-}
-
 export async function detectApi(): Promise<boolean> {
   if (MODE === 'mock') {
-    apiLive = false;
-    liveSet = true;
     return false;
   }
   if (MODE === 'http') {
-    apiLive = true;
-    liveSet = true;
     return true;
   }
   const ctrl = new AbortController();
   const timer = window.setTimeout(() => ctrl.abort(), 1200);
   try {
     const res = await fetch(`${BASE}/health`, { signal: ctrl.signal });
-    apiLive = res.ok;
     return res.ok;
   } catch {
-    apiLive = false;
     return false;
   } finally {
-    liveSet = true;
     window.clearTimeout(timer);
   }
 }

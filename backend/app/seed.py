@@ -4,6 +4,7 @@
 重复执行安全（按唯一键 upsert，不翻倍）。
 """
 from app.engine import dataset as ds
+from app.engine.engine import RULE_DEFAULTS
 from app import db
 from app.repository import Repository
 
@@ -41,14 +42,21 @@ def series_items() -> list[dict]:
     return items
 
 
+def _rule_type(value):
+    if isinstance(value, bool):
+        return "bool"
+    if isinstance(value, int):
+        return "int"
+    if isinstance(value, float):
+        return "float"
+    return "str"
+
+
 def rule_items() -> list[dict]:
+    """阈值默认值单一来源 = engine.RULE_DEFAULTS（避免与 seed 双处维护）。"""
     return [
-        {"key": "margin.target", "value": "18.5", "value_type": "float"},
-        {"key": "returns.baseline", "value": "3.2", "value_type": "float"},
-        {"key": "east.threshold", "value": "-3.0", "value_type": "float"},
-        {"key": "store_cluster.ratio", "value": "60.0", "value_type": "float"},
-        {"key": "store_cluster.mix_name", "value": "新品系列渗透率", "value_type": "str"},
-        {"key": "store_cluster.mix_pct", "value": "82.0", "value_type": "float"},
+        {"key": key, "value": str(value), "value_type": _rule_type(value)}
+        for key, value in RULE_DEFAULTS.items()
     ]
 
 
