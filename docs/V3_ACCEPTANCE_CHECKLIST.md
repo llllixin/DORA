@@ -2,6 +2,14 @@
 
 > 对应：docs/版本路线图.md §3A.4。完成 V3-T1..T5 后填写；自动项给出命令，人工项给出核对标准。
 
+## 审查状态（2026-09-07）
+- **A · 自动门禁 ✅**：`tests/run_all` 5 段 **ALL GREEN**（engine / ingest / reasoning / golden / e2e）；`npm run build` ✅；`/tmp/dora_smoke.py` 全绿 ✅
+- **B · 边界/极端审查 ✅**：
+  - B1 无 key + `provider=llm` → `updated=0 / fallback=9`，引擎判定不变、cache rows=0
+  - B2 部分 provider 失败 → `updated 7 / fallback 2`（不 all-or-nothing）；重复 refresh 幂等（rows=9 稳定）；空数据 refresh 不崩溃；LLM 输出极端（超长 next 回退模板、code-fence JSON 可解析、非法 JSON 抛错→fallback）；**数值锁**（causeA/B.value 恒为引擎基线）
+  - B3 非法上传（400）后语义缓存**保留**（rows=9），仅成功入库才失效
+- **C · 人工核对**：待用户按下方 C 段在运行界面确认后填写 Sign-off。
+
 ## A. 自动门禁（提交/验收前置）
 - [ ] `cd backend && python3 -m tests.run_all` → **ALL GREEN（5 段）**
   - engine_check：引擎判定回归
