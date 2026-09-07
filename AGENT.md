@@ -15,6 +15,7 @@
 | change 导航 + 归档索引 | `openspec/README.md`；归档全量在 `openspec/changes/archive/` |
 | V2 / V3 / V4 / V5 阶段总结 | `RELEASE_NOTES_V2.md` / `RELEASE_NOTES_V3.md` / `RELEASE_NOTES_V4.md` / `RELEASE_NOTES_V5.md` |
 | V5 验收清单 | `docs/V5_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅，V5 已完成） |
+| 优化方向 / 审计清单 | `docs/优化方向.md`（2026-09-07 全流程审计：F1–F10 + P0/P1/P2 候选） |
 | V3 验收清单 | `docs/V3_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅） |
 
 ## 3. 当前状态
