@@ -16,7 +16,7 @@
 2. **某条需求谁加的/验证证据** → 打开对应 spec，顶部「需求来源表」给出 change 归档目录与迭代号。
 3. **逐任务细节** → 进 `openspec/changes/archive/<date>-<id>/tasks.md`（每条任务含验证命令），proposal=为什么、design=怎么做。
 
-## 归档 Change 索引（23 个）
+## 归档 Change 索引（24 个）
 | Change | 归档目录（date-<id>） | 影响的 spec（+需求数） | 迭代 | 备注/决策 |
 |---|---|---|---|---|
 | C1 引擎覆盖 | 2026-09-07-extend-engine-coverage | business-engine +3 | 9 | 基线建 spec |
@@ -42,6 +42,7 @@
 | V5-T2 建档引擎 | 2026-09-07-v5-action-builder | business-action +1 | 29 | D031 |
 | V5-T3 状态机 API | 2026-09-07-v5-action-api | business-action +1 | 30 | D031 |
 | V5-T4 Action UI | 2026-09-07-v5-action-ui | business-action +1 | 31 | D031 |
+| Bug1 前端超时收口 | 2026-09-07-fix-reason-refresh-timeout | skip_specs（0） | 32 | P011 |
 
 ## V2 → 能力 → Change 覆盖矩阵
 | 能力 | 需求数 | 建立于 | 后续补充自 |

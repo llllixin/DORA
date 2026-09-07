@@ -178,6 +178,7 @@ export async function refreshReasoningApi(): Promise<ReasoningRefreshResult> {
     '/reason/refresh',
     {},
     () => ({ ok: true, updated: [] as string[], fallback: [] as string[], provider: 'template' as const }),
+    30000, // Bug1 收口：默认 2600ms 会误杀真实 LLM 批量（预算 20s + 在途尾差），显式放宽到 30s
   );
 }
 
