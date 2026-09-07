@@ -87,5 +87,13 @@ def rows_for_evidence(kind: str) -> list[list[str]]:
         rows = [[s, sc["region"], f"¥{sc['region_avg_aov']}", "高客单"] for s in sc["top_stores"]]
         rows.append([sc["region"], "区域占比", f"{sc['region_count']} / {sc['top_total']}", f"{sc['region_ratio_pct']:.0f}%"])
         return rows
+    if kind == "new_sku":
+        rows = []
+        prev = None
+        for w, v in zip(NEW_SKU_WEEKS, NEW_SKU_VALUES):
+            delta = "" if prev is None else f"{(v / prev - 1) * 100:+.1f}%"
+            rows.append(["新品销量", w, f"{v:,}", delta or "—"])
+            prev = v
+        return rows
     return []
 

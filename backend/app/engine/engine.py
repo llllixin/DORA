@@ -215,7 +215,7 @@ def evaluate_signals(snap: dict) -> list[dict]:
             "metric": f"{n['current']:,}", "delta": f"↑ {n['delta_pct']}%",
             "trigger": "新品连续增长但缺少门店共性验证，暂为机会候选",
             "factors": ["需拆解增长门店与动作"],
-            "evidence_kind": "margin",  # 演示：证据由引擎扩展阶段补全
+            "evidence_kind": "new_sku",
         })
     if h["delta_pp"] >= 5:
         signals.append({
@@ -424,6 +424,7 @@ EVIDENCE_META = {
     "high_value": {"sheet": "门店分层", "scope": "全门店 · 周维度", "path": "store_profile → aov → segmentation"},
     "data_event": {"sheet": "数据源状态 · 更新日志", "scope": "全量 · 最近一次更新", "path": "ingest → validate → metric snapshot → signal refresh"},
     "store_cluster": {"sheet": "门店画像 · Top 高客单", "scope": "Top 高客单门店", "path": "store_profile → cohort → aov → product_mix"},
+    "new_sku": {"sheet": "新品销量 · 周度", "scope": "新品系列 · 周维度", "path": "sku → week → trend → opportunity threshold"},
 }
 DEFAULT_META = {"sheet": "经营数据 · 引擎口径", "scope": "引擎计算范围", "path": "metric → rule → signal → insight"}
 
