@@ -1,5 +1,5 @@
-import { actionCases, evidence, insights, watchItems } from '../data';
-import type { ActionCase, ActionCaseDetail, Evidence, Insight, InsightType, WatchItem, WatchParseResult, WatchTargetCard } from '../types';
+import { evidence, insights, watchItems } from '../data';
+import type { ActionCaseCard, ActionCaseDetail, Evidence, Insight, InsightType, WatchItem, WatchParseResult, WatchTargetCard } from '../types';
 
 // API 地址：开发环境默认走 Vite 代理 /api → http://localhost:8000（见 vite.config.ts proxy）；
 // 生产部署可用环境变量 VITE_API_BASE_URL 覆盖为后端绝对地址。
@@ -76,31 +76,6 @@ export async function getInsights(type: InsightType): Promise<Insight[]> {
 
 export async function getEvidence(id: string): Promise<Evidence> {
   return apiGet(`/evidence/${id}`, () => evidence[id] ?? evidence.p1);
-}
-
-export async function getActionCase(id: string): Promise<ActionCase> {
-  return apiGet(`/actions/${id}`, () => actionCases[id] ?? actionCases.p1);
-}
-
-export async function createFollowup(payload: { insightId: string }) {
-  return apiPost(
-    '/watch',
-    payload,
-    () => ({ ok: true, id: `followup-${payload.insightId}`, status: 'watching' as const }),
-  );
-}
-
-export async function executeAction(payload: { actionId: string }) {
-  return apiPost(
-    `/actions/${payload.actionId}/execute`,
-    {},
-    () => ({
-      ok: true,
-      actionId: payload.actionId,
-      status: 'running' as const,
-      message: '执行结果已回写问题档案，Dora 将继续验证。',
-    }),
-  );
 }
 
 export function getApiBase() {
@@ -231,10 +206,6 @@ export async function detectApi(): Promise<boolean> {
   }
 }
 
-export async function listActions(): Promise<ActionCase[]> {
-  return apiGet('/actions', () => Object.values(actionCases));
-}
-
 export async function listWatch(): Promise<WatchItem[]> {
   return apiGet('/watch', () => [...watchItems]);
 }
@@ -334,22 +305,16 @@ function replaceList<T>(target: T[], items: T[]) {
 export async function syncRemoteData(): Promise<boolean> {
   const ok = await detectApi();
   if (!ok) return false;
-  const [problems, opportunities, changes, actions, watch] = await Promise.all([
+  const [problems, opportunities, changes, watch] = await Promise.all([
     getInsights('problem'),
     getInsights('opportunity'),
     getInsights('change'),
-    listActions(),
     listWatch(),
   ]);
   replaceList(insights.problem, problems);
   replaceList(insights.opportunity, opportunities);
   replaceList(insights.change, changes);
-  const actionMap: Record<string, ActionCase> = {};
-  actions.forEach((a) => {
-    actionMap[a.id] = a;
-  });
-  Object.keys(actionCases).forEach((k) => delete actionCases[k]);
-  Object.assign(actionCases, actionMap);
+  // Action 档案由 ActionPage 直读 /api/action/cases（不再同步覆写 data.ts 演示数据，F1）
   replaceList(watchItems, watch);
   return true;
 }
@@ -388,9 +353,9 @@ export async function createAction(insightId: string): Promise<{ ok: boolean; cr
   }
 }
 
-export async function listActionCases(): Promise<ActionCaseDetail[]> {
-  const r = await apiGet('/action/cases', () => ({ ok: true, cases: [] as ActionCaseDetail[] }));
-  return (r as { cases: ActionCaseDetail[] }).cases;
+export async function listActionCases(): Promise<ActionCaseCard[]> {
+  const r = await apiGet('/action/cases', () => ({ ok: true, cases: [] as ActionCaseCard[] }));
+  return (r as { cases: ActionCaseCard[] }).cases;
 }
 
 export async function fetchActionCase(id: string): Promise<ActionCaseDetail | null> {

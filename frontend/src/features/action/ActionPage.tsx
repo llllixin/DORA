@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { actionCases } from '../../data';
-import type { ActionCase, ActionCaseDetail } from '../../types';
+import type { ActionCase, ActionCaseCard, ActionCaseDetail } from '../../types';
 import { Tag } from '../../components/ui/Tag';
 import {
   blockStep, doneStep, fetchActionCase, listActionCases, startStep, verifyAction,
@@ -23,7 +23,7 @@ const CASE_LABEL: Record<string, string> = {
 };
 
 export function ActionPage({ joined, onTrace, onNotice }: Props) {
-  const [cases, setCases] = useState<ActionCaseDetail[]>([]);
+  const [cases, setCases] = useState<ActionCaseCard[]>([]);
   const [demo, setDemo] = useState(false);
   const [currentId, setCurrentId] = useState('');
   const [detail, setDetail] = useState<ActionCaseDetail | null>(null);

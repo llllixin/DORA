@@ -139,3 +139,19 @@ export interface ActionCaseDetail {
   archive: string;
   steps: CaseStep[];
 }
+
+/** V5 列表摘要（无 steps；详情请用 fetchActionCase） */
+export interface ActionCaseCard {
+  id: string;
+  kind: 'problem' | 'opportunity';
+  tag: string;
+  tag_cls: string;
+  case_title: string;
+  code: string;
+  source: string;
+  status: 'open' | 'running' | 'waiting_verify' | 'resolved';
+  orchestration: { experts: string[]; data: string[]; expertDesc: string };
+  archive: string;
+  created_at: string;
+  updated_at: string;
+}

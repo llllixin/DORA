@@ -28,7 +28,7 @@
 1. **LLM 兜底阶段 2**（异步 job + 状态接口 + 前端"更新中 n/m" + SSE；P011/D028/D030 阶段 1 已完成，Bug1 已收口）。
 2. **工具/Agent 执行层**（真实外部动作接入 Action 步骤，D031-1 预留口）。
 3. **Redis/Celery 分布式调度**（D009 推迟项）／Docker 全家桶（搭建文档 37）／生产部署（38）。
-4. 维护清理：旧 `/api/actions` 静态端点 + `data.ts` ACTIONS/actionCases 下线（V5 sign-off 后可做，先改 e2e/前端 sync）；"引擎结论与页面数字一致性核对"（低优先）。
+4. 维护收尾剩余：引擎结论与页面数字一致性核对（低优先）；AskBar/Dora Chat 追问 mock（F8，规划后接 LLM）。
 
 ## 5. 本地运行 / 验证（新会话先跑）
 ```bash

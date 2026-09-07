@@ -3,9 +3,7 @@ from datetime import datetime, timezone
 import json
 import threading
 
-from app.data import ACTIONS, EVIDENCE, INSIGHTS
 from app.schemas import (
-    ActionCaseModel,
     ActionCreateRequest,
     EvidenceModel,
     InsightSummary,
@@ -64,48 +62,15 @@ def get_insight(insight_id: str):
                 "evidence": item["evidence"],
                 "semantics": item["semantics"],
             }
-    for items in INSIGHTS.values():  # 静态兜底：历史 id（如 o2 / c2）仍可读
-        for item in items:
-            if item["id"] == insight_id:
-                return {
-                    **item,
-                    "route": "watch" if item["type"] == "change" else "action",
-                    "evidenceId": insight_id,
-                }
-    raise HTTPException(status_code=404, detail="insight not found")
+    raise HTTPException(status_code=404, detail="insight not found")  # 只认当前引擎判定（静态兜底已下线）
 
 
 @router.get("/evidence/{evidence_id}", response_model=EvidenceModel)
 def get_evidence(evidence_id: str):
-    item = engine_evidence(evidence_id) or EVIDENCE.get(evidence_id)
+    item = engine_evidence(evidence_id)  # 只认 Repository 生成证据（静态兜底已下线）
     if not item:
         raise HTTPException(status_code=404, detail="evidence not found")
     return EvidenceModel(**item)
-
-
-@router.get("/actions", response_model=list[ActionCaseModel])
-def list_actions():
-    return [ActionCaseModel(**item) for item in ACTIONS.values()]
-
-
-@router.get("/actions/{action_id}", response_model=ActionCaseModel)
-def get_action(action_id: str):
-    item = ACTIONS.get(action_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="action not found")
-    return ActionCaseModel(**item)
-
-
-@router.post("/actions/{action_id}/execute")
-def execute_action(action_id: str):
-    if action_id not in ACTIONS:
-        raise HTTPException(status_code=404, detail="action not found")
-    return {
-        "ok": True,
-        "actionId": action_id,
-        "status": "running",
-        "message": "执行任务已发起，结果将回写问题档案；Dora 将继续验证。",
-    }
 
 
 def _watch_card(repo: Repository, target: dict) -> dict:

@@ -71,20 +71,19 @@ def east_breach_csv() -> bytes:
 def main() -> int:
     post("/datasets/sample")  # 出厂重置
 
-    # Case 1：问题 → Evidence → Action
+    # Case 1：问题 → Evidence → Action（真实档案）
     probs = get("/insights?type=problem")
     assert any(i["id"] == "p1" for i in probs), "p1 problem missing"
     ev = get("/evidence/p1")
     assert ev["rawRows"] and ev["hits"], "p1 evidence empty"
-    ex = post("/actions/p1/execute")
-    assert ex.get("ok") and ex.get("status") == "running", "p1 execute failed"
+    p1_case = get("/action/cases/p1")
+    assert p1_case["case"]["id"] == "p1" and p1_case["case"]["steps"], "p1 seed action case missing"
 
-    # Case 2：机会 → 验证可复制 → Action
+    # Case 2：机会 → 验证可复制 → Action（真实档案）
     opps = get("/insights?type=opportunity")
     assert any(i["id"] == "o1" for i in opps), "o1 opportunity missing"
-    acts = get("/actions")
-    assert any(a["id"] == "o1" for a in acts), "o1 action case missing"
-    assert post("/actions/o1/execute").get("ok"), "o1 execute failed"
+    o1_case = get("/action/cases/o1")
+    assert o1_case["case"]["id"] == "o1" and o1_case["case"]["steps"], "o1 seed action case missing"
 
     # Case 3：变化 → Watch
     chgs = get("/insights?type=change")
