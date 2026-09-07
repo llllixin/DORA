@@ -17,10 +17,20 @@ def _mean(vals: list[float]) -> float:
     return sum(vals) / len(vals)
 
 
+def _below(actual: float, ref: float) -> bool:
+    """阈值比较：'低于目标' 用严格小于（值==目标不触发）。"""
+    return actual < ref
+
+
+def _breach(actual: float, threshold: float, *, inclusive: bool = True) -> bool:
+    """阈值比较：'跌破升级阈值' 默认含等于（<=）；inclusive=False 时严格小于。"""
+    return actual <= threshold if inclusive else actual < threshold
+
+
 def _streak_below(values: list[float], target: float) -> int:
     n = 0
     for v in reversed(values):
-        if v < target:
+        if _below(v, target):
             n += 1
         else:
             break
@@ -47,6 +57,19 @@ def _series(repo, key: str, dimension: str | None = None) -> list[float]:
     if repo is None:
         return []
     return [r["value"] for r in repo.get_series(key) if dimension is None or r["dimension"] == dimension]
+
+
+from datetime import datetime
+
+METRIC_SERIES_KEYS = [
+    "margin", "returns", "orders", "revenue", "aov",
+    "east_orders", "new_sku", "high_value", "supplier_price",
+]
+
+
+def _repo_has_series(repo) -> bool:
+    """空数据门禁：Repository 是否存在任一指标序列。"""
+    return any(bool(repo.get_series(key)) for key in METRIC_SERIES_KEYS)
 
 
 def compute_snapshot(repo=None, rules=None) -> dict:
@@ -199,7 +222,7 @@ def evaluate_signals(snap: dict) -> list[dict]:
             "evidence_kind": "aov",
         })
     if e["delta_pct"] < -1.0:
-        if e["delta_pct"] <= e["threshold"]:
+        if _breach(e["delta_pct"], e["threshold"]):  # 跌破默认含等于
             # Watch→升级：跌破阈值自动升级为问题（文档 Case 4）
             signals.append({
                 "id": "sig-east-breach", "insight": "e2", "type": "problem", "metric_key": "east_orders",
@@ -418,7 +441,7 @@ def build_insights(signals: list[dict], snap: dict) -> tuple[list[dict], dict]:
     for i in insights:
         counts[{"problem": "problems", "opportunity": "opportunities", "change": "changes"}[i["type"]]] += 1
     counts["watching"] = counts["changes"]
-    pulse = {**counts, "last_updated": "09:32"}
+    pulse = {**counts, "last_updated": snap["data_event"]["updated"]}
     return insights, pulse
 
 
@@ -428,6 +451,13 @@ def run_engine(repo=None, rules=None) -> dict:
         from app.repository import Repository
         repo = Repository()
     snap = compute_snapshot(repo, rules)
+    if not _repo_has_series(repo):
+        # 空数据门禁：无指标序列则不产洞察（即使 cluster/update_log 残留）
+        pulse = {
+            "problems": 0, "opportunities": 0, "changes": 0, "watching": 0,
+            "last_updated": "--",
+        }
+        return {"snapshot": snap, "signals": [], "insights": [], "pulse": pulse}
     signals = evaluate_signals(snap)
     insights, pulse = build_insights(signals, snap)
     return {"snapshot": snap, "signals": signals, "insights": insights, "pulse": pulse}
@@ -524,11 +554,15 @@ def engine_evidence(insight_id: str, repo=None) -> dict | None:
     copy = _TYPE_COPY[insight["type"]]
     metric = insight["metric"]
     delta = insight["delta"]
+    # 时间戳取自最新更新事件；无事件显示 --
+    _latest = repo.get_latest_update() or {}
+    _ts = str(_latest.get("updated") or "--")
+    updated_display = "--" if _ts == "--" else f"{datetime.now():%Y-%m-%d} {_ts}"
     return {
         "id": insight_id,
         "title": insight["title"],
         "source": f"{meta['sheet']} + 规则引擎",
-        "updated": "2026-09-06 09:32",
+        "updated": updated_display,
         "sheet": meta["sheet"],
         "scope": meta["scope"],
         "metric": f"{metric} · {delta}",

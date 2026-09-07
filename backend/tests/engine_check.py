@@ -4,7 +4,7 @@
 后续接入 PostgreSQL 后，本文件保留为"判定逻辑不回归"的第一道护栏。
 """
 import sys
-from app.engine.engine import engine_evidence, run_engine
+from app.engine.engine import _below, _breach, engine_evidence, run_engine
 
 
 def main() -> int:
@@ -15,6 +15,10 @@ def main() -> int:
     m = snap["margin"]
     assert m["current"] < m["target"], "margin should be below target"
     assert m["streak_below"] >= 3, "margin should trigger streak rule"
+    # 阈值比较语义（严格小于 / 跌破含等于）
+    assert _below(18.4, 18.5) and not _below(18.5, 18.5), "below must be strict <"
+    assert _breach(-3.0, -3.0) and not _breach(-2.9, -3.0), "breach default inclusive <="
+    assert not _breach(-3.0, -3.0, inclusive=False), "inclusive=False must be strict <"
     assert pulse["problems"] == 3, f"expected 3 problems, got {pulse['problems']}"
     assert pulse["opportunities"] == 2, f"expected 2 opportunities, got {pulse['opportunities']}"
     assert pulse["changes"] == 4, f"expected 4 changes, got {pulse['changes']}"

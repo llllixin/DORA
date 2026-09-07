@@ -264,3 +264,7 @@ body{font-size:14px}
 .map-actions{display:flex;gap:8px;margin-top:10px}
 .map-hint{font-size:10px;color:#a0a6b5;margin-top:8px;line-height:1.6}
 @media(max-width:760px){.map-grid{grid-template-columns:1fr}}
+
+.summary-card .q{display:inline-grid;place-items:center;width:14px;height:14px;margin-left:5px;border-radius:50%;background:#eef0f6;color:#8a90a0;font-size:9px;font-weight:800;cursor:help;vertical-align:middle}
+.summary-card .q:hover{background:var(--brand-soft);color:#5149dc}
+

@@ -169,6 +169,7 @@ export default function App() {
             onInsight={onInsight}
             onTrace={openTrace}
             onNotice={notify}
+            dataLabel={`${dataSrc.name} · ${dataSrc.at} 更新`}
           />
         )}{" "}
         {page === "insight" && (
