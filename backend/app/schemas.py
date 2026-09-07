@@ -75,3 +75,7 @@ class WatchItem(BaseModel):
     color: str
     logic: str
     source: str
+
+
+class WatchParseRequest(BaseModel):
+    text: str

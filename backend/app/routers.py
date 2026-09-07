@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 
 from app.data import ACTIONS, EVIDENCE, INSIGHTS, WATCH
-from app.schemas import ActionCaseModel, EvidenceModel, InsightSummary, Pulse, WatchItem
+from app.schemas import ActionCaseModel, EvidenceModel, InsightSummary, Pulse, WatchItem, WatchParseRequest
 from app.ingest import (
     IngestValidationError,
     items_from_mapping,
@@ -15,6 +15,7 @@ from app.reasoning.cache import refresh as reasoning_refresh
 from app.reasoning.provider import resolve_provider
 from app.repository import Repository
 from app.seed import run_seed
+from app.watch.parser import parse_watch_text
 
 router = APIRouter(prefix="/api")
 
@@ -222,4 +223,10 @@ def reason_refresh():
         return {"ok": True, "updated": [], "fallback": [], "provider": provider.kind}
     out = reasoning_refresh(repo, res["insights"], res["snapshot"], provider)
     return {"ok": True, **out}
+
+
+@router.post("/watch/parse")
+def watch_parse(req: WatchParseRequest):
+    """委托语句解析（V4-T2）：纯文本词典解析，不触 DB；结果供前端确认后创建。"""
+    return parse_watch_text(req.text)
 

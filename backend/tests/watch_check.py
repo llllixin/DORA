@@ -1,4 +1,4 @@
-"""V4 watch_check：第 1 节 = 领域/持久化 CRUD（T1）；第 2 节 = 升级路径 E2E（T5 追加）。
+"""V4 watch_check：第 1 节 = 领域/持久化 CRUD（T1）；第 2 节 = 委托解析（T2）；第 3 节 = 升级路径 E2E（T5 追加）。
 
 运行：cd backend && python3 -m tests.watch_check
 前置：PostgreSQL 已 seed（本地 docker compose up -d 后 python -m app.seed）。
@@ -7,6 +7,7 @@ import sys
 
 from app.repository import Repository
 from app.seed import run_seed
+from app.watch.parser import parse_watch_text
 
 INTENT = {
     "metric_key": "east_orders",
@@ -77,10 +78,50 @@ def section1_crud(repo: Repository) -> None:
     assert repo.count_rows("watch_event") >= 0
 
 
+def section2_parser() -> None:
+    """V4-T2：委托语句 → 结构化 intent（词典 + 显式拒绝 + 建议默认）。"""
+    # 支持句式：demo 句（east_orders/华东/连续 3 天下降）
+    r = parse_watch_text("帮我关注华东销售额，如果连续三天下降就提醒我")
+    assert r["ok"], r
+    i = r["intent"]
+    assert i["metric_key"] == "east_orders" and i["dimension"] == "华东"
+    assert i["condition"] == {"type": "streak_below", "days": 3, "ref": None}
+    assert i["label"] == "华东销售额" and i["frequency"] is None
+    assert i["condition_defaulted"] is False
+
+    # 值跌破 + 频率词
+    r = parse_watch_text("关注利润率，跌破 18% 就提醒我，每天 09:00 检查")
+    assert r["ok"]
+    i = r["intent"]
+    assert i["metric_key"] == "margin" and i["dimension"] == "全国"
+    assert i["condition"] == {"type": "below", "ref": 18.0, "ref_is_pct": True}
+    assert i["frequency"] == "daily 09:00" and i["condition_defaulted"] is False
+
+    # 中文数字天数 + 建议默认标记
+    r = parse_watch_text("帮我关注新品增长，连续两天上涨就提醒我")
+    assert r["ok"] and r["intent"]["metric_key"] == "new_sku"
+    assert r["intent"]["condition"] == {"type": "streak_above", "days": 2, "ref": None}
+    r = parse_watch_text("关注退货率")
+    assert r["ok"] and r["intent"]["dimension"] == ""
+    assert r["intent"]["condition_defaulted"] is True, "缺条件应给建议默认并标记"
+
+    # 拒绝句式：unknown 指标
+    r = parse_watch_text("关注库存周转，连续 3 天下跌就提醒我")
+    assert r["ok"] is False and r["intent"] is None
+    assert r["unsupported"] and "库存周转" in r["unsupported"][0]["token"]
+
+    # 前端建议 chips 映射：受支持的 5 个 ok=true，库存周转显式拒绝
+    chips = ["利润率", "华东销售", "新品增长", "退货率", "大额订单", "库存周转"]
+    ok_count = sum(1 for c in chips if parse_watch_text(f"帮我关注{c}")["ok"])
+    assert ok_count == 5, f"supported chips should be 5, got {ok_count}"
+    assert parse_watch_text("帮我关注库存周转")["ok"] is False
+
+
 def main() -> int:
     run_seed()  # 建表 + 出厂重置（watch 表无种子，恒空起步）
     section1_crud(Repository())
-    print("watch_check OK（第 1 节 领域 CRUD 全绿）")
+    section2_parser()
+    print("watch_check OK（第 1 节 领域 CRUD + 第 2 节 解析 全绿）")
     return 0
 
 
