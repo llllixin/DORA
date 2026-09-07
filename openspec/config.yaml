@@ -40,6 +40,9 @@ rules:
 
 # apply / archive 的操作建议
 operations:
+  propose:
+    guidance:
+      - design 产出的关键取舍完成后立即记入 docs/开发问题与经验.md 的 D 系列（编号 D0xx，含退出条件），不等 archive，便于复查与学习。
   apply:
     guidance:
       - 每个任务完成后用对应验证命令（build / engine_check / curl）给出证据再勾选。
