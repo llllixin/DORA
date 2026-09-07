@@ -1,7 +1,7 @@
-"""V4 watch_check：第 1 节 = 领域/持久化 CRUD（T1）；第 2 节 = 委托解析（T2）；第 3 节 = 升级路径 E2E（T5 追加）。
+"""V4 watch_check：第 1 节 = 领域/持久化 CRUD（T1）；第 2 节 = 委托解析（T2）；第 3 节 = 评估器（T3）；第 4 节 = Case 3/4 升级 E2E（T5，HTTP）。
 
 运行：cd backend && python3 -m tests.watch_check
-前置：PostgreSQL 已 seed（本地 docker compose up -d 后 python -m app.seed）。
+前置：PostgreSQL 已 seed + 后端在运行（本地 docker compose up -d、uvicorn :8000）。
 """
 import sys
 
@@ -179,13 +179,58 @@ def section3_evaluator(repo: Repository) -> None:
     run_seed()  # 恢复出厂（清理 crafted 序列与事件）
 
 
+def section4_e2e(repo: Repository) -> None:
+    """V4-T5：Case 3/4 委托升级路径端到端（HTTP + 上传即时评估）。
+
+    前置：后端在运行（run_all 已有此前置，同 e2e_api_check）。
+    Case 3：变化 → watch（change 事件）；Case 4：继续恶化 → 引擎 e2 → escalate 事件回脉搏。
+    """
+    import os
+    import urllib.request
+    from tests.e2e_api_check import east_breach_csv, get, post, post_file
+
+    BASE = os.environ.get("DORA_API_BASE", "http://localhost:8000/api")
+
+    def delete(path: str):
+        req = urllib.request.Request(BASE + path, method="DELETE")
+        with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=10):
+            pass
+
+    post("/datasets/sample")
+    created = post("/watch", {"text": "帮我关注华东销售额，如果连续三天下降就提醒我", "frequency": "on_update"})
+    assert created.get("ok") and created["target"]["status"] == "watching"
+    tid = created["target"]["id"]
+
+    # Case 3：创建即评估 → 变化命中（watch 事件）
+    det = get(f"/watch/{tid}")
+    kinds = [e["kind"] for e in det["events"]]
+    assert "change" in kinds, f"Case 3: change event expected, got {kinds}"
+
+    # Case 4：上传跌破升级阈值 → 引擎 e2 且委托 escalate 引用 e2
+    up = post_file("/datasets", "east_breach_v4.csv", east_breach_csv())
+    assert up.get("ok"), "breach upload failed"
+    det2 = get(f"/watch/{tid}")
+    escalates = [e for e in det2["events"] if e["kind"] == "escalate"]
+    assert escalates and escalates[-1]["values"]["engine_insight"] == "e2", \
+        f"Case 4: escalate referencing e2 expected, got {det2['events']}"
+    probs = get("/insights?type=problem")
+    assert any(i["id"] == "e2" for i in probs), "engine e2 problem missing after breach"
+    cards = get("/watch")
+    card = next(c for c in cards if c["id"] == tid)
+    assert card["value"] == "已升级" and card["color"] == "red", f"card should be escalated, got {card}"
+
+    delete(f"/watch/{tid}")
+    post("/datasets/sample")  # 还原出厂
+
+
 def main() -> int:
     run_seed()  # 建表 + 出厂重置（watch 表无种子，恒空起步）
     repo = Repository()
     section1_crud(repo)
     section2_parser()
     section3_evaluator(repo)
-    print("watch_check OK（第 1 节 CRUD + 第 2 节 解析 + 第 3 节 评估器 全绿）")
+    section4_e2e(repo)
+    print("watch_check OK（第 1 节 CRUD + 第 2 节 解析 + 第 3 节 评估器 + 第 4 节 升级 E2E 全绿）")
     return 0
 
 

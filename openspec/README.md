@@ -16,7 +16,7 @@
 2. **某条需求谁加的/验证证据** → 打开对应 spec，顶部「需求来源表」给出 change 归档目录与迭代号。
 3. **逐任务细节** → 进 `openspec/changes/archive/<date>-<id>/tasks.md`（每条任务含验证命令），proposal=为什么、design=怎么做。
 
-## 归档 Change 索引（17 个）
+## 归档 Change 索引（18 个）
 | Change | 归档目录（date-<id>） | 影响的 spec（+需求数） | 迭代 | 备注/决策 |
 |---|---|---|---|---|
 | C1 引擎覆盖 | 2026-09-07-extend-engine-coverage | business-engine +3 | 9 | 基线建 spec |
@@ -36,6 +36,7 @@
 | V4-T2 委托解析 | 2026-09-07-v4-watch-parser | business-watch +1 | 23 | D029 |
 | V4-T3 通用评估 | 2026-09-07-v4-watch-evaluator | business-watch +1 | 24 | D029 |
 | V4-T4 Watch UI | 2026-09-07-v4-watch-ui | business-watch +1 | 25 | D029 |
+| V4-T5 验收收尾 | 2026-09-07-v4-watch-acceptance | skip_specs（0） | 26 | D029 |
 
 ## V2 → 能力 → Change 覆盖矩阵
 | 能力 | 需求数 | 建立于 | 后续补充自 |
