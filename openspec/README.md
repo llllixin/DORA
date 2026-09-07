@@ -16,7 +16,7 @@
 2. **某条需求谁加的/验证证据** → 打开对应 spec，顶部「需求来源表」给出 change 归档目录与迭代号。
 3. **逐任务细节** → 进 `openspec/changes/archive/<date>-<id>/tasks.md`（每条任务含验证命令），proposal=为什么、design=怎么做。
 
-## 归档 Change 索引（8 个）
+## 归档 Change 索引（13 个）
 | Change | 归档目录（date-<id>） | 影响的 spec（+需求数） | 迭代 | 备注/决策 |
 |---|---|---|---|---|
 | C1 引擎覆盖 | 2026-09-07-extend-engine-coverage | business-engine +3 | 9 | 基线建 spec |
@@ -27,11 +27,16 @@
 | C5 E2E 门禁 | 2026-09-07-e2e-guardrails | business-engine +1 | 14 | D019 |
 | 收尾清理 | 2026-09-07-code-cleanup | skip_specs（0） | 15 | D020 |
 | V2 边界修复 | 2026-09-07-fix-v2-critical-boundaries | business-engine +3 | 16 | D021/P010 |
+| V3-T1 推理抽象层 | 2026-09-07-v3-reasoning-layer | skip_specs（0） | 17 | D023 |
+| V3-T2 语义缓存 | 2026-09-07-v3-semantics-cache | business-engine +1 | 18 | D024 |
+| V3-T3 LLM + 失效 | 2026-09-07-v3-llm-provider | business-engine +2 | 19 | D025 |
+| V3-T4 前端入口 | 2026-09-07-v3-reasoning-ui | skip_specs（0） | 20 | D026 |
+| V3-T5 验收收尾 | 2026-09-07-v3-acceptance | skip_specs（0） | 21 | D027 |
 
 ## V2 → 能力 → Change 覆盖矩阵
 | 能力 | 需求数 | 建立于 | 后续补充自 |
 |---|---|---|---|
-| business-engine | 11 | C1 基线 | C2(+2) · c3证据(+1) · C3上传(+1) · C5(+1) · V2边界(+3) |
+| business-engine | 14 | C1 基线 | C2(+2)·c3证据(+1)·C3上传(+1)·C5(+1)·V2边界(+3)·**V3-T2(+1)·V3-T3(+2)** |
 | business-data-store | 3 | C2 | — |
 | data-ingest | 2 | C3 | — |
 | upload-mapping | 2 | C4 | — |

@@ -18,6 +18,9 @@ Dora 确定性业务引擎的对外行为契约：输入原始经营数据，产
 | 无指标数据时不产洞察 | V2 边界修复 | `changes/archive/2026-09-07-fix-v2-critical-boundaries` | 16 |
 | 阈值比较语义显式化 | V2 边界修复 | 同上 | 16 |
 | 时间戳取自更新事件 | V2 边界修复 | 同上 | 16 |
+| 洞察语义可来自推理缓存并标注来源 | V3-T2 语义缓存 | `changes/archive/2026-09-07-v3-semantics-cache` | 18 |
+| LLM 解释可配置且不污染判定 | V3-T3 LLM | `changes/archive/2026-09-07-v3-llm-provider` | 19 |
+| 数据变更后缓存失效 | V3-T3 LLM | 同上 | 19 |
 
 ## Requirements
 
