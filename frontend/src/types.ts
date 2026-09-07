@@ -65,6 +65,35 @@ export interface WatchItem {
   source: string;
 }
 
+/** V4-T4：真实委托卡片（后端 /api/watch 返回，WatchItem 超集） */
+export interface WatchTargetCard extends WatchItem {
+  status?: 'watching' | 'paused';
+  frequency?: string;
+  lastEventAt?: string;
+}
+
+export interface WatchCondition {
+  type: string;
+  days?: number;
+  ref?: number | null;
+  ref_is_pct?: boolean;
+}
+
+export interface WatchParseIntent {
+  metric_key: string;
+  dimension: string;
+  condition: WatchCondition;
+  frequency: string | null;
+  label: string;
+  condition_defaulted: boolean;
+}
+
+export interface WatchParseResult {
+  ok: boolean;
+  intent?: WatchParseIntent;
+  unsupported?: { token: string; reason: string }[];
+}
+
 export type ChartPointSeries = { name: string; values: number[]; color: string };
 
 export interface DataSource {

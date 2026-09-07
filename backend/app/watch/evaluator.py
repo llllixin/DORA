@@ -104,7 +104,9 @@ def evaluate_one(repo: Repository, target: dict, engine_insights: list[dict] | N
     # 升级身份只认引擎判定（红线）
     pid = ESCALATION.get(key)
     eng = None
-    if pid is not None and engine_insights:
+    if pid is not None:
+        if engine_insights is None:  # 单目标调用（手动 check 等）：惰性取一次引擎判定
+            engine_insights = run_engine(repo)["insights"]
         eng = next((x for x in engine_insights if x.get("id") == pid), None)
     if eng is not None:
         kind, summary = "escalate", f"已升级：{eng.get('trigger') or eng.get('title') or pid}"

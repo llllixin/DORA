@@ -79,3 +79,12 @@ class WatchItem(BaseModel):
 
 class WatchParseRequest(BaseModel):
     text: str
+
+
+class WatchCreateRequest(BaseModel):
+    text: str
+    frequency: str | None = None
+
+
+class WatchStatusRequest(BaseModel):
+    status: str

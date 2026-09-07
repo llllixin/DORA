@@ -268,3 +268,7 @@ body{font-size:14px}
 .summary-card .q{display:inline-grid;place-items:center;width:14px;height:14px;margin-left:5px;border-radius:50%;background:#eef0f6;color:#8a90a0;font-size:9px;font-weight:800;cursor:help;vertical-align:middle}
 .summary-card .q:hover{background:var(--brand-soft);color:#5149dc}
 
+
+/* V4-T4：Watch 真实化补充 */
+.wopts { display: flex; gap: 6px; flex-wrap: wrap; }
+.delegate-error { color: #c0392b; font-size: 13px; margin: 8px 0; }

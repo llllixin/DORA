@@ -1,5 +1,5 @@
 import { actionCases, evidence, insights, watchItems } from '../data';
-import type { ActionCase, Evidence, Insight, InsightType, WatchItem } from '../types';
+import type { ActionCase, Evidence, Insight, InsightType, WatchItem, WatchParseResult, WatchTargetCard } from '../types';
 
 // API 地址：开发环境默认走 Vite 代理 /api → http://localhost:8000（见 vite.config.ts proxy）；
 // 生产部署可用环境变量 VITE_API_BASE_URL 覆盖为后端绝对地址。
@@ -236,6 +236,94 @@ export async function listActions(): Promise<ActionCase[]> {
 
 export async function listWatch(): Promise<WatchItem[]> {
   return apiGet('/watch', () => [...watchItems]);
+}
+
+/** V4-T2：解析委托语句（后端无 parse 概念时前端回退静态演示解析）。 */
+export async function parseWatch(text: string): Promise<WatchParseResult> {
+  return apiPost('/watch/parse', { text }, () => demoParse(text));
+}
+
+/** V4-T4：创建委托 = parse（400 detail 上抛，不静默 mock）→ create → 即时评估。 */
+export async function createWatch(text: string, frequency?: string): Promise<{ ok: boolean; target: WatchTargetCard | null }> {
+  if (MODE === 'mock') {
+    await wait(160);
+    const r = demoParse(text);
+    if (!r.ok || !r.intent) throw new Error(r.unsupported?.[0]?.reason ?? '无法解析该委托');
+    return { ok: true, target: null };
+  }
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(`${BASE}/watch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, frequency: frequency ?? undefined }),
+      signal: ctrl.signal,
+    });
+    const body = (await res.json().catch(() => null)) as { detail?: string; ok?: boolean; target?: WatchTargetCard } | null;
+    if (!res.ok) {
+      throw new Error(body?.detail || `HTTP ${res.status}`);
+    }
+    return { ok: true, target: body?.target ?? null };
+  } catch (err) {
+    if (MODE === 'http') throw err;
+    // 网络失败（后端离线）→ 走演示路径；业务 4xx（不支持指标）继续抛给调用方
+    if (err instanceof Error && /HTTP|detail/.test(err.message)) throw err;
+    console.warn('[doraApi] POST /watch 失败，走演示创建：', err);
+    const r = demoParse(text);
+    if (!r.ok) throw new Error(r.unsupported?.[0]?.reason ?? '无法解析该委托');
+    return { ok: true, target: null };
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+async function apiSend<T>(method: 'PATCH' | 'DELETE' | 'POST', path: string, payload: unknown, fallback: () => T, timeoutMs = 8000): Promise<T> {
+  if (MODE === 'mock') {
+    await wait(140);
+    return fallback();
+  }
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: method === 'DELETE' ? undefined : JSON.stringify(payload ?? {}),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as T;
+  } catch (err) {
+    if (MODE === 'http') throw err;
+    console.warn(`[doraApi] ${method} ${path} 失败，已回退：`, err);
+    await wait(100);
+    return fallback();
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+export function setWatchStatus(id: string, status: 'watching' | 'paused') {
+  return apiSend('PATCH', `/watch/${id}`, { status }, () => ({ ok: true }));
+}
+
+export function deleteWatch(id: string) {
+  return apiSend('DELETE', `/watch/${id}`, {}, () => ({ ok: true }));
+}
+
+export async function checkWatch(id: string): Promise<{ ok: boolean; kind: string; summary?: string }> {
+  return apiSend('POST', `/watch/${id}/check`, {}, () => ({ ok: true, kind: 'miss' }));
+}
+
+function demoParse(text: string): WatchParseResult {
+  const demo: [string, WatchParseResult] = [
+    '华东销售额',
+    { ok: true, intent: { metric_key: 'east_orders', dimension: '华东', label: '华东销售额', condition: { type: 'streak_below', days: 3 }, frequency: 'on_update', condition_defaulted: false } },
+  ];
+  const label = demo[0];
+  if (text.includes('华东') && text.includes('销售')) return demo[1];
+  return { ok: false, unsupported: [{ token: text.slice(0, 8), reason: `暂不支持该指标（离线演示）；可用：${label} 等` }] };
 }
 
 function replaceList<T>(target: T[], items: T[]) {

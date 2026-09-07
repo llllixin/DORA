@@ -10,6 +10,7 @@ Dora"持续关注（Watch）"能力的行为契约：用户以一句话把业务
 | 委托与命中事件可持久化存取 | V4-T1 Watch 领域 | `changes/archive/2026-09-07-v4-watch-domain` | 22 |
 | 委托语句可解析为结构化委托（显式确认） | V4-T2 委托解析 | `changes/archive/2026-09-07-v4-watch-parser` | 23 |
 | 委托被自动评估并记录命中事件（不伪造身份） | V4-T3 评估器 | `changes/archive/2026-09-07-v4-watch-evaluator` | 24 |
+| 委托经 REST 可管理并回显到界面 | V4-T4 Watch UI | `changes/archive/2026-09-07-v4-watch-ui` | 25 |
 
 ## Requirements
 
@@ -49,3 +50,14 @@ Dora"持续关注（Watch）"能力的行为契约：用户以一句话把业务
 #### Scenario: 升级事件仅引用引擎判定
 - **WHEN** 委托 east_orders（连续下跌）且数据跌破引擎升级阈值使 run_engine 产出 problem `e2`
 - **THEN** 事件 kind=escalate 且 `values.engine_insight=="e2"`；无引擎判定时任何指标都不会产生 escalate
+
+### Requirement: 委托经 REST 可管理并回显到界面
+系统 SHALL 暴露 watch REST：创建（文本委托 + 频率 → 解析 → 落库 → 即时评估）、列表（含最新状态）、单查（含命中事件）、暂停/恢复、删除（级联事件）、手动检查。前端 Watch 页 SHALL 以该接口为真实数据源（输入解析回显 → 确认创建 → 列表操作），Pulse「持续关注」计数与最近状态 SHALL 来自真实委托列表而非静态数组；后端不可用时前端才回退本地演示数据并标注静态。
+
+#### Scenario: 委托创建与即时评估
+- **WHEN** POST /api/watch 提交"帮我关注华东销售额，如果连续三天下降就提醒我"
+- **THEN** 返回创建的 target（含解析 intent），且创建后立即做一次评估；再次 GET 列表可见该委托且状态/频率/最近检查时间已更新
+
+#### Scenario: 暂停后不评估
+- **WHEN** PATCH 将委托 status=paused 后数据更新触发即时评估
+- **THEN** 该委托不被评估、不产生新事件；恢复 watching 后才恢复评估

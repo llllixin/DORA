@@ -1,9 +1,17 @@
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
-from app.data import ACTIONS, EVIDENCE, INSIGHTS, WATCH
-from app.schemas import ActionCaseModel, EvidenceModel, InsightSummary, Pulse, WatchItem, WatchParseRequest
+from app.data import ACTIONS, EVIDENCE, INSIGHTS
+from app.schemas import (
+    ActionCaseModel,
+    EvidenceModel,
+    InsightSummary,
+    Pulse,
+    WatchCreateRequest,
+    WatchParseRequest,
+    WatchStatusRequest,
+)
 from app.ingest import (
     IngestValidationError,
     items_from_mapping,
@@ -15,6 +23,8 @@ from app.reasoning.cache import refresh as reasoning_refresh
 from app.reasoning.provider import resolve_provider
 from app.repository import Repository
 from app.seed import run_seed
+from app.watch.evaluator import evaluate_all as watch_evaluate_all
+from app.watch.evaluator import evaluate_one as watch_evaluate_one
 from app.watch.parser import parse_watch_text
 
 router = APIRouter(prefix="/api")
@@ -92,9 +102,50 @@ def execute_action(action_id: str):
     }
 
 
-@router.get("/watch", response_model=list[WatchItem])
+def _watch_card(repo: Repository, target: dict) -> dict:
+    """委托 → WatchItem 兼容卡片（Pulse/Topbar 消费 watchItems 零改动升级）。"""
+    intent = target.get("intent") or {}
+    label = intent.get("label") or target["id"]
+    dimension = intent.get("dimension", "")
+    cond = intent.get("condition") or {}
+    cond_txt = {
+        "streak_below": f"连续 {cond.get('days', 1)} 天下降",
+        "streak_above": f"连续 {cond.get('days', 1)} 天上涨",
+        "below": f"跌破 {cond.get('ref')}",
+        "above": f"超过 {cond.get('ref')}",
+    }.get(cond.get("type"), "关注变化")
+    freq = target.get("frequency") or "on_update"
+    freq_txt = {"on_update": "数据更新时", "daily 09:00": "每日 09:00", "weekly": "每周"}.get(freq, freq)
+    events = repo.list_watch_events(target["id"])
+    last = events[-1] if events else None
+    if target["status"] == "paused":
+        value, color = "已暂停", "blue"
+    elif last and last["kind"] == "escalate":
+        value, color = "已升级", "red"
+    elif last and last["kind"] == "change":
+        value, color = "有变化", "blue"
+    else:
+        value, color = "观察中", "green"
+    logic = f"{cond_txt}（{freq_txt}）"
+    if target.get("last_event_at"):
+        logic += f" · 最近命中 {target['last_event_at'][5:16].replace('T', ' ')}"
+    return {
+        "id": target["id"],
+        "name": label,
+        "value": value,
+        "color": color,
+        "logic": logic,
+        "source": f"{label} · {dimension or '全量'}",
+        "status": target["status"],
+        "frequency": freq,
+        "lastEventAt": target.get("last_event_at") or (last["triggered_at"] if last else ""),
+    }
+
+
+@router.get("/watch")
 def list_watch():
-    return [WatchItem(**item) for item in WATCH]
+    repo = Repository()
+    return [_watch_card(repo, t) for t in repo.list_watch_targets()]
 
 
 from app.engine.engine import engine_evidence, run_engine
@@ -130,7 +181,6 @@ def _watch_after_data_write(repo: Repository) -> None:
     辅助逻辑：失败只告警，不影响上传主流程（事件可由下次触发/调度补）。
     """
     try:
-        from app.watch.evaluator import evaluate_all as watch_evaluate_all
         stats = watch_evaluate_all(repo)
         if stats["checked"]:
             print(f"[watch] on-update evaluate: {stats}")
@@ -250,4 +300,56 @@ def reason_refresh():
 def watch_parse(req: WatchParseRequest):
     """委托语句解析（V4-T2）：纯文本词典解析，不触 DB；结果供前端确认后创建。"""
     return parse_watch_text(req.text)
+
+
+@router.post("/watch")
+def create_watch(req: WatchCreateRequest):
+    """创建委托：parse（unsupported→400）→ 落库 → 即时评估一次（V4-T3/T4）。"""
+    parsed = parse_watch_text(req.text)
+    if not parsed["ok"]:
+        reason = (parsed["unsupported"] or [{}])[0].get("reason", "无法解析该委托")
+        raise HTTPException(status_code=400, detail=reason)
+    intent = parsed["intent"]
+    freq = req.frequency or intent.get("frequency") or "on_update"
+    repo = Repository()
+    target = repo.create_watch_target(req.text, intent, status="watching", frequency=freq)
+    watch_evaluate_all(repo)
+    return {"ok": True, "target": _watch_card(repo, repo.get_watch_target(target["id"]))}
+
+
+@router.get("/watch/{watch_id}")
+def get_watch(watch_id: str):
+    repo = Repository()
+    target = repo.get_watch_target(watch_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="watch not found")
+    return {"ok": True, "target": target, "events": repo.list_watch_events(watch_id)}
+
+
+@router.patch("/watch/{watch_id}")
+def update_watch_status(watch_id: str, req: WatchStatusRequest):
+    repo = Repository()
+    target = repo.set_watch_status(watch_id, req.status)
+    if target is None:
+        raise HTTPException(status_code=404, detail="watch not found")
+    return {"ok": True, "target": _watch_card(repo, target)}
+
+
+@router.delete("/watch/{watch_id}")
+def delete_watch(watch_id: str):
+    repo = Repository()
+    deleted = repo.delete_watch_target(watch_id)  # 幂等：不存在也返回 ok
+    return {"ok": True, "deleted": deleted}
+
+
+@router.post("/watch/{watch_id}/check")
+def check_watch(watch_id: str):
+    """手动立即评估一次（验收/测试用）。"""
+    repo = Repository()
+    target = repo.get_watch_target(watch_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="watch not found")
+    out = watch_evaluate_one(repo, target)
+    repo.touch_watch_target(watch_id, datetime.now(timezone.utc).isoformat(timespec="seconds"))
+    return {"ok": True, **out}
 
