@@ -18,7 +18,51 @@ from app.repository import Repository
 from app.seed import run_seed
 
 
+def section_policy() -> None:
+    """阶段 1（llm-refresh-policy）：熔断注入时钟 / 优先级 / 降级分类。"""
+    import urllib.error
+    from app.reasoning import policy
+    from app.reasoning.policy import CircuitBreaker
+
+    # 熔断：窗口计数 → open → 冷却后自动复位；success 重置
+    clock = {"v": 0.0}
+    cb = CircuitBreaker(now=lambda: clock["v"])
+    cb.record_failure(); clock["v"] += 1
+    cb.record_failure(); clock["v"] += 1
+    cb.record_failure(); clock["v"] += 1
+    assert cb.is_open(), "3 failures in window -> open"
+    clock["v"] += 10  # cooldown 内仍 open
+    assert cb.is_open() is True
+    clock["v"] = 40  # 超 cooldown（open_until=32）→ 复位 closed
+    assert cb.is_open() is False
+    # success 清空失败计数
+    cb.record_failure(); cb.record_failure(); cb.record_failure()
+    assert cb.is_open() is True
+    cb.record_success()
+    assert cb.is_open() is False
+
+    # 优先级：problem → opportunity → change
+    items = [{"type": "change", "id": "c1"}, {"type": "problem", "id": "p1"},
+             {"type": "opportunity", "id": "o1"}, {"type": "change", "id": "c3"}]
+    ordered = sorted(items, key=policy.priority_key)
+    assert [i["id"] for i in ordered] == ["p1", "o1", "c1", "c3"], ordered
+
+    # 降级分类：网络/超时/429/5xx 才算；本地 4xx/配置/解析不算
+    assert policy.is_degraded(TimeoutError("x")) is True
+    assert policy.is_degraded(urllib.error.URLError(TimeoutError("x"))) is True
+    assert policy.is_degraded(urllib.error.HTTPError("u", 429, "x", None, None)) is True
+    assert policy.is_degraded(urllib.error.HTTPError("u", 503, "x", None, None)) is True
+    assert policy.is_degraded(urllib.error.HTTPError("u", 400, "x", None, None)) is False
+    assert policy.is_degraded(RuntimeError("no key")) is False
+    assert policy.is_degraded(ValueError("bad json")) is False
+    assert policy.is_degraded(policy.CircuitOpenError("open")) is True
+
+
 def main() -> int:
+    import os
+    # 测试自持语义：模板基线 + 空 key（本地 .env=llm+真 key 不影响本测试）
+    os.environ["DORA_REASONING_PROVIDER"] = "template"
+    os.environ["DORA_LLM_API_KEY"] = ""
     run_seed()
     provider = resolve_provider()  # 默认应解析为 template
     assert isinstance(provider, TemplateProvider), "default provider must be TemplateProvider"
@@ -90,7 +134,8 @@ def main() -> int:
     for i in res3["insights"]:
         assert i["reasonSource"] == "template" and "generatedAt" not in i, "clear cache -> template again"
 
-    print(f"reasoning_check OK (parity on {checked} insights; T2 cache merge OK)")
+    section_policy()
+    print(f"reasoning_check OK (parity on {checked} insights; T2 cache merge OK; policy OK)")
     return 0
 
 

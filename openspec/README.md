@@ -16,7 +16,7 @@
 2. **某条需求谁加的/验证证据** → 打开对应 spec，顶部「需求来源表」给出 change 归档目录与迭代号。
 3. **逐任务细节** → 进 `openspec/changes/archive/<date>-<id>/tasks.md`（每条任务含验证命令），proposal=为什么、design=怎么做。
 
-## 归档 Change 索引（18 个）
+## 归档 Change 索引（19 个）
 | Change | 归档目录（date-<id>） | 影响的 spec（+需求数） | 迭代 | 备注/决策 |
 |---|---|---|---|---|
 | C1 引擎覆盖 | 2026-09-07-extend-engine-coverage | business-engine +3 | 9 | 基线建 spec |
@@ -37,11 +37,12 @@
 | V4-T3 通用评估 | 2026-09-07-v4-watch-evaluator | business-watch +1 | 24 | D029 |
 | V4-T4 Watch UI | 2026-09-07-v4-watch-ui | business-watch +1 | 25 | D029 |
 | V4-T5 验收收尾 | 2026-09-07-v4-watch-acceptance | skip_specs（0） | 26 | D029 |
+| LLM 兜底阶段 1 | 2026-09-07-llm-refresh-policy | business-engine +1 | 27 | D030 |
 
 ## V2 → 能力 → Change 覆盖矩阵
 | 能力 | 需求数 | 建立于 | 后续补充自 |
 |---|---|---|---|
-| business-engine | 14 | C1 基线 | C2(+2)·c3证据(+1)·C3上传(+1)·C5(+1)·V2边界(+3)·**V3-T2(+1)·V3-T3(+2)** |
+| business-engine | 15 | C1 基线 | C2(+2)·c3证据(+1)·C3上传(+1)·C5(+1)·V2边界(+3)·**V3-T2(+1)·V3-T3(+2)·LLM兜底1(+1)** |
 | business-data-store | 3 | C2 | — |
 | data-ingest | 2 | C3 | — |
 | upload-mapping | 2 | C4 | — |

@@ -17,12 +17,13 @@
 | V3 验收清单 | `docs/V3_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅） |
 
 ## 3. 当前状态
-- **V1 ✅ / V2 ✅ / V3 ✅（Dora Reasoning）**，迭代 0–21 全归档，`run_all` 5 段全绿。
-- 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（template 模式）、frontend :5173。
+- **V1 ✅ / V2 ✅ / V3 ✅ / V4 已实现待人工验收（Watch）**；迭代 0–27 全归档，`run_all` **6 段**全绿。
+- **真实 LLM 已接**：DeepSeek 官方 `deepseek-chat`（backend/.env=llm，本地 git-ignored）；LLM 兜底阶段 1 已落地（P011/D028/D030）。
+- 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（llm 模式）、frontend :5173。
 
 ## 4. 下一步（按优先级，任选）
 1. **开工 V4-T1（Watch 领域与持久化）**：V4 规划已定（路线图 **§3B** + P/D **D029**），V4-T1..T5 每任务 = 一个 OpenSpec change 按序执行；首个归档 change 新建能力 spec `business-watch`。开工前让用户 review §3B 规划。
-2. **LLM 刷新兜底 阶段 1**（纯后端，可选插队）：实现 P011/D028——超时拆分(3/10s) + 整批预算 20s + 并发 2–3 + 熔断(3 失败→30s) + 优先级(P1→机会→变化) + 连点合并；前端不变。阶段 2 = 异步 job/SSE + 前端"更新中 n/m"。
+2. **LLM 刷新兜底**：**阶段 1 已完成**（迭代 27，P011/D028/D030：超时 10s/预算 20s/并发 3/熔断/优先级/单飞，change `llm-refresh-policy`）。阶段 2 = 异步 job + 状态接口 + 前端"更新中 n/m"+ SSE（待立项）。
 3. 可选收尾：路线图"引擎结论与页面数字一致性核对"（低优先）。
 
 ## 5. 本地运行 / 验证（新会话先跑）
@@ -55,7 +56,7 @@ env（backend/.env 样例）：`DATABASE_URL`、`DORA_REASONING_PROVIDER=templat
 - 任务"完成"判据：run_all(5 段) + build + 相关端点 curl（绕代理 env）+ 冒烟。
 
 ## 8. 未决/注意（重要上下文）
-- **P011/D028**：LLM 批量刷新耗时上界问题已分析设计、阶段 1 待开工（见 §4-2）——V3 已知问题，非缺陷但需跟踪。
-- V2 misc："引擎结论与页面数字一致性核对"仍未做（低优先）；图表仍为前端展示层静态。
-- 真实 LLM 未在本机配置过（template 模式默认）；接 key 后按验收清单 C 可选项人工复核一次。
+- **P011/D028/D030**：LLM 刷新兜底 **阶段 1 已落地**（迭代 27：单条 10s/整批预算 20s/并发 3/熔断/优先级/单飞，reasoning 实测 9 条 4.9s）；**阶段 2（异步 job/SSE + 前端进度）待立项**。
+- V4 misc："引擎结论与页面数字一致性核对"仍未做（低优先）；图表仍为前端展示层静态。
+- **真实 LLM 已配置**：DeepSeek 官方 `deepseek-chat`（backend/.env 本地，git-ignored），`DORA_REASONING_PROVIDER=llm`；reasoning/run_all 门禁已自行钉死 template+空 key 环境，不受本地配置影响。
 - spec 导航把 V3 三条需求已并入 business-engine（14 条），README 索引 13 个 change。

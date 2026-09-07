@@ -1,11 +1,16 @@
 """LLM 解释 Provider（V3-T3）：OpenAI 兼容 chat/completions。
 
 红线：只允许 LLM 改写"可读文案"，数值永远以引擎模板基线为准。
+兜底（阶段 1）：单条超时 ≤10s（env DORA_LLM_TIMEOUT）；熔断开启不触网快速失败；
+网络级降级（超时/URLError/5xx/429）计入熔断；本地配置/解析错误不计。
 """
 import json
 import os
+import socket
 import urllib.request
+from urllib.error import HTTPError, URLError
 
+from app.reasoning import policy
 from app.reasoning.provider import ReasoningContext, ReasoningResult
 from app.reasoning.semantics import template_semantics
 
@@ -35,6 +40,8 @@ class LLMProvider:
         base, key, model = self._config()
         if not key:
             raise RuntimeError("DORA_LLM_API_KEY not set (LLM provider unavailable)")
+        if policy.breaker.is_open():
+            raise policy.CircuitOpenError("LLM circuit open; refresh skipped network")
         template = template_semantics(context.insight_id, context.snapshot) or {}
         facts = {
             "insight_id": context.insight_id,
@@ -63,8 +70,15 @@ class LLMProvider:
             headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=40) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, timeout=policy.timeout_secs()) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError, socket.timeout) as exc:
+            if policy.is_degraded(exc):
+                policy.breaker.record_failure()
+                raise policy.DegradationError(f"llm degraded: {exc}") from exc
+            raise  # 本地类错误（如 401 配置错）不计熔断
+        policy.breaker.record_success()
         content = (data.get("choices") or [{}])[0].get("message", {}).get("content", "")
         llm = _parse_json(content)
         merged = _merge_with_numeric_stability(template, llm)

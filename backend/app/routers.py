@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from datetime import datetime, timezone
 import json
+import threading
 
 from app.data import ACTIONS, EVIDENCE, INSIGHTS
 from app.schemas import (
@@ -287,6 +288,38 @@ async def mapped_dataset(file: UploadFile = File(...), mapping: str = Form(...))
 
 @router.post("/reason/refresh")
 def reason_refresh():
+    """批量刷新（阶段 1 单飞）：并发重复请求合并为一次执行，后到者复用首个结果。"""
+    with _refresh_cond:
+        if _refresh_state["running"]:
+            while _refresh_state["running"]:
+                _refresh_cond.wait()
+            if _refresh_state["error"] is not None:
+                raise _refresh_state["error"]
+            return _refresh_state["result"]
+        _refresh_state["running"] = True
+        _refresh_state["result"] = None
+        _refresh_state["error"] = None
+    try:
+        out = _compute_refresh_once()
+    except Exception as exc:
+        with _refresh_cond:
+            _refresh_state["error"] = exc
+            _refresh_state["running"] = False
+            _refresh_cond.notify_all()
+        raise
+    with _refresh_cond:
+        _refresh_state["result"] = out
+        _refresh_state["running"] = False
+        _refresh_state["error"] = None
+        _refresh_cond.notify_all()
+    return out
+
+
+_refresh_cond = threading.Condition()
+_refresh_state = {"running": False, "result": None, "error": None}
+
+
+def _compute_refresh_once() -> dict:
     repo = Repository()
     provider = resolve_provider()
     res = run_engine(repo)
