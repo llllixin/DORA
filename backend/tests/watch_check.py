@@ -117,11 +117,75 @@ def section2_parser() -> None:
     assert parse_watch_text("帮我关注库存周转")["ok"] is False
 
 
+def section3_evaluator(repo: Repository) -> None:
+    """V4-T3：条件求值（命中/升级/未命中/去重）+ 周期到期判断。"""
+    from datetime import datetime, timezone
+    from app.engine.engine import run_engine
+    from app.watch.evaluator import evaluate_all
+    from app.watch.scheduler import _is_due
+
+    def put(key, dimension, values, unit=""):
+        repo.replace_series([key], [
+            {"metric_key": key, "label": f"T{i}", "dimension": dimension, "value": float(v), "unit": unit}
+            for i, v in enumerate(values)
+        ])
+
+    # 升级场景：east_orders 连续下跌并跌破引擎升级阈值 → escalate 引用 e2
+    run_seed()
+    put("east_orders", "华东", [105.0, 103.0, 100.0, 97.0, 93.0])
+    t1 = repo.create_watch_target(
+        "升级场景", {"metric_key": "east_orders", "dimension": "华东", "label": "华东销售额",
+                     "condition": {"type": "streak_below", "days": 3, "ref": None}},
+        frequency="on_update")
+    stats = evaluate_all(repo)
+    evs = repo.list_watch_events(t1["id"])
+    assert len(evs) == 1 and evs[0]["kind"] == "escalate", f"expect escalate event, got {evs}"
+    assert evs[0]["values"]["engine_insight"] == "e2", "escalate must reference engine insight e2"
+    assert stats["escalate"] >= 1
+    assert repo.get_watch_target(t1["id"])["last_checked_at"], "last_checked_at updated"
+
+    # 幂等去重：同一数据再评估不重复写
+    stats2 = evaluate_all(repo)
+    assert repo.list_watch_events(t1["id"]) == evs, "duplicate event must be skipped"
+    assert stats2["skipped"] >= 1
+    repo.delete_watch_target(t1["id"])
+
+    # 未命中：margin 高值未跌破 → miss、无事件
+    run_seed()
+    put("margin", "全国", [19.6, 19.4, 19.3], "%")
+    t2 = repo.create_watch_target(
+        "未命中", {"metric_key": "margin", "dimension": "全国", "label": "利润率",
+                   "condition": {"type": "below", "ref": 18.0, "ref_is_pct": True}},
+        frequency="on_update")
+    stats = evaluate_all(repo)
+    assert stats["miss"] >= 1 and repo.list_watch_events(t2["id"]) == []
+    repo.delete_watch_target(t2["id"])
+
+    # 周期到期判断（纯函数注入 now）
+    utc = timezone.utc
+    d_target = {"id": "t-d", "status": "watching", "frequency": "daily 09:00", "last_checked_at": ""}
+    w_target = {"id": "t-w", "status": "watching", "frequency": "weekly", "last_checked_at": ""}
+    assert _is_due(d_target, datetime(2026, 9, 7, 8, 59, tzinfo=utc)) is False, "before 09:00 not due"
+    assert _is_due(d_target, datetime(2026, 9, 7, 9, 3, tzinfo=utc)) is True, "after 09:00 due"
+    d_target["last_checked_at"] = "2026-09-07T09:10:00+00:00"
+    assert _is_due(d_target, datetime(2026, 9, 7, 10, 0, tzinfo=utc)) is False, "already checked today"
+    assert _is_due(w_target, datetime(2026, 9, 7, 9, 0, tzinfo=utc)) is True, "monday due"  # 2026-09-07 = Mon
+    w_target["last_checked_at"] = "2026-09-07T09:05:00+00:00"
+    assert _is_due(w_target, datetime(2026, 9, 8, 9, 0, tzinfo=utc)) is False, "same week not due again"
+    assert _is_due(w_target, datetime(2026, 9, 14, 9, 0, tzinfo=utc)) is True, "next monday due"
+    paused = {"id": "t-p", "status": "paused", "frequency": "daily 09:00", "last_checked_at": ""}
+    assert _is_due(paused, datetime(2026, 9, 7, 10, 0, tzinfo=utc)) is False, "paused not due"
+
+    run_seed()  # 恢复出厂（清理 crafted 序列与事件）
+
+
 def main() -> int:
     run_seed()  # 建表 + 出厂重置（watch 表无种子，恒空起步）
-    section1_crud(Repository())
+    repo = Repository()
+    section1_crud(repo)
     section2_parser()
-    print("watch_check OK（第 1 节 领域 CRUD + 第 2 节 解析 全绿）")
+    section3_evaluator(repo)
+    print("watch_check OK（第 1 节 CRUD + 第 2 节 解析 + 第 3 节 评估器 全绿）")
     return 0
 
 

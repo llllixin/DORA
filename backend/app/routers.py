@@ -124,9 +124,28 @@ def engine_insights():
 MAX_UPLOAD = 10 * 1024 * 1024  # 10MB
 
 
+def _watch_after_data_write(repo: Repository) -> None:
+    """数据写入成功后即时评估 on_update 委托（V4-T3）。
+
+    辅助逻辑：失败只告警，不影响上传主流程（事件可由下次触发/调度补）。
+    """
+    try:
+        from app.watch.evaluator import evaluate_all as watch_evaluate_all
+        stats = watch_evaluate_all(repo)
+        if stats["checked"]:
+            print(f"[watch] on-update evaluate: {stats}")
+    except Exception as exc:
+        print(f"[watch] on-update evaluate skipped: {exc}")
+
+
 @router.post("/datasets/sample")
 def upload_sample():
     counts = run_seed()
+    # 出厂重置：数据回到出厂 → 旧命中事件失效（清事件、保留委托），再即时评估
+    repo = Repository()
+    repo.delete_all_reasoning()
+    repo.delete_all_watch_events()
+    _watch_after_data_write(repo)
     return {"ok": True, "counts": counts}
 
 
@@ -163,6 +182,7 @@ async def upload_dataset(file: UploadFile = File(...)):
         "total_rows": repo.count_rows("metric_series"),
         "metrics": keys,
     })
+    _watch_after_data_write(repo)
     return {"ok": True, "name": name, "rows": len(items), "affectedMetrics": keys, "updated": now}
 
 
@@ -212,6 +232,7 @@ async def mapped_dataset(file: UploadFile = File(...), mapping: str = Form(...))
         "total_rows": repo.count_rows("metric_series"),
         "metrics": keys,
     })
+    _watch_after_data_write(repo)
     return {"ok": True, "name": name, "rows": len(items), "affectedMetrics": keys, "updated": now}
 
 @router.post("/reason/refresh")

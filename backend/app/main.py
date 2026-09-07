@@ -1,10 +1,21 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.routers import router
 from app.repository import DataSourceUnavailableError
+from app.watch import scheduler as watch_scheduler
 
-app = FastAPI(title="Dora API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    watch_scheduler.start()  # V4-T3：周期调度（daily/weekly 委托）
+    yield
+    watch_scheduler.stop()
+
+
+app = FastAPI(title="Dora API", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],

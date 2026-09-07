@@ -383,6 +383,28 @@ class Repository:
                 ]
         return self._wrap(_do)
 
+    def touch_watch_target(self, target_id: str, checked_at: str) -> bool:
+        """更新 last_checked_at（评估完成后调用）；目标不存在返回 False。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(WatchTarget, target_id)
+                if row is None:
+                    return False
+                row.last_checked_at = checked_at
+                s.commit()
+                return True
+        return self._wrap(_do)
+
+    def delete_all_watch_events(self) -> None:
+        """清空全部命中事件（保留委托；出厂重置时旧数据引用失效）。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                s.execute(delete(WatchEvent))
+                s.commit()
+        self._wrap(_do)
+
 
 class _Ctx:
     def __init__(self, session):
