@@ -8,7 +8,7 @@
 ## 2. 单一事实源（去哪查什么）
 | 问什么 | 去哪个文件 |
 |---|---|
-| 现在第几版 / backlog / V3-V6 规划 | `docs/版本路线图.md`（V1–V4 ✅；**§3B V4 已归档、§3C = V5 Action 已规划待开工**） |
+| 现在第几版 / backlog / V3-V5+未来候选 | `docs/版本路线图.md`（V1–V4 ✅、**V5 Action 已实现待人工验收**；版本上限=5，V5 之后是"未来候选方向"非正式版本） |
 | 迭代历史（每步记录） | `docs/开发过程记录.md`（迭代 0–27） |
 | 问题/决策/经验 | `docs/开发问题与经验.md`（P 系列 + D 系列 001–028） |
 | 能力 spec（最终态）+ 需求来源表 | `openspec/specs/`（business-engine/business-data-store/data-ingest/upload-mapping） |
