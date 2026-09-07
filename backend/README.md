@@ -53,3 +53,17 @@ curl http://localhost:8000/api/datasets/current
 支持 metric_key：`margin / returns / orders / revenue / aov / east_orders / new_sku / high_value / supplier_price`。
 限制：≤10MB；非法内容返回 400；数据库离线返回 503。任意业务口径的映射向导属后续迭代（C4）。
 
+### 任意列布局 → 映射入库（C4）
+
+```bash
+# 1) 预览列结构（不落库）
+curl -F 'file=@/path/any.csv' http://localhost:8000/api/datasets/preview
+
+# 2) 声明列映射后入库（file + mapping JSON）
+curl -F 'file=@/path/any.csv' \
+     -F 'mapping={"metric_key":"margin","label_column":"date","value_column":"margin_value","dimension_column":"region"}' \
+     http://localhost:8000/api/datasets/mapped
+```
+
+映射字段：`metric_key`（白名单）、`label_column`、`value_column`、可选 `dimension_column`/`unit`。
+

@@ -252,3 +252,15 @@ body{font-size:14px}
 .dsm-danger .btn{color:#b63146;border-color:#ffdce1;background:var(--red-soft)}
 @media(max-width:760px){.boot{padding:16px}.boot-card{padding:20px 16px}.boot-flow{flex-direction:column}.dsm-panel{padding:18px 16px}}
 
+
+
+/* ===== C4 上传列映射 ===== */
+.up-map{margin-top:12px;padding:12px 13px;border:1px solid #e8e2ff;border-radius:12px;background:#fbfaff}
+.map-head{font-size:12px;color:#3a34b8;margin-bottom:10px}
+.map-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.map-field{display:flex;flex-direction:column;gap:4px;font-size:10px;color:#747b8d}
+.map-field select{padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:12px}
+.map-err{margin-top:8px;color:#b63146;background:var(--red-soft);border:1px solid #ffdce1;border-radius:8px;padding:7px 9px;font-size:11px}
+.map-actions{display:flex;gap:8px;margin-top:10px}
+.map-hint{font-size:10px;color:#a0a6b5;margin-top:8px;line-height:1.6}
+@media(max-width:760px){.map-grid{grid-template-columns:1fr}}

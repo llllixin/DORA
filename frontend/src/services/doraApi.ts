@@ -137,6 +137,59 @@ export async function uploadDataset(file: File) {
   }
 }
 
+export type PreviewResult = { ok: boolean; name: string; columns: string[]; sampleRows: Record<string, string>[] };
+
+export async function previewDataset(file: File): Promise<PreviewResult | null> {
+  if (MODE === 'mock') return null;
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(`${BASE}/datasets/preview`, { method: 'POST', body: fd, signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as PreviewResult;
+  } catch (err) {
+    if (MODE === 'http') throw err;
+    console.warn('[doraApi] 预览失败，走规范直传：', err);
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+export type UploadMapping = {
+  metric_key: string;
+  label_column: string;
+  value_column: string;
+  dimension_column?: string;
+  unit?: string;
+};
+
+export async function mappedDataset(file: File, mapping: UploadMapping) {
+  if (MODE === 'mock') {
+    throw new Error('离线演示模式不支持列映射，请选择"载入样例"或先启动后端');
+  }
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('mapping', JSON.stringify(mapping));
+    const res = await fetch(`${BASE}/datasets/mapped`, { method: 'POST', body: fd, signal: ctrl.signal });
+    const body = (await res.json().catch(() => null)) as { detail?: string } | null;
+    if (!res.ok) {
+      throw new Error(body?.detail || `HTTP ${res.status}`);
+    }
+    return body as { ok: boolean; name: string; rows: number; affectedMetrics: string[]; updated: string };
+  } catch (err) {
+    if (MODE === 'http') throw err;
+    throw err instanceof Error ? err : new Error(String(err));
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // 页面级数据同步：App 启动时探测后端并把 /insights /actions /watch 结果原位刷
 // 新到 data.ts 的持有结构（insights / actionCases / watchItems）。

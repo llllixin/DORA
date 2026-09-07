@@ -7,7 +7,7 @@ import io
 import csv
 import sys
 
-from app.ingest import IngestValidationError, parse_dataset
+from app.ingest import IngestValidationError, items_from_mapping, parse_dataset, preview_rows
 from app.repository import Repository
 from app.engine.engine import run_engine
 from app.seed import run_seed
@@ -19,6 +19,14 @@ def _csv_bytes(rows: list[list]) -> bytes:
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(HEADER)
+    w.writerows(rows)
+    return buf.getvalue().encode("utf-8")
+
+
+def _raw_csv_bytes(header: list[str], rows: list[list]) -> bytes:
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(header)
     w.writerows(rows)
     return buf.getvalue().encode("utf-8")
 
@@ -54,7 +62,28 @@ def main() -> int:
     ids2 = [i["id"] for i in run_engine()["insights"]]
     assert ids2 == ids0, "sample reseed must restore original insights"
 
-    print("ingest self-check OK")
+    # 4) C4：预览 + 映射入库（任意列布局 -> margin）
+    biz = _raw_csv_bytes(["date", "margin_value", "region"],
+                         [[f"L{i}", "20.0", "全国"] for i in range(1, 10)])
+    prev = preview_rows(biz, "biz.csv")
+    assert "margin_value" in prev["columns"] and len(prev["sampleRows"]) == 9
+    from app.ingest import read_rows
+    mapped = items_from_mapping(read_rows(biz, "biz.csv"),
+                                {"metric_key": "margin", "label_column": "date",
+                                 "value_column": "margin_value", "dimension_column": "region"})
+    assert len(mapped) == 9 and all(it["metric_key"] == "margin" for it in mapped)
+    repo.replace_series(["margin"], mapped)
+    assert "p1" not in [i["id"] for i in run_engine()["insights"]]
+    try:
+        items_from_mapping(read_rows(biz, "biz.csv"),
+                           {"metric_key": "margin", "label_column": "date", "value_column": "nope"})
+        raise AssertionError("missing column should raise")
+    except IngestValidationError:
+        pass
+    run_seed()
+    assert "p1" in [i["id"] for i in run_engine()["insights"]]
+
+    print("ingest self-check OK (incl. C4 mapping)")
     print("after replace ids:", ids1)
     return 0
 

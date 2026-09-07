@@ -48,13 +48,7 @@ def _rows_from_xlsx(content: bytes) -> list[dict[str, str]]:
 
 def parse_dataset(filename: str, content: bytes) -> list[dict[str, Any]]:
     """解析并校验；返回 series 行（可直接入库）。失败抛 IngestValidationError。"""
-    name = filename.lower()
-    if name.endswith(".csv"):
-        raw = _rows_from_csv(content)
-    elif name.endswith(".xlsx") or name.endswith(".xls"):
-        raw = _rows_from_xlsx(content)
-    else:
-        raise IngestValidationError("仅支持 .csv / .xlsx")
+    raw = read_rows(content, filename)
 
     if not raw:
         raise IngestValidationError("文件内容为空")
@@ -85,4 +79,64 @@ def parse_dataset(filename: str, content: bytes) -> list[dict[str, Any]]:
         for it in items:
             if not it["label"]:
                 raise IngestValidationError("label 不能为空")
+    return items
+
+
+def read_rows(content: bytes, filename: str) -> list[dict[str, str]]:
+    """仅解析（不做值校验），供 preview/映射使用。"""
+    name = filename.lower()
+    if name.endswith(".csv"):
+        return _rows_from_csv(content)
+    if name.endswith(".xlsx") or name.endswith(".xls"):
+        return _rows_from_xlsx(content)
+    raise IngestValidationError("仅支持 .csv / .xlsx")
+
+
+def preview_rows(content: bytes, filename: str, max_rows: int = 10) -> dict[str, Any]:
+    raw = read_rows(content, filename)
+    if not raw:
+        raise IngestValidationError("文件内容为空或无有效数据行")
+    columns = list(dict.fromkeys(k for row in raw for k in row))
+    return {"columns": columns, "sampleRows": raw[:max_rows]}
+
+
+def items_from_mapping(raw: list[dict[str, str]], mapping: dict[str, Any]) -> list[dict[str, Any]]:
+    """按映射把任意列布局行转成 series 项（校验语义与规范直传一致）。"""
+    metric = (mapping.get("metric_key") or "").strip()
+    if metric not in ALLOWED_KEYS:
+        raise IngestValidationError(f"指标 key 不支持：{metric or '(空)'}")
+    label_col = (mapping.get("label_column") or "").strip()
+    value_col = (mapping.get("value_column") or "").strip()
+    dim_col = (mapping.get("dimension_column") or "").strip() or None
+    unit_col = (mapping.get("unit") or "").strip() or None
+    if not raw:
+        raise IngestValidationError("文件内容为空")
+
+    first = raw[0]
+    for col in [label_col, value_col, dim_col, unit_col]:
+        if col and col not in first:
+            raise IngestValidationError(f"文件缺少列：{col}")
+
+    items: list[dict[str, Any]] = []
+    for i, row in enumerate(raw, start=2):
+        if all(not str(row.get(c) or "").strip() for c in row):
+            continue
+        label = str(row.get(label_col) or "").strip()
+        if not label:
+            raise IngestValidationError(f"第 {i} 行 label 为空")
+        try:
+            value = float(str(row.get(value_col) or "").replace(",", ""))
+        except (TypeError, ValueError):
+            raise IngestValidationError(f"第 {i} 行 {value_col} 非数值：{row.get(value_col)}")
+        if not (0 <= abs(value) <= 1e12):
+            raise IngestValidationError(f"第 {i} 行 value 超出合理范围：{value}")
+        items.append({
+            "metric_key": metric,
+            "label": label,
+            "dimension": str(row.get(dim_col) or "").strip() if dim_col else "",
+            "value": value,
+            "unit": str(row.get(unit_col) or "").strip() if unit_col else "",
+        })
+    if not items:
+        raise IngestValidationError("没有可入库的数据行")
     return items

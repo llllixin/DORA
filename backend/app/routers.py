@@ -1,9 +1,16 @@
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from datetime import datetime
+import json
 
 from app.data import ACTIONS, EVIDENCE, INSIGHTS, WATCH
 from app.schemas import ActionCaseModel, EvidenceModel, InsightSummary, Pulse, WatchItem
-from app.ingest import IngestValidationError, parse_dataset
+from app.ingest import (
+    IngestValidationError,
+    items_from_mapping,
+    parse_dataset,
+    preview_rows,
+    read_rows,
+)
 from app.repository import Repository
 from app.seed import run_seed
 
@@ -142,6 +149,54 @@ async def upload_dataset(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(exc))
     if not items:
         raise HTTPException(status_code=400, detail="文件内容为空")
+    keys = sorted({it["metric_key"] for it in items})
+    repo = Repository()
+    repo.replace_series(keys, items)
+    now = datetime.now().strftime("%H:%M")
+    repo.upsert_data_update({
+        "updated_at": now,
+        "rows_added": len(items),
+        "total_rows": repo.count_rows("metric_series"),
+        "metrics": keys,
+    })
+    return {"ok": True, "name": name, "rows": len(items), "affectedMetrics": keys, "updated": now}
+
+
+def _check_upload(name: str, content: bytes) -> None:
+    if not (name.lower().endswith(".csv") or name.lower().endswith(".xlsx")):
+        raise HTTPException(status_code=400, detail="仅支持 .csv / .xlsx 文件")
+    if len(content) > MAX_UPLOAD:
+        raise HTTPException(status_code=413, detail="文件超过 10MB 上限")
+
+
+@router.post("/datasets/preview")
+async def preview_dataset(file: UploadFile = File(...)):
+    name = file.filename or "preview.csv"
+    content = await file.read()
+    _check_upload(name, content)
+    try:
+        data = preview_rows(content, name)
+    except IngestValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"ok": True, "name": name, **data}
+
+
+@router.post("/datasets/mapped")
+async def mapped_dataset(file: UploadFile = File(...), mapping: str = Form(...)):
+    try:
+        mp = json.loads(mapping)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="mapping 必须是合法 JSON")
+    if not isinstance(mp, dict):
+        raise HTTPException(status_code=400, detail="mapping 必须是对象")
+    name = file.filename or "mapped.csv"
+    content = await file.read()
+    _check_upload(name, content)
+    try:
+        raw = read_rows(content, name)
+        items = items_from_mapping(raw, mp)
+    except IngestValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     keys = sorted({it["metric_key"] for it in items})
     repo = Repository()
     repo.replace_series(keys, items)
