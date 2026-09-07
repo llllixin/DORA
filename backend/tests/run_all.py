@@ -3,6 +3,7 @@
 前置：PostgreSQL 运行且 seed 过；后端 API 在 :8000。
 运行：cd backend && python3 -m tests.run_all
 """
+import os
 import subprocess
 import sys
 
@@ -18,9 +19,12 @@ STEPS = [
 
 def main() -> int:
     failed = False
+    # 钉死门禁环境：模板语义基线 + 空 key。开发者本地 .env（如 DORA_REASONING_PROVIDER=llm+真 key）
+    # 不得影响 run_all 的确定性断言；llm 行为由 reasoning_check 内显式构造（resolve_provider('llm')/无 key fallback/mock 数值稳定）覆盖。
+    gate_env = {**os.environ, "DORA_REASONING_PROVIDER": "template", "DORA_LLM_API_KEY": ""}
     for name, cmd in STEPS:
         print(f"\n=== {name} ===")
-        r = subprocess.run(cmd, capture_output=True, text=True)
+        r = subprocess.run(cmd, capture_output=True, text=True, env=gate_env)
         print(r.stdout.strip() or (r.stderr.strip()[-1200:] if r.returncode else ""))
         if r.returncode != 0:
             failed = True
