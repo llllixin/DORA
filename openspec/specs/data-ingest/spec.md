@@ -3,6 +3,13 @@
 ## Purpose
 提供经营数据文件的入库接口：接受 CSV/XLSX 的"引擎输入规范格式"，完成解析校验、事务性写入 PostgreSQL Repository 并登记数据更新事件，使引擎数据源可被外部文件驱动更新。
 
+## 需求来源表（Traceability）
+
+| 需求 | 由谁新增 | 归档 change | 迭代 |
+|---|---|---|---|
+| 上传规范格式数据集 | C3 真实上传 | `changes/archive/2026-09-07-dataset-upload` | 12 |
+| 载入内置样例与数据源摘要 | C3 真实上传 | 同上 | 12 |
+
 ## Requirements
 
 ### Requirement: 上传规范格式数据集

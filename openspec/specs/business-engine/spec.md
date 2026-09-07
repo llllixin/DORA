@@ -3,6 +3,22 @@
 ## Purpose
 Dora 确定性业务引擎的对外行为契约：输入原始经营数据，产出 Pulse 摘要与 problem/opportunity/change 三类洞察，并伴随可追溯证据与"原因链+下一步"语义。本变更补齐"数据更新事件"与"高客单门店集群机会"两类情形的引擎覆盖，使其不再依赖静态兜底。
 
+## 需求来源表（Traceability）
+
+| 需求 | 由谁新增 | 归档 change | 迭代 |
+|---|---|---|---|
+| 数据更新事件生成 change 洞察（c2） | C1 引擎覆盖 | `changes/archive/2026-09-07-extend-engine-coverage` | 9 |
+| 高客单门店集群生成机会洞察（o2） | C1 引擎覆盖 | 同上 | 9 |
+| 引擎覆盖不依赖静态兜底 | C1 引擎覆盖 | 同上 | 9 |
+| 引擎从持久化数据源计算 | C2 PostgreSQL | `changes/archive/2026-09-07-postgres-repository` | 10 |
+| 规则参数可配置 | C2 PostgreSQL | 同上 | 10 |
+| 新品销量洞察的证据对齐（c3） | c3 证据修复 | `changes/archive/2026-09-07-fix-new-sku-evidence` | 11 |
+| 数据更新后引擎端点即时反映 | C3 真实上传 | `changes/archive/2026-09-07-dataset-upload` | 12 |
+| 跌破阈值自动升级为问题（e2） | C5 E2E 门禁 | `changes/archive/2026-09-07-e2e-guardrails` | 14 |
+| 无指标数据时不产洞察 | V2 边界修复 | `changes/archive/2026-09-07-fix-v2-critical-boundaries` | 16 |
+| 阈值比较语义显式化 | V2 边界修复 | 同上 | 16 |
+| 时间戳取自更新事件 | V2 边界修复 | 同上 | 16 |
+
 ## Requirements
 
 ### Requirement: 数据更新事件生成 change 洞察

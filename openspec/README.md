@@ -1,0 +1,43 @@
+# OpenSpec 导航（Dora）
+
+> 用 OpenSpec 组织"需求（capability spec）与变更（change）"。这里是**查找入口**。
+
+## 布局
+
+| 目录 | 放什么 | 何时看 |
+|---|---|---|
+| `openspec/specs/<capability>/spec.md` | **能力最终态 spec**（收敛：4 个文件） | 想知道"系统现在必须做到什么" |
+| `openspec/changes/<id>/` | 活跃中的变更（propose→apply） | 当前在做什么 |
+| `openspec/changes/archive/<date>-<id>/` | **已归档变更全量**（proposal/spec/design/tasks） | 想追"某个需求的来龙去脉/逐任务细节" |
+| `.clinerules/workflows` + `.cline/skills` | propose/apply/update/archive 工作流 | 流程操作 |
+
+## 查找三步
+1. **系统要什么** → `openspec/specs/`（4 个能力：business-engine / business-data-store / data-ingest / upload-mapping）。
+2. **某条需求谁加的/验证证据** → 打开对应 spec，顶部「需求来源表」给出 change 归档目录与迭代号。
+3. **逐任务细节** → 进 `openspec/changes/archive/<date>-<id>/tasks.md`（每条任务含验证命令），proposal=为什么、design=怎么做。
+
+## 归档 Change 索引（8 个）
+| Change | 归档目录（date-<id>） | 影响的 spec（+需求数） | 迭代 | 备注/决策 |
+|---|---|---|---|---|
+| C1 引擎覆盖 | 2026-09-07-extend-engine-coverage | business-engine +3 | 9 | 基线建 spec |
+| C2 PostgreSQL | 2026-09-07-postgres-repository | business-data-store +3 / business-engine +2 | 10 | D016 |
+| c3 证据修复 | 2026-09-07-fix-new-sku-evidence | business-engine +1 | 11 | P009 |
+| C3 真实上传 | 2026-09-07-dataset-upload | data-ingest +2 / business-engine +1 | 12 | D017 |
+| C4 列映射 | 2026-09-07-upload-mapping | upload-mapping +2 | 13 | D018 |
+| C5 E2E 门禁 | 2026-09-07-e2e-guardrails | business-engine +1 | 14 | D019 |
+| 收尾清理 | 2026-09-07-code-cleanup | skip_specs（0） | 15 | D020 |
+| V2 边界修复 | 2026-09-07-fix-v2-critical-boundaries | business-engine +3 | 16 | D021/P010 |
+
+## V2 → 能力 → Change 覆盖矩阵
+| 能力 | 需求数 | 建立于 | 后续补充自 |
+|---|---|---|---|
+| business-engine | 11 | C1 基线 | C2(+2) · c3证据(+1) · C3上传(+1) · C5(+1) · V2边界(+3) |
+| business-data-store | 3 | C2 | — |
+| data-ingest | 2 | C3 | — |
+| upload-mapping | 2 | C4 | — |
+
+## 与外部文档的对应
+- 版本/backlog：`docs/版本路线图.md`（V2=迭代 6–16）
+- 历史流水：`docs/开发过程记录.md`（迭代 N 一条）
+- 经验/决策：`docs/开发问题与经验.md`（P 系列 / D 系列）
+- V2 阶段总结：`RELEASE_NOTES_V2.md`

@@ -3,6 +3,14 @@
 ## Purpose
 持久化存储 Dora 引擎所需的原始经营数据（时间序列、门店集群、数据更新事件）与规则参数配置，支持幂等种子加载与按需读取，作为引擎计算的数据来源（默认 PostgreSQL）。
 
+## 需求来源表（Traceability）
+
+| 需求 | 由谁新增 | 归档 change | 迭代 |
+|---|---|---|---|
+| 持久化原始经营数据模型 | C2 PostgreSQL | `changes/archive/2026-09-07-postgres-repository` | 10 |
+| 规则参数配置存储 | C2 PostgreSQL | 同上 | 10 |
+| 数据库不可用的错误语义 | C2 PostgreSQL | 同上 | 10 |
+
 ## Requirements
 
 ### Requirement: 持久化原始经营数据模型
