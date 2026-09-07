@@ -11,7 +11,7 @@ import { PulsePage } from "./features/pulse/PulsePage";
 import { InsightPage } from "./features/insight/InsightPage";
 import { ActionPage } from "./features/action/ActionPage";
 import { WatchPage } from "./features/watch/WatchPage";
-import { getEvidence, syncRemoteData } from './services/doraApi';
+import { getEvidence, refreshReasoningApi, syncRemoteData } from './services/doraApi';
 import type { Evidence } from "./types";
 
 const readHash = (): { page: Page; type: InsightType; idx: number } => {
@@ -147,6 +147,29 @@ export default function App() {
     navigate("pulse");
   };
 
+  const refreshReasoning = async () => {
+    let msg = "解释生成完成（模板模式）";
+    try {
+      const r = await refreshReasoningApi();
+      msg =
+        r.provider === "llm"
+          ? "✓ AI 解释已重新生成"
+          : r.updated.length > 0
+            ? "✓ 解释已重新生成（模板模式）"
+            : "解释刷新完成";
+    } catch (err) {
+      console.warn("[App] reasoning refresh failed", err);
+      msg = "解释刷新失败，已保持模板解释";
+    }
+    try {
+      const ok = await syncRemoteData();
+      if (ok) setSyncTick((t) => t + 1);
+    } catch (err) {
+      console.warn("[App] reasoning resync failed", err);
+    }
+    notify(msg);
+  };
+
   if (!dataSrc) return <OnboardingPage onReady={handleReady} />;
   return (
     <div className="app">
@@ -184,6 +207,7 @@ export default function App() {
             onTrace={openTrace}
             onRoute={route}
             onNotice={notify}
+            onRefreshReasoning={refreshReasoning}
           />
         )}{" "}
         {page === "action" && (

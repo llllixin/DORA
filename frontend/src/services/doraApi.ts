@@ -166,6 +166,21 @@ export type UploadMapping = {
   unit?: string;
 };
 
+export type ReasoningRefreshResult = {
+  ok: boolean;
+  updated: string[];
+  fallback: string[];
+  provider: 'template' | 'llm';
+};
+
+export async function refreshReasoningApi(): Promise<ReasoningRefreshResult> {
+  return apiPost(
+    '/reason/refresh',
+    {},
+    () => ({ ok: true, updated: [] as string[], fallback: [] as string[], provider: 'template' as const }),
+  );
+}
+
 export async function mappedDataset(file: File, mapping: UploadMapping) {
   if (MODE === 'mock') {
     throw new Error('离线演示模式不支持列映射，请选择"载入样例"或先启动后端');

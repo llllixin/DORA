@@ -14,6 +14,8 @@ export interface Insight {
   source: string;
   question: string;
   semantics?: InsightSemantics;
+  reasonSource?: 'template' | 'llm';
+  generatedAt?: string;
 }
 
 export interface InsightSemantics {
