@@ -28,75 +28,135 @@ def _streak_below(values: list[float], target: float) -> int:
     return n
 
 
-def compute_snapshot() -> dict:
-    """从原始数据计算当前指标状态。"""
-    margin = ds.MARGIN_VALUES
-    orders, revenue, aov = ds.ORDERS_VALUES, ds.REVENUE_VALUES, ds.AOV_VALUES
-    east = ds.EAST_ORDERS_VALUES
+RULE_DEFAULTS = {
+    "margin.target": 18.5,
+    "returns.baseline": 3.2,
+    "east.threshold": -3.0,
+    "store_cluster.ratio": 60.0,
+    "store_cluster.mix_name": "新品系列渗透率",
+    "store_cluster.mix_pct": 82.0,
+}
+
+
+def _rule_map(repo) -> dict:
+    """规则配置：DB 有值优先，缺省回退内置默认。"""
+    return {**RULE_DEFAULTS, **(repo.get_rules() if repo else {})}
+
+
+def _series(repo, key: str, dimension: str | None = None) -> list[float]:
+    """从 Repository 读取某指标（可按维度过滤）时间序列值（按存储顺序=时间序）。"""
+    if repo is None:
+        return []
+    return [r["value"] for r in repo.get_series(key) if dimension is None or r["dimension"] == dimension]
+
+
+def compute_snapshot(repo=None, rules=None) -> dict:
+    """从 Repository（默认 PostgreSQL）读取原始数据并计算指标状态。"""
+    rules = rules or _rule_map(repo)
+    margin = _series(repo, "margin", "全国")
+    orders = _series(repo, "orders", "全国")
+    revenue = _series(repo, "revenue", "全国")
+    aov = _series(repo, "aov", "全国")
+    east = _series(repo, "east_orders", "华东")
+    new_sku = _series(repo, "new_sku", "全区域")
+    high = _series(repo, "high_value", "全国")
+    target = float(rules["margin.target"])
+    baseline = float(rules["returns.baseline"])
+
+    # 退货：按门店维度分组
+    store_rows = repo.get_series("returns") if repo else []
+    returns_by_store: dict[str, list[float]] = {}
+    for r in store_rows:
+        returns_by_store.setdefault(r["dimension"], []).append(r["value"])
+    latest_store = {s: vals[-1] for s, vals in returns_by_store.items()}
+
+    # 供应商价格：按供应商维度分组
+    price_rows = repo.get_series("supplier_price") if repo else []
+    price_by_supplier: dict[str, list[float]] = {}
+    for r in price_rows:
+        price_by_supplier.setdefault(r["dimension"], []).append(r["value"])
+    b_prices = price_by_supplier.get("供应商B", [])
+    c_prices = price_by_supplier.get("供应商C", [])
+
+    # 门店集群：从行聚合（Top 列表默认全表 = 种子 10 家）
+    cluster_rows = repo.get_cluster_stores() if repo else []
+    region_counts: dict[str, int] = {}
+    region_aov: dict[str, list[float]] = {}
+    for cr in cluster_rows:
+        region_counts[cr["region"]] = region_counts.get(cr["region"], 0) + 1
+        region_aov.setdefault(cr["region"], []).append(cr["aov"])
+    region = max(region_counts, key=lambda k: (region_counts[k], k)) if region_counts else ""
+    region_count = region_counts.get(region, 0)
+    top_total = len(cluster_rows)
+
+    event = repo.get_latest_update() if repo else None
+    event = event or {"updated": "--", "rows_added": 0, "total_rows": 0, "metrics": []}
+
     return {
         "margin": {
-            "current": margin[-1],
-            "baseline": _mean(margin[:4]),
-            "target": 18.5,
-            "delta_pct": round(_pct(margin[-1], _mean(margin[:4])), 1),
-            "streak_below": _streak_below(margin, 18.5),
+            "current": margin[-1] if margin else 0.0,
+            "baseline": _mean(margin[:4]) if len(margin) >= 4 else (margin[0] if margin else 0.0),
+            "target": target,
+            "delta_pct": round(_pct(margin[-1], _mean(margin[:4])), 1) if len(margin) >= 4 else 0.0,
+            "streak_below": _streak_below(margin, target) if margin else 0,
             "latest": margin[-3:],
         },
         "returns": {
-            "latest_store": {s: vals[-1] for s, vals in ds.RETURN_STORES.items()},
-            "baseline": ds.RETURN_BASELINE,
-            "delta_pp": round(max(v[-1] for v in ds.RETURN_STORES.values()) - ds.RETURN_BASELINE, 1),
-            "stores": list(ds.RETURN_STORES.keys()),
-            "rising_weeks": min(len(v) for v in ds.RETURN_STORES.values()),
+            "latest_store": latest_store,
+            "baseline": baseline,
+            "delta_pp": round((max(latest_store.values()) if latest_store else 0.0) - baseline, 1),
+            "stores": list(returns_by_store.keys()),
+            "rising_weeks": min((len(v) for v in returns_by_store.values()), default=0),
         },
         "orders": {
-            "current": orders[-1],
-            "delta_pct": round(_pct(orders[-1], _mean(orders[:2])), 1),
+            "current": int(orders[-1]) if orders else 0,
+            "delta_pct": round(_pct(orders[-1], _mean(orders[:2])), 1) if len(orders) >= 2 else 0.0,
         },
         "revenue": {
-            "current": revenue[-1],
-            "delta_pct": round(_pct(revenue[-1], _mean(revenue[:2])), 1),
+            "current": int(revenue[-1]) if revenue else 0,
+            "delta_pct": round(_pct(revenue[-1], _mean(revenue[:2])), 1) if len(revenue) >= 2 else 0.0,
         },
         "aov": {
-            "current": aov[-1],
-            "delta_pct": round(_pct(aov[-1], _mean(aov[:2])), 1),
+            "current": int(aov[-1]) if aov else 0,
+            "delta_pct": round(_pct(aov[-1], _mean(aov[:2])), 1) if len(aov) >= 2 else 0.0,
         },
         "east_orders": {
-            "current": east[-1],
-            "delta_pct": round(_pct(east[-1], _mean(east[:2])), 1),
-            "threshold": ds.EAST_ORDERS_THRESHOLD,
+            "current": int(east[-1]) if east else 0,
+            "delta_pct": round(_pct(east[-1], _mean(east[:2])), 1) if len(east) >= 2 else 0.0,
+            "threshold": float(rules["east.threshold"]),
         },
         "new_sku": {
-            "current": ds.NEW_SKU_VALUES[-1],
-            "delta_pct": round(_pct(ds.NEW_SKU_VALUES[-1], ds.NEW_SKU_VALUES[0]), 1),
+            "current": int(new_sku[-1]) if new_sku else 0,
+            "delta_pct": round(_pct(new_sku[-1], new_sku[0]), 1) if new_sku else 0.0,
         },
         "high_value": {
-            "current": ds.HIGH_VALUE_VALUES[-1],
-            "baseline": ds.HIGH_VALUE_VALUES[0],
-            "delta_pp": round(ds.HIGH_VALUE_VALUES[-1] - ds.HIGH_VALUE_VALUES[0], 1),
+            "current": high[-1] if high else 0.0,
+            "baseline": high[0] if high else 0.0,
+            "delta_pp": round((high[-1] - high[0]) if high else 0.0, 1),
         },
         "data_event": {
-            "updated": ds.DS_UPDATE["updated"],
-            "rows_added": ds.DS_UPDATE["rows_added"],
-            "total_rows": ds.DS_UPDATE["total_rows"],
-            "metrics": ds.DS_UPDATE["metrics_affected"],
+            "updated": event["updated"],
+            "rows_added": event["rows_added"],
+            "total_rows": event["total_rows"],
+            "metrics": event["metrics"],
         },
         "store_cluster": {
-            "region": ds.STORE_CLUSTER["region"],
-            "top_total": ds.STORE_CLUSTER["top_total"],
-            "region_count": ds.STORE_CLUSTER["region_count"],
-            "ratio": ds.STORE_CLUSTER["region_ratio_pct"],
-            "threshold": 60.0,
-            "aov": ds.STORE_CLUSTER["region_avg_aov"],
-            "mix_name": ds.STORE_CLUSTER["common_mix_name"],
-            "mix_pct": ds.STORE_CLUSTER["common_mix_pct"],
+            "region": region,
+            "top_total": top_total,
+            "region_count": region_count,
+            "ratio": round(region_count / top_total * 100.0, 1) if top_total else 0.0,
+            "threshold": float(rules["store_cluster.ratio"]),
+            "aov": round(_mean(region_aov.get(region, [])), 1) if region_aov.get(region) else 0.0,
+            "mix_name": str(rules["store_cluster.mix_name"]),
+            "mix_pct": float(rules["store_cluster.mix_pct"]),
         },
         "supplier_b": {
-            "current": ds.PURCHASE_PRICE["供应商B"][-1],
-            "delta_pct": round(_pct(ds.PURCHASE_PRICE["供应商B"][-1], _mean(ds.PURCHASE_PRICE["供应商B"][:-1])), 1),
-            "peer_delta_pct": round(_pct(ds.PURCHASE_PRICE["供应商B"][-1], ds.PURCHASE_PRICE["供应商C"][-1]), 1),
+            "current": b_prices[-1] if b_prices else 0.0,
+            "delta_pct": round(_pct(b_prices[-1], _mean(b_prices[:-1])), 1) if len(b_prices) > 1 else 0.0,
+            "peer_delta_pct": round(_pct(b_prices[-1], c_prices[-1]), 1) if b_prices and c_prices else 0.0,
         },
     }
+
 
 
 def evaluate_signals(snap: dict) -> list[dict]:
@@ -307,9 +367,8 @@ def _semantics(iid: str, s: dict) -> dict | None:
     return None
 
 
-def build_insights(signals: list[dict]) -> tuple[list[dict], dict]:
+def build_insights(signals: list[dict], snap: dict) -> tuple[list[dict], dict]:
     """Signal → Insight：注入计算数值 + 生成置信度 + 汇总 Pulse。"""
-    snap = compute_snapshot()
     insights: list[dict] = []
     for sig in signals:
         tpl = INSIGHT_TEMPLATES[sig["insight"]]
@@ -345,11 +404,14 @@ def build_insights(signals: list[dict]) -> tuple[list[dict], dict]:
     return insights, pulse
 
 
-def run_engine() -> dict:
-    """全链路：Metric → Rule → Signal → Insight → Pulse。"""
-    snap = compute_snapshot()
+def run_engine(repo=None, rules=None) -> dict:
+    """全链路：Metric → Rule → Signal → Insight → Pulse（数据源=Repository）。"""
+    if repo is None:
+        from app.repository import Repository
+        repo = Repository()
+    snap = compute_snapshot(repo, rules)
     signals = evaluate_signals(snap)
-    insights, pulse = build_insights(signals)
+    insights, pulse = build_insights(signals, snap)
     return {"snapshot": snap, "signals": signals, "insights": insights, "pulse": pulse}
 
 
