@@ -69,6 +69,15 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
     void loadList();
   };
 
+  useEffect(() => {
+    if (demo) return; // 离线演示不轮询
+    const timer = window.setInterval(() => {
+      void reload();
+    }, 20000); // F7：20s 轻量轮询（正式推送留阶段 2 SSE/异步）
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId, demo]);
+
   const act = async (fn: () => Promise<unknown>, msg: string) => {
     try {
       await fn();

@@ -32,6 +32,14 @@ export function WatchPage({ onNotice }: Props) {
     void load();
   }, []);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      void load();
+    }, 20000); // F7：20s 轻量轮询（正式推送留阶段 2 SSE/异步）
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const doParse = async (text: string) => {
     setError('');
     const r = await parseWatch(text);

@@ -62,6 +62,17 @@ def section1_crud(repo: Repository) -> None:
     assert repo.delete_action_case("o-test") is False
     assert repo.count_rows("action_case") == 5
 
+    # F4：seed 档案进度在 sample（run_seed）后不被覆盖
+    from app.seed import action_cases_from_static
+    repo.set_action_step_status("o2", 3, "in_progress")  # 人为推进 seed 档案
+    run_seed()  # 模拟"载入样例"
+    preserved = repo.get_action_case("o2")
+    assert preserved["steps"][3]["status"] == "in_progress", "F4: sample must NOT reset seed progress"
+    # 复位 o2 基线（门禁自持，保证后续测试可重现；运行时语义=保留进度）
+    baseline = next((c, st) for c, st in action_cases_from_static() if c["id"] == "o2")
+    repo.upsert_seed_case(baseline[0], baseline[1])
+    assert repo.get_action_case("o2")["steps"][3]["status"] == "pending", "o2 baseline restored"
+
 
 def section2_builder(repo: Repository) -> None:
     """V5-T2：洞察→档案（引擎判定校验 / 幂等 / 模板）。"""
@@ -253,9 +264,12 @@ def section4_e2e(repo: Repository) -> None:
     s, cont = call("POST", f"/action/cases/{ocid}/verify", {"outcome": "continue", "note": "进入下一轮观察"})
     assert s == 200 and cont["case"]["status"] == "running"
 
+    from app.seed import action_cases_from_static
+    o1_baseline = next((c, st) for c, st in action_cases_from_static() if c["id"] == "o1")
+    repo.upsert_seed_case(o1_baseline[0], o1_baseline[1])  # 复归 o1 基线（F4：sample 不再代做）
     repo.delete_action_case("e2")  # 自清（sample 不重置 action 档案）
     delete(f"/watch/{watch_id}")   # 清理测试 watch
-    post("/datasets/sample")  # 还原数据/事件（o1 seed 被 upsert 复位到 running 初始态）
+    post("/datasets/sample")  # 还原数据/事件
 
 
 def main() -> int:

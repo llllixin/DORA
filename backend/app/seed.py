@@ -87,9 +87,14 @@ def action_cases_from_static() -> list[tuple[dict, list[dict]]]:
 
 
 def seed_action_cases(repo: Repository) -> None:
-    """V5-T1：静态 ACTIONS 5 例迁移为 action_case/action_step 种子（幂等）。"""
+    """V5-T1 建档 / F4 语义：档案缺失才建档，绝不覆盖已有进度与验证记录。
+
+    出厂重置只恢复数据（metric/watch 事件）；行动档案（含 5 个 seed 演示档案）一旦被推进/验证，
+    sample 不再将其归零（全新环境首次 seed 自动建档为基线）。
+    """
     for case, steps in action_cases_from_static():
-        repo.upsert_seed_case(case, steps)
+        if repo.get_action_case(case["id"]) is None:
+            repo.create_action_case(case, steps, status=case.get("status", "running"))
 
 
 def run_seed() -> dict[str, int]:
