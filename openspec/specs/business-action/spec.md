@@ -12,6 +12,7 @@ Dora"行动回路（Action）"能力的行为契约：引擎判定的 problem/op
 | 档案步骤可执行推进并验证归档（非法迁移拒绝） | V5-T3 状态机 API | `changes/archive/2026-09-07-v5-action-api` | 30 |
 | 档案可在界面真实执行与验证（真数据源） | V5-T4 Action UI | `changes/archive/2026-09-07-v5-action-ui` | 31 |
 | 已归档档案可沉淀为经验库并展示处理过程 | 迭代36 经验沉淀 | `changes/archive/2026-09-08-action-lesson-archive` | 36 |
+| 归档与经验按类型写入统一知识库并可筛选 | 迭代38 知识库 | `changes/archive/2026-09-08-knowledge-archive` | 38 |
 
 ## Requirements
 
@@ -69,3 +70,14 @@ Dora"行动回路（Action）"能力的行为契约：引擎判定的 problem/op
 #### Scenario: 未完成档案拒绝沉淀
 - **WHEN** 对 running/waiting_verify 档案调用 archive-as-lesson
 - **THEN** 返回 4xx 且经验库无新增
+
+### Requirement: 归档与经验按类型写入统一知识库并可筛选
+系统 SHALL 提供 `knowledge_archive`：当行动档案 verify resolved 时按类型（problem|opportunity，取自档案 kind）自动写入一条含完整处理过程（archive）的知识；当档案沉淀经验（case_lesson）时按类型 lesson 再写入一条（含处理过程与结论）。同类型同来源幂等（(entry_type, source_id) 唯一）。系统 SHALL 提供知识库查询：可按类型筛选并返回各类型计数；类型 change 为预留（无来源时不产生数据）。
+
+#### Scenario: resolved 与沉淀经验自动按类型入库
+- **WHEN** 档案 verify resolved，随后对该档案沉淀经验
+- **THEN** knowledge_archive 出现两条：problem（content=处理过程）与 lesson（content=处理过程、note=结论）；重复动作不新增（幂等）
+
+#### Scenario: 按类型筛选与统计
+- **WHEN** GET /api/knowledge?type=problem
+- **THEN** 只返回 problem 类条目且 stats 反映各类型计数

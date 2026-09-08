@@ -81,4 +81,11 @@ def verify(repo: Repository, case_id: str, outcome: str, note: str = "") -> dict
         if not note:
             raise ActionFlowError("resolved requires a note")
     repo.verify_action_case(case_id, outcome, note=note)
+    if outcome == "resolved":
+        # 知识库：resolved 归档按类型自动入库（幂等）
+        detail = repo.get_action_case(case_id)
+        repo.add_knowledge(
+            detail["kind"], case_id, detail["code"], detail["case_title"],
+            detail.get("archive", ""), note=note)
+        return detail
     return repo.get_action_case(case_id)

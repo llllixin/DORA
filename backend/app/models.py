@@ -124,3 +124,17 @@ class CaseLesson(Base):
     archive = Column(String(2000), nullable=False, default="")   # 处理过程全文（含验证记录）
     resolution = Column(String(1000), nullable=False, default="")  # 沉淀结论 note
     created_at = Column(String(32), nullable=False, default="")
+
+
+class KnowledgeArchive(Base):
+    """统一知识/归档库（迭代 38）：resolved 档案按类型 + 经验 lesson 自动入库。"""
+    __tablename__ = "knowledge_archive"
+    __table_args__ = (UniqueConstraint("entry_type", "source_id", name="uq_knowledge_source"),)
+    id = Column(Integer, primary_key=True)
+    entry_type = Column(String(16), nullable=False, index=True)  # problem|opportunity|change|lesson
+    source_id = Column(String(48), nullable=False, default="")   # case_id / lesson case_id
+    code = Column(String(32), nullable=False, default="")
+    title = Column(String(300), nullable=False, default="")
+    content = Column(String(2000), nullable=False, default="")   # 处理过程全文（archive）
+    note = Column(String(1000), nullable=False, default="")       # 结论
+    created_at = Column(String(32), nullable=False, default="")

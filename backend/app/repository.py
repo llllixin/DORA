@@ -13,6 +13,7 @@ from app.models import (
     CaseLesson,
     DataUpdateLog,
     InsightReasoning,
+    KnowledgeArchive,
     MetricSeries,
     RuleConfig,
     StoreClusterStore,
@@ -260,6 +261,7 @@ class Repository:
             "action_case": ActionCase,
             "action_step": ActionStep,
             "case_lesson": CaseLesson,
+            "knowledge_archive": KnowledgeArchive,
         }[table]
 
         def _do():
@@ -605,6 +607,11 @@ class Repository:
                     resolution=note, created_at=_now_iso(),
                 )
                 s.add(lesson)
+                # 统一知识库同步写入（类型 lesson，同事务）
+                s.add(KnowledgeArchive(
+                    entry_type="lesson", source_id=case_id, code=row.code,
+                    title=row.case_title, content=row.archive, note=note,
+                    created_at=lesson.created_at))
                 s.commit()
                 return {"created": True, "lesson": _case_lesson_dict(lesson)}
         return self._wrap(_do)
@@ -624,6 +631,56 @@ class Repository:
         def _do():
             with self._session_ctx() as s:
                 row = s.get(CaseLesson, case_id)
+                if row is None:
+                    return False
+                s.delete(row)
+                s.commit()
+                return True
+        return self._wrap(_do)
+
+    # ---------- 统一知识/归档库：knowledge_archive（迭代 38） ----------
+    def add_knowledge(self, entry_type: str, source_id: str, code: str,
+                      title: str, content: str, note: str = "") -> dict | None:
+        """按类型写入知识（(entry_type, source_id) 唯一幂等）。重复返回既有（created=False）。"""
+        now = _now_iso()
+
+        def _do():
+            with self._session_ctx() as s:
+                existing = s.execute(
+                    select(KnowledgeArchive).where(
+                        KnowledgeArchive.entry_type == entry_type,
+                        KnowledgeArchive.source_id == source_id)
+                ).scalars().first()
+                if existing is not None:
+                    return {"created": False, "entry": _knowledge_dict(existing)}
+                row = KnowledgeArchive(
+                    entry_type=entry_type, source_id=source_id, code=code,
+                    title=title, content=content, note=note, created_at=now)
+                s.add(row)
+                s.commit()
+                return {"created": True, "entry": _knowledge_dict(row)}
+        return self._wrap(_do)
+
+    def list_knowledge(self, entry_type: str | None = None) -> list[dict]:
+        def _do():
+            with self._session_ctx() as s:
+                q = select(KnowledgeArchive)
+                if entry_type:
+                    q = q.where(KnowledgeArchive.entry_type == entry_type)
+                rows = s.execute(q.order_by(KnowledgeArchive.created_at.desc(), KnowledgeArchive.id.desc())).scalars().all()
+                return [_knowledge_dict(r) for r in rows]
+        return self._wrap(_do)
+
+    def delete_knowledge_by_source(self, entry_type: str, source_id: str) -> bool:
+        """删除知识（测试自清等）。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.execute(
+                    select(KnowledgeArchive).where(
+                        KnowledgeArchive.entry_type == entry_type,
+                        KnowledgeArchive.source_id == source_id)
+                ).scalars().first()
                 if row is None:
                     return False
                 s.delete(row)
@@ -665,6 +722,14 @@ def _case_lesson_dict(row: CaseLesson) -> dict[str, Any]:
         "case_id": row.case_id, "code": row.code, "kind": row.kind,
         "title": row.title, "archive": row.archive, "resolution": row.resolution,
         "created_at": row.created_at,
+    }
+
+
+def _knowledge_dict(row: KnowledgeArchive) -> dict[str, Any]:
+    return {
+        "id": row.id, "entry_type": row.entry_type, "source_id": row.source_id,
+        "code": row.code, "title": row.title, "content": row.content,
+        "note": row.note, "created_at": row.created_at,
     }
 
 

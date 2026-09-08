@@ -11,6 +11,10 @@ from app.seed import run_seed
 
 def section1_crud(repo: Repository) -> None:
     """V5-T1：seed 迁移幂等 + case/step CRUD 往返。"""
+    from app.seed import action_cases_from_static
+    # 测试自持基线：显式重建 5 例（运行时 sample 不会归零 seed 档案，F4）
+    for case, steps in action_cases_from_static():
+        repo.upsert_seed_case(case, steps)
     # 重复 seed 幂等：case=5、每案 5 步、状态分布正确
     run_seed()
     run_seed()
@@ -193,6 +197,8 @@ def section3_flow(repo: Repository) -> None:
 
     repo.delete_action_case("flow-test")
     repo.delete_action_case("flow-cont")
+    repo.delete_knowledge_by_source("problem", "flow-test")  # 知识库测试残留自清
+    repo.delete_knowledge_by_source("problem", "flow-cont")
     run_seed()  # 还原 seed 状态
 
 
@@ -268,6 +274,7 @@ def section4_e2e(repo: Repository) -> None:
     o1_baseline = next((c, st) for c, st in action_cases_from_static() if c["id"] == "o1")
     repo.upsert_seed_case(o1_baseline[0], o1_baseline[1])  # 复归 o1 基线（F4：sample 不再代做）
     repo.delete_action_case("e2")  # 自清（sample 不重置 action 档案）
+    repo.delete_knowledge_by_source("problem", "e2")  # 知识库 e2 resolved 行自清
     delete(f"/watch/{watch_id}")   # 清理测试 watch
     post("/datasets/sample")  # 还原数据/事件
 
@@ -296,8 +303,45 @@ def section5_lesson(repo: Repository) -> None:
     assert any(l["case_id"] == "lesson-test" for l in lessons)
     assert repo.delete_case_lesson("lesson-test") is True
     assert repo.delete_case_lesson("lesson-test") is False
+    repo.delete_knowledge_by_source("problem", "lesson-test")
+    repo.delete_knowledge_by_source("lesson", "lesson-test")
     repo.delete_action_case("lesson-test")
     run_seed()  # 还原
+
+
+def section6_knowledge(repo: Repository) -> None:
+    """迭代 38：resolved 与沉淀经验按类型自动入库 + 筛选/stats。"""
+    from app.action import flow
+
+    repo.create_action_case(
+        case={"id": "knowledge-test", "kind": "opportunity", "code": "KNW-0001",
+              "case_title": "知识库测试机会", "tag_cls": "green", "source": "测试"},
+        steps=[{"seq": 0, "title": "A", "desc": "d", "evidence": "e", "status": "pending"},
+               {"seq": 1, "title": "B", "desc": "d", "evidence": "e", "status": "pending"}],
+        status="open")
+    flow.start_step(repo, "knowledge-test", 0)
+    flow.done_step(repo, "knowledge-test", 0)
+    flow.start_step(repo, "knowledge-test", 1)
+    flow.done_step(repo, "knowledge-test", 1)
+    flow.verify(repo, "knowledge-test", "resolved", note="机会成立，进入复制推广")
+    # resolved → knowledge opportunity 行
+    opp_rows = repo.list_knowledge("opportunity")
+    assert any(e["source_id"] == "knowledge-test" and e["note"] == "机会成立，进入复制推广" for e in opp_rows)
+    # 沉淀经验 → lesson 行
+    repo.create_case_lesson("knowledge-test", "试点通过，可复制到 3 家门店")
+    lesson_rows = repo.list_knowledge("lesson")
+    assert any(e["source_id"] == "knowledge-test" and "可复制" in e["note"] for e in lesson_rows)
+    # 幂等：重复 resolved 已冻结；lesson 重复 created=False 且不新增行
+    dup = repo.create_case_lesson("knowledge-test", "again")
+    assert dup["created"] is False
+    assert sum(1 for e in repo.list_knowledge("lesson") if e["source_id"] == "knowledge-test") == 1
+
+    # 清理
+    repo.delete_knowledge_by_source("opportunity", "knowledge-test")
+    repo.delete_knowledge_by_source("lesson", "knowledge-test")
+    repo.delete_case_lesson("knowledge-test")
+    repo.delete_action_case("knowledge-test")
+    run_seed()
 
 
 def main() -> int:
@@ -308,7 +352,8 @@ def main() -> int:
     section3_flow(repo)
     section4_e2e(repo)
     section5_lesson(repo)
-    print("action_check OK（第 1–5 节：CRUD/建档/状态机/闭环 E2E/经验沉淀 全绿）")
+    section6_knowledge(repo)
+    print("action_check OK（第 1–6 节：CRUD/建档/状态机/闭环 E2E/经验沉淀/知识库 全绿）")
     return 0
 
 

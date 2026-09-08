@@ -463,3 +463,15 @@ def list_lessons():
     repo = Repository()
     return {"ok": True, "lessons": repo.list_case_lessons()}
 
+
+@router.get("/knowledge")
+def list_knowledge(type: str = Query("", pattern="^(|problem|opportunity|change|lesson)$")):
+    """知识/归档库：按类型筛选；stats 始终返回各类型计数。"""
+    repo = Repository()
+    entries = repo.list_knowledge(type or None)
+    all_entries = repo.list_knowledge() if type else entries
+    stats: dict[str, int] = {}
+    for et in ("problem", "opportunity", "change", "lesson"):
+        stats[et] = sum(1 for e in all_entries if e["entry_type"] == et)
+    return {"ok": True, "type": type or "all", "entries": entries, "stats": stats}
+

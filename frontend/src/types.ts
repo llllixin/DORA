@@ -1,4 +1,4 @@
-export type Page = 'pulse' | 'insight' | 'action' | 'watch';
+export type Page = 'pulse' | 'insight' | 'action' | 'watch' | 'knowledge';
 export type InsightType = 'problem' | 'opportunity' | 'change';
 export type StatusKind = 'none' | 'action' | 'watch';
 
@@ -165,4 +165,22 @@ export interface CaseLesson {
   archive: string;
   resolution: string;
   created_at: string;
+}
+
+export interface KnowledgeEntry {
+  id: number;
+  entry_type: 'problem' | 'opportunity' | 'change' | 'lesson';
+  source_id: string;
+  code: string;
+  title: string;
+  content: string;
+  note: string;
+  created_at: string;
+}
+
+export interface KnowledgeStats {
+  problem: number;
+  opportunity: number;
+  change: number;
+  lesson: number;
 }

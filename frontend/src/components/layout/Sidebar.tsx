@@ -1,7 +1,7 @@
 import type { Page } from '../../types';
 import { capabilities } from '../../data';
 
-const items: [Page,string,string][] = [['pulse','✦','业务脉搏'],['insight','◒','洞察'],['action','↗','行动回路'],['watch','◌','持续关注']];
+const items: [Page,string,string][] = [['pulse','✦','业务脉搏'],['insight','◒','洞察'],['action','↗','行动回路'],['watch','◌','持续关注'],['knowledge','◈','知识库']];
 
 export function Sidebar({ page, onPage, onCapability, onNotice }: { page: Page; onPage: (p: Page)=>void; onCapability: (name:string)=>void; onNotice:(msg:string)=>void }) {
   return <aside className="sidebar" role="navigation" aria-label="主导航">

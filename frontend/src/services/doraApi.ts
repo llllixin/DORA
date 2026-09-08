@@ -1,5 +1,5 @@
 import { evidence, insights, watchItems } from '../data';
-import type { ActionCaseCard, ActionCaseDetail, CaseLesson, Evidence, Insight, InsightType, WatchItem, WatchParseResult, WatchTargetCard } from '../types';
+import type { ActionCaseCard, ActionCaseDetail, CaseLesson, Evidence, Insight, InsightType, KnowledgeEntry, KnowledgeStats, WatchItem, WatchParseResult, WatchTargetCard } from '../types';
 
 // API 地址：开发环境默认走 Vite 代理 /api → http://localhost:8000（见 vite.config.ts proxy）；
 // 生产部署可用环境变量 VITE_API_BASE_URL 覆盖为后端绝对地址。
@@ -405,5 +405,16 @@ export async function archiveAsLesson(caseId: string, note: string): Promise<{ o
 export async function listLessons(): Promise<CaseLesson[]> {
   const r = await apiGet('/action/lessons', () => ({ ok: true, lessons: [] as CaseLesson[] }));
   return (r as { lessons: CaseLesson[] }).lessons;
+}
+
+
+export async function listKnowledge(type = ''): Promise<{ entries: KnowledgeEntry[]; stats: KnowledgeStats }> {
+  const q = type ? `?type=${type}` : '';
+  const r = await apiGet(`/knowledge${q}`, () => ({
+    ok: true,
+    entries: [] as KnowledgeEntry[],
+    stats: { problem: 0, opportunity: 0, change: 0, lesson: 0 } as KnowledgeStats,
+  }));
+  return { entries: (r as { entries: KnowledgeEntry[] }).entries, stats: (r as { stats: KnowledgeStats }).stats };
 }
 

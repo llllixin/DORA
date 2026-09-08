@@ -10,6 +10,7 @@ import { OnboardingPage } from "./features/onboarding/OnboardingPage";
 import { PulsePage } from "./features/pulse/PulsePage";
 import { InsightPage } from "./features/insight/InsightPage";
 import { ActionPage } from "./features/action/ActionPage";
+import { KnowledgePage } from "./features/knowledge/KnowledgePage";
 import { WatchPage } from "./features/watch/WatchPage";
 import { createAction, getEvidence, refreshReasoningApi, syncRemoteData } from './services/doraApi';
 import type { Evidence } from "./types";
@@ -241,6 +242,7 @@ export default function App() {
             }}
           />
         )}
+        {page === "knowledge" && <KnowledgePage onNotice={notify} />}
       </main>
       <EvidenceDrawer
         data={drawer}
