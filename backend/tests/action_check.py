@@ -272,6 +272,34 @@ def section4_e2e(repo: Repository) -> None:
     post("/datasets/sample")  # 还原数据/事件
 
 
+def section5_lesson(repo: Repository) -> None:
+    """迭代 36：resolved 档案 → 经验沉淀（幂等/仅 resolved）。"""
+    from app.action import flow
+
+    repo.create_action_case(
+        case={"id": "lesson-test", "kind": "problem", "code": "LSN-0001",
+              "case_title": "经验测试档案", "tag_cls": "red", "source": "测试"},
+        steps=[{"seq": 0, "title": "A", "desc": "d", "evidence": "e", "status": "pending"},
+               {"seq": 1, "title": "B", "desc": "d", "evidence": "e", "status": "pending"}],
+        status="open")
+    flow.start_step(repo, "lesson-test", 0)
+    flow.done_step(repo, "lesson-test", 0)
+    flow.start_step(repo, "lesson-test", 1)
+    flow.done_step(repo, "lesson-test", 1)
+    flow.verify(repo, "lesson-test", "resolved", note="阈值回稳，验证通过")
+    out = repo.create_case_lesson("lesson-test", "验证通过，供应商 B 成本需季度复核")
+    assert out["created"] is True and out["lesson"]["code"] == "LSN-0001"
+    assert "验证通过" in out["lesson"]["archive"]
+    again = repo.create_case_lesson("lesson-test", "again")
+    assert again["created"] is False, "lesson archive must be idempotent"
+    lessons = repo.list_case_lessons()
+    assert any(l["case_id"] == "lesson-test" for l in lessons)
+    assert repo.delete_case_lesson("lesson-test") is True
+    assert repo.delete_case_lesson("lesson-test") is False
+    repo.delete_action_case("lesson-test")
+    run_seed()  # 还原
+
+
 def main() -> int:
     run_seed()
     repo = Repository()
@@ -279,7 +307,8 @@ def main() -> int:
     section2_builder(repo)
     section3_flow(repo)
     section4_e2e(repo)
-    print("action_check OK（第 1–4 节：CRUD/建档引擎/状态机服务/闭环 E2E 全绿）")
+    section5_lesson(repo)
+    print("action_check OK（第 1–5 节：CRUD/建档/状态机/闭环 E2E/经验沉淀 全绿）")
     return 0
 
 

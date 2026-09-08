@@ -11,6 +11,7 @@ Dora"行动回路（Action）"能力的行为契约：引擎判定的 problem/op
 | 引擎判定的洞察可建档为行动档案（幂等） | V5-T2 建档引擎 | `changes/archive/2026-09-07-v5-action-builder` | 29 |
 | 档案步骤可执行推进并验证归档（非法迁移拒绝） | V5-T3 状态机 API | `changes/archive/2026-09-07-v5-action-api` | 30 |
 | 档案可在界面真实执行与验证（真数据源） | V5-T4 Action UI | `changes/archive/2026-09-07-v5-action-ui` | 31 |
+| 已归档档案可沉淀为经验库并展示处理过程 | 迭代36 经验沉淀 | `changes/archive/2026-09-08-action-lesson-archive` | 36 |
 
 ## Requirements
 
@@ -57,3 +58,14 @@ Dora"行动回路（Action）"能力的行为契约：引擎判定的 problem/op
 #### Scenario: 步骤与验证控件真实驱动状态机
 - **WHEN** 对档案详情执行「开始/完成/阻塞/归档(带说明)」
 - **THEN** 界面调用对应 /api/action/cases 端点并刷新展示最新状态/note/result/归档视图；非法迁移由后端 4xx 拒绝并在界面提示
+
+### Requirement: 已归档档案可沉淀为经验库并展示处理过程
+系统 SHALL 提供"沉淀经验"：对 status=resolved 的行动档案调用归档接口后，将 `case_lesson` 记录（case 编号/类型/标题/处理过程 archive/结论 note/时间）写入经验库；同一档案重复沉淀幂等（返回既有）；非 resolved 档案调用 SHALL 被拒绝（4xx）。系统 SHALL 提供经验列表查询（按时间倒序），供用户查看"处理过程"与未来相似洞察引用。
+
+#### Scenario: resolved 后沉淀经验且幂等
+- **WHEN** 档案已 resolved，先 POST archive-as-lesson 再重复 POST
+- **THEN** 首次写入经验库（created=True），重复调用返回既有且经验条数不变
+
+#### Scenario: 未完成档案拒绝沉淀
+- **WHEN** 对 running/waiting_verify 档案调用 archive-as-lesson
+- **THEN** 返回 4xx 且经验库无新增

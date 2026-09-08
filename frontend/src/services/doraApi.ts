@@ -1,5 +1,5 @@
 import { evidence, insights, watchItems } from '../data';
-import type { ActionCaseCard, ActionCaseDetail, Evidence, Insight, InsightType, WatchItem, WatchParseResult, WatchTargetCard } from '../types';
+import type { ActionCaseCard, ActionCaseDetail, CaseLesson, Evidence, Insight, InsightType, WatchItem, WatchParseResult, WatchTargetCard } from '../types';
 
 // API 地址：开发环境默认走 Vite 代理 /api → http://localhost:8000（见 vite.config.ts proxy）；
 // 生产部署可用环境变量 VITE_API_BASE_URL 覆盖为后端绝对地址。
@@ -377,5 +377,33 @@ export function blockStep(id: string, seq: number, note = '') {
 
 export function verifyAction(id: string, outcome: 'resolved' | 'continue', note = '') {
   return apiSend('POST', `/action/cases/${id}/verify`, { outcome, note }, () => ({ ok: true }));
+}
+
+/** 迭代36：resolved 档案 → 经验沉淀（4xx 显式上抛）。 */
+export async function archiveAsLesson(caseId: string, note: string): Promise<{ ok: boolean; created: boolean; lesson: CaseLesson | null }> {
+  if (MODE === 'mock') return { ok: true, created: false, lesson: null };
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(`${BASE}/action/cases/${caseId}/archive-as-lesson`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+      signal: ctrl.signal,
+    });
+    const body = (await res.json().catch(() => null)) as { detail?: string; ok?: boolean; created?: boolean; lesson?: CaseLesson } | null;
+    if (!res.ok) throw new Error(body?.detail || `HTTP ${res.status}`);
+    return { ok: true, created: !!body?.created, lesson: body?.lesson ?? null };
+  } catch (err) {
+    if (MODE === 'http') throw err;
+    throw err instanceof Error ? err : new Error(String(err));
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+export async function listLessons(): Promise<CaseLesson[]> {
+  const r = await apiGet('/action/lessons', () => ({ ok: true, lessons: [] as CaseLesson[] }));
+  return (r as { lessons: CaseLesson[] }).lessons;
 }
 

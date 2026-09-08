@@ -102,3 +102,7 @@ class StepBodyRequest(BaseModel):
 class VerifyRequest(BaseModel):
     outcome: str  # resolved|continue
     note: str = ""
+
+
+class ArchiveLessonRequest(BaseModel):
+    note: str = ""

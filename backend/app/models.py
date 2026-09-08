@@ -112,3 +112,15 @@ class ActionStep(Base):
     note = Column(String(500), nullable=False, default="")
     result = Column(String(1000), nullable=False, default="")
     finished_at = Column(String(32), nullable=False, default="")
+
+
+class CaseLesson(Base):
+    """行动经验沉淀（迭代 36）：resolved 档案的确定性处理记录（case_id 幂等）。"""
+    __tablename__ = "case_lesson"
+    case_id = Column(String(32), primary_key=True)
+    code = Column(String(32), nullable=False, default="")
+    kind = Column(String(16), nullable=False, default="problem")
+    title = Column(String(300), nullable=False, default="")
+    archive = Column(String(2000), nullable=False, default="")   # 处理过程全文（含验证记录）
+    resolution = Column(String(1000), nullable=False, default="")  # 沉淀结论 note
+    created_at = Column(String(32), nullable=False, default="")

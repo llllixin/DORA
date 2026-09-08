@@ -5,6 +5,7 @@ import threading
 
 from app.schemas import (
     ActionCreateRequest,
+    ArchiveLessonRequest,
     EvidenceModel,
     InsightSummary,
     Pulse,
@@ -441,4 +442,24 @@ def action_verify(case_id: str, body: VerifyRequest):
     except action_flow.ActionFlowError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return {"ok": True, "case": updated}
+
+
+@router.post("/action/cases/{case_id}/archive-as-lesson")
+def archive_as_lesson(case_id: str, body: ArchiveLessonRequest):
+    """resolved 档案 → 经验沉淀（case_id 幂等）。非 resolved 或空结论拒绝。"""
+    repo, case = _action_detail_or_404(case_id)
+    if case["status"] != "resolved":
+        raise HTTPException(status_code=400, detail="仅已归档（resolved）档案可沉淀经验")
+    if not body.note.strip():
+        raise HTTPException(status_code=400, detail="沉淀经验必须填写结论（note）")
+    out = repo.create_case_lesson(case_id, body.note.strip())
+    if out is None:
+        raise HTTPException(status_code=404, detail="action case not found")
+    return {"ok": True, **out}
+
+
+@router.get("/action/lessons")
+def list_lessons():
+    repo = Repository()
+    return {"ok": True, "lessons": repo.list_case_lessons()}
 

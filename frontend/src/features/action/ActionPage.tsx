@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { actionCases } from '../../data';
-import type { ActionCase, ActionCaseCard, ActionCaseDetail } from '../../types';
+import type { ActionCase, ActionCaseCard, ActionCaseDetail, CaseLesson } from '../../types';
 import { Tag } from '../../components/ui/Tag';
 import {
-  blockStep, doneStep, fetchActionCase, listActionCases, startStep, verifyAction,
+  archiveAsLesson, blockStep, doneStep, fetchActionCase, listActionCases, listLessons, startStep, verifyAction,
 } from '../../services/doraApi';
 
 type Props = {
@@ -29,6 +29,11 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
   const [detail, setDetail] = useState<ActionCaseDetail | null>(null);
   const [verifyNote, setVerifyNote] = useState('');
   const [stepNote, setStepNote] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [lessons, setLessons] = useState<CaseLesson[]>([]);
+  const [showLessons, setShowLessons] = useState(false);
+  const [lessonNote, setLessonNote] = useState('');
+  const [learned, setLearned] = useState(false);
 
   const loadList = async () => {
     try {
@@ -57,7 +62,10 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
     let alive = true;
     void (async () => {
       const d = await fetchActionCase(currentId);
-      if (alive && d) setDetail(d);
+      if (alive && d) {
+        setDetail(d);
+        setLearned(false);
+      }
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,6 +91,30 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
       await fn();
       onNotice(msg);
       void reload();
+    } catch (err) {
+      onNotice(`✗ ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const loadLessons = async () => {
+    try {
+      setLessons(await listLessons());
+    } catch {
+      setLessons([]);
+    }
+  };
+
+  useEffect(() => {
+    void loadLessons();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const archiveLesson = async (c: ActionCaseDetail) => {
+    try {
+      const r = await archiveAsLesson(c.id, lessonNote.trim() || '该问题已按档案处理并验证通过');
+      onNotice(r.created ? '✓ 已沉淀经验并加入经验库' : '该档案经验已沉淀（幂等返回既有）');
+      setLearned(true);
+      void loadLessons();
     } catch (err) {
       onNotice(`✗ ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -128,8 +160,12 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
         <span className="status"><span className="dot" />{cases.length} 份行动档案</span>
       </div>
       <div className="action-layout">
-        <div className="card" style={{ padding: 12, maxWidth: 300 }}>
-          <b style={{ display: 'block', margin: '6px 4px 8px' }}>档案列表</b>
+        <div className="card" style={{ padding: drawerOpen ? 12 : 8, width: drawerOpen ? 280 : 64, flexShrink: 0, transition: 'width .18s ease' }}>
+          <div style={{ display: drawerOpen ? 'block' : 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '6px 4px 8px' }}>
+              <b>档案列表</b>
+              <button className="rowbtn" onClick={() => setDrawerOpen(false)}>收起 «</button>
+            </div>
           {cases.length === 0 && <div className="action-empty">还没有行动档案。前往「洞察」把问题 / 机会加入行动回路。</div>}
           {cases.map((it) => (
             <button key={it.id} className="suggest" style={{ width: '100%', textAlign: 'left', marginBottom: 6 }}
@@ -138,6 +174,27 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
               {it.case_title} <small style={{ opacity: 0.6 }}> · {it.code} · {CASE_LABEL[it.status]}</small>
             </button>
           ))}
+            <div style={{ borderTop: '1px solid #eee', marginTop: 8 }}>
+              <button className="rowbtn" onClick={() => setShowLessons((v) => !v)}>🧠 学习经验（{lessons.length}）{showLessons ? '▾' : '▸'}</button>
+              {showLessons && lessons.map((l) => (
+                <div key={l.case_id} style={{ fontSize: 12, marginTop: 6 }}>
+                  <b>{l.code} · {l.title}</b>
+                  <div style={{ opacity: 0.75 }}>结论：{l.resolution}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {!drawerOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+              <button className="rowbtn" onClick={() => setDrawerOpen(true)} title="展开">»</button>
+              {cases.map((it) => (
+                <button key={it.id} className="rowbtn" title={it.code}
+                        onClick={() => { setCurrentId(it.id); setDetail(null); setDrawerOpen(true); }}>
+                  {it.code.slice(0, 1)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="card" style={{ flex: 1, padding: 16 }}>
           {!detail && <div className="action-empty">选择左侧档案查看详情（或从洞察加入行动回路）。</div>}
@@ -194,6 +251,15 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
                 <div style={{ border: '1px solid #cde8cd', background: '#f4fbf4', borderRadius: 8, padding: 10, marginTop: 8 }}>
                   <b>✓ 已归档</b>
                   <pre style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0', font: 'inherit' }}>{detail.archive}</pre>
+                  {!learned ? (
+                    <div style={{ marginTop: 8 }}>
+                      <input className="delegate-input" style={{ width: '100%' }} placeholder="沉淀结论（经验库，供自我学习；选填，默认=已验证通过）"
+                             value={lessonNote} onChange={(e) => setLessonNote(e.target.value)} />
+                      <button className="btn primary" onClick={() => archiveLesson(detail)}>沉淀经验 → 经验库</button>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 8, opacity: 0.85 }}>🧠 已沉淀进经验库（可在抽屉「学习经验」查看处理过程）</div>
+                  )}
                 </div>
               )}
 

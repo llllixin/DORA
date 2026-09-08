@@ -155,3 +155,14 @@ export interface ActionCaseCard {
   created_at: string;
   updated_at: string;
 }
+
+/** 行动经验沉淀（CaseLesson） */
+export interface CaseLesson {
+  case_id: string;
+  code: string;
+  kind: 'problem' | 'opportunity';
+  title: string;
+  archive: string;
+  resolution: string;
+  created_at: string;
+}

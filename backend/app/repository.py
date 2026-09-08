@@ -10,6 +10,7 @@ from app import db
 from app.models import (
     ActionCase,
     ActionStep,
+    CaseLesson,
     DataUpdateLog,
     InsightReasoning,
     MetricSeries,
@@ -258,6 +259,7 @@ class Repository:
             "watch_event": WatchEvent,
             "action_case": ActionCase,
             "action_step": ActionStep,
+            "case_lesson": CaseLesson,
         }[table]
 
         def _do():
@@ -585,6 +587,50 @@ class Repository:
                 s.commit()
         self._wrap(_do)
 
+    # ---------- 行动经验沉淀：case_lesson（迭代 36） ----------
+    def create_case_lesson(self, case_id: str, note: str) -> dict | None:
+        """resolved 档案 → 经验沉淀（case_id 幂等）。case 不存在返回 None。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                existing = s.get(CaseLesson, case_id)
+                if existing is not None:
+                    return {"created": False, "lesson": _case_lesson_dict(existing)}
+                row = s.get(ActionCase, case_id)
+                if row is None:
+                    return None
+                lesson = CaseLesson(
+                    case_id=case_id, code=row.code, kind=row.kind,
+                    title=row.case_title, archive=row.archive,
+                    resolution=note, created_at=_now_iso(),
+                )
+                s.add(lesson)
+                s.commit()
+                return {"created": True, "lesson": _case_lesson_dict(lesson)}
+        return self._wrap(_do)
+
+    def list_case_lessons(self) -> list[dict]:
+        def _do():
+            with self._session_ctx() as s:
+                rows = s.execute(
+                    select(CaseLesson).order_by(CaseLesson.created_at.desc(), CaseLesson.case_id.desc())
+                ).scalars().all()
+                return [_case_lesson_dict(r) for r in rows]
+        return self._wrap(_do)
+
+    def delete_case_lesson(self, case_id: str) -> bool:
+        """删除经验（测试自清等）；不存在返回 False。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(CaseLesson, case_id)
+                if row is None:
+                    return False
+                s.delete(row)
+                s.commit()
+                return True
+        return self._wrap(_do)
+
 
 def _insert_steps(s, case_id: str, steps: list[dict[str, Any]]) -> None:
     for i, st in enumerate(steps):
@@ -611,6 +657,14 @@ def _action_step_dict(row: ActionStep) -> dict[str, Any]:
         "title": row.title, "desc": row.desc, "evidence": row.evidence,
         "why": row.why, "status": row.status, "note": row.note,
         "result": row.result, "finished_at": row.finished_at,
+    }
+
+
+def _case_lesson_dict(row: CaseLesson) -> dict[str, Any]:
+    return {
+        "case_id": row.case_id, "code": row.code, "kind": row.kind,
+        "title": row.title, "archive": row.archive, "resolution": row.resolution,
+        "created_at": row.created_at,
     }
 
 
