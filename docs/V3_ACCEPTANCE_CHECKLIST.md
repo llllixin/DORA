@@ -1,6 +1,6 @@
 # Dora · V3（Dora Reasoning）验收与审查清单
 
-> 对应：docs/版本路线图.md §3A.4。完成 V3-T1..T5 后填写；自动项给出命令，人工项给出核对标准。
+> 对应：docs/历史版本路线.md §3A（V3 规划已归档）。完成 V3-T1..T5 后填写；自动项给出命令，人工项给出核对标准。
 
 ## 审查状态（2026-09-07）
 - **A · 自动门禁 ✅**：`tests/run_all` 5 段 **ALL GREEN**（engine / ingest / reasoning / golden / e2e）；`npm run build` ✅；`/tmp/dora_smoke.py` 全绿 ✅

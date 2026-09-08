@@ -61,7 +61,7 @@
 | **business-action** | 6 | V5-T1（2026-09-07-v5-action-domain） | V5-T2(+1)·V5-T3(+1)·V5-T4(+1)·经验沉淀(+1)·知识库(+1) |
 
 ## 与外部文档的对应
-- 版本/backlog：`docs/版本路线图.md`（V2=迭代 6–16）
+- 当前状态：`docs/版本路线图.md`；版本历史（V1–V5 归档）：`docs/历史版本路线.md`；持续优化 backlog/候选：`docs/持续优化路线.md`
 - 历史流水：`docs/开发过程记录.md`（迭代 N 一条）
 - 经验/决策：`docs/开发问题与经验.md`（P 系列 / D 系列）
 - V2 阶段总结：`RELEASE_NOTES_V2.md`

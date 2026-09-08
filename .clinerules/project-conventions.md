@@ -4,8 +4,9 @@
 
 | 问什么 | 去哪个文件 | 说明 |
 |---|---|---|
-| 现在第几版 / 每个版本状态 | `docs/版本路线图.md` | 唯一版本事实源 |
-| V2 还差什么 / backlog | `docs/版本路线图.md` §2（每项 = 一个 OpenSpec change id） | 唯一 backlog；**不在其它文件复制清单** |
+| 当前状态 / 现在是第几版 | `docs/版本路线图.md` | 版本状态入口 |
+| 已完成版本历史（V1–V5） | `docs/历史版本路线.md` | 归档，不再改动状态 |
+| 未解决 / 候选 / backlog | `docs/持续优化路线.md`（每项 = 一个 OpenSpec change id） | **唯一 backlog**；**不在其它文件复制清单** |
 | 单个变更怎么做、怎么验收 | `openspec/changes/<id>/`（proposal/spec/design/tasks） | 变更级事实源 |
 | 发生过什么（历史） | `docs/开发过程记录.md`（仅"迭代 N"流水，不含待办） | 唯一历史记录 |
 | 经验教训 / 决策 | `docs/开发问题与经验.md`（P / D 系列） | 反思落点 |
@@ -15,7 +16,7 @@
 ## 1. 唯一实现路径（代码改动必须走）
 
 ```
-路线图 backlog 项（含 OpenSpec change id）
+持续优化路线 backlog 项（含 OpenSpec change id）
   → /opsx-propose（proposal + specs delta + design + tasks，不写业务代码）
   → 用户 review
   → /opsx-apply（按 tasks 逐条实现，每条勾选必须附可复现验证）
@@ -24,7 +25,7 @@
 ```
 
 - **代码改动（feature 或 bugfix）必须归属某个 change**：若在 in-flight change 内直接做；否则先开一个 change。
-- **豁免（可直接提交）**：纯文档/流程/工具链改动（本文档、版本路线图、dev-log 追加、.gitignore、脚手架）——提交信息标注 `docs:` / `chore:` 即代表豁免声明。
+- **豁免（可直接提交）**：纯文档/流程/工具链改动（本文档、版本路线图 / 历史版本路线 / 持续优化路线等 docs 规划文件、dev-log 追加、.gitignore、脚手架）——提交信息标注 `docs:` / `chore:` 即代表豁免声明。
 - 归档 C1 之类历史步骤如需"补做"，须先在回复里说明理由再执行，不自行脑补用户授权。
 
 ## 2. 提交与仓库
