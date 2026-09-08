@@ -159,8 +159,8 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
         </div>
         <span className="status"><span className="dot" />{cases.length} 份行动档案</span>
       </div>
-      <div className="action-layout">
-        <div className="card" style={{ padding: drawerOpen ? 12 : 8, width: drawerOpen ? 280 : 64, flexShrink: 0, transition: 'width .18s ease' }}>
+      <div style={{ display: 'flex', gap: 14, marginTop: 14, alignItems: 'flex-start' }}>
+        <div className="card" style={{ padding: drawerOpen ? 12 : 8, width: drawerOpen ? 300 : 60, flexShrink: 0, transition: 'width .18s ease' }}>
           <div style={{ display: drawerOpen ? 'block' : 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '6px 4px 8px' }}>
               <b>档案列表</b>
@@ -196,7 +196,7 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
             </div>
           )}
         </div>
-        <div className="card" style={{ flex: 1, padding: 16 }}>
+        <div className="card" style={{ flex: 1, minWidth: 0, padding: 16 }}>
           {!detail && <div className="action-empty">选择左侧档案查看详情（或从洞察加入行动回路）。</div>}
           {detail && (
             <>
