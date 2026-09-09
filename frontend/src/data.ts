@@ -1,10 +1,13 @@
-import type { ActionCase, ChartData, Evidence, Insight, InsightType, WatchItem } from './types';
+import type { ActionCase, ChartData, Evidence, Insight, InsightType, WatchTargetCard } from './types';
 
 export const insights: Record<InsightType, Insight[]> = {
   problem: [
-    { id: 'p1', type: 'problem', tag: '问题 · 高影响', title: '利润率正在失速', desc: '连续3天低于18.5%，主要影响来自A产品线与供应商B。', confidence: 86, metric: '18.7%', delta: '↓ 2.1%', source: '趋势 + 产品线 + 供应商', question: '为什么利润率会失速？' },
-    { id: 'p2', type: 'problem', tag: '问题 · 中影响', title: '华东退货率连续上升', desc: '退货率从3.2%升至4.6%，主要集中在两家门店。', confidence: 78, metric: '4.6%', delta: '↑ 1.4pp', source: '退货明细 + 门店', question: '退货上升集中在哪些门店？' },
-    { id: 'p3', type: 'problem', tag: '问题 · 需复核', title: '订单量下降但销售额仍增长', desc: '订单量下降1.8%，但销售额增长3.2%，出现结构性变化。', confidence: 72, metric: '4,286', delta: '↓ 1.8%', source: '订单 + 销售额 + 客单价', question: '是不是少量高价值订单拉高了销售额？' },
+    { id: 'p1', type: 'problem', tag: '问题 · 高影响', title: '利润率正在失速', desc: '连续3天低于18.5%，主要影响来自A产品线与供应商B。', confidence: 86, metric: '18.7%', delta: '↓ 2.1%', source: '趋势 + 产品线 + 供应商', question: '为什么利润率会失速？', trigger: '连续 3 天低于目标 18.5%', evidence: { kind: 'margin' },
+    semantics: { causeA: { name: 'A 产品线采购成本', value: '+8.3%' }, causeB: { name: '供应商 B', value: '+11.7%' }, next: ['核对供应商 B 最近 30 天采购价与合同价差', '按 A 产品线拆分毛利影响，确认 ¥230,000 影响区间', '进入行动回路，发起采购议价并连续 7 天跟踪利润率'] } },
+    { id: 'p2', type: 'problem', tag: '问题 · 中影响', title: '华东退货率连续上升', desc: '退货率从3.2%升至4.6%，主要集中在两家门店。', confidence: 78, metric: '4.6%', delta: '↑ 1.4pp', source: '退货明细 + 门店', question: '退货上升集中在哪些门店？', trigger: '连续多周高于区域基线，集中于少数门店', evidence: { kind: 'returns' },
+    semantics: { causeA: { name: '门店 08 / 16', value: '' }, causeB: { name: '退货率', value: '4.6%' }, next: ['提取门店 08 / 16 的退货商品、原因与批次', '对比两家门店与其他门店的客服、物流和商品质量数据', '先处理高频退货原因，再观察退货率是否回落至 3.2% 以下'] } },
+    { id: 'p3', type: 'problem', tag: '问题 · 需复核', title: '订单量下降但销售额仍增长', desc: '订单量下降1.8%，但销售额增长3.2%，出现结构性变化。', confidence: 72, metric: '4,286', delta: '↓ 1.8%', source: '订单 + 销售额 + 客单价', question: '是不是少量高价值订单拉高了销售额？', trigger: '订单量下降但销售额增长的结构性变化', evidence: { kind: 'orders' },
+    semantics: { causeA: { name: '订单量', value: '-1.8%' }, causeB: { name: '客单价', value: '¥2,998' }, next: ['拆分订单、客单价和商品结构，确认增长是否由少数大单贡献', '核查高价值订单的客户、渠道和商品组合是否可持续', '设置订单量与客单价联动观察，避免销售额增长掩盖订单风险'] } },
   ],
   opportunity: [
     { id: 'o1', type: 'opportunity', tag: '增长机会', title: '客单价连续4周增长', desc: '客单价升至¥2,998，新品系列贡献62%的增长。', confidence: 74, metric: '¥2,998', delta: '↑ 5.1%', source: '客单价 + 商品 + 门店', question: '这个增长能复制吗？' },
@@ -50,7 +53,7 @@ export const actionCases: Record<string, ActionCase> = {
   o2: { id:'o2', kind:'opportunity', tag:'机会', tagCls:'green', caseTitle:'机会验证 · STO-0607', code:'STO-0607', source:'来源：机会洞察 · 华东高客单门店形成集群', steps:[{title:'发现机会',desc:'Top 10 高客单门店中 7 家来自华东，形成高价值集群。',evidence:'门店画像 · Top 高客单门店'},{title:'拆解来源',desc:'提炼 7 家高客单门店的共同经营动作。',evidence:'7 家华东门店共同动作'},{title:'小范围验证',desc:'选 2 家普通门店开展复制试点，以客单价和转化率验收。',evidence:'2 家普通门店 · 复制试点'},{title:'复制推广',desc:'试点通过后扩大推广，Dora 才结束 STO-0607。',evidence:'复制结果 · STO-0607 档案'}], current:{title:'当前行动 · 提炼高客单动作',desc:'先提炼 7 家门店的共同经营动作。',why:'机会不是看到好结果就结束，要进入行动回路验证可复制性，提炼出共性动作才可能推广。',evidence:'门店经营动作对比'}, experts:['门店经营专家','会员运营专家'], data:['门店画像.xlsx','会员数据'], expertDesc:'门店共性动作提炼与试点', archive:'执行结果、门店对比、试点结论和复制建议都会回写到 STO-0607。' },
 };
 
-export const watchItems: WatchItem[] = [
+export const watchItems: WatchTargetCard[] = [
   { id:'c1', name:'华东订单量', value:'-1.8%', color:'red', logic:'连续 3 天偏弱 → 未达 -3% 升级阈值，持续观察', source:'订单明细.xlsx · 华东' },
   { id:'c2', name:'门店销售数据更新', value:'+327 条', color:'blue', logic:'数据更新事件 → 重算核心指标，判断是否触发新洞察', source:'门店经营数据.xlsx · 全量' },
   { id:'c3', name:'新品销量', value:'2,460', color:'green', logic:'连续 3 周增长 → 趋势出现，观察是否升级为机会', source:'新品销量数据.xlsx · 全区域' },

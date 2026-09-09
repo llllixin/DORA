@@ -21,14 +21,14 @@
 | V3 验收清单 | `docs/V3_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅） |
 
 ## 3. 当前状态
-- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；V5 后收尾迭代 34–38 亦已归档，`run_all` **7 段** ALL GREEN（golden 9 不变）、`npm run build` 绿。
+- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；V5 后收尾迭代 34–38 与 **3D.1-W1 迭代 39（frontend-loop-pulse）** 已归档，`run_all` **7 段** ALL GREEN（golden 9 不变）、`npm run build` 绿。
 - **V5 之后 = 候选方向 + 两块 backlog（不占版本号）**：候选清单见 `docs/持续优化路线.md` §1；已选 backlog（3D.1 前端接线收口 W1–W3 / 3D.2 专家团领域化 E1–E3）见 §3–§4；已完成收尾见 `docs/历史版本路线.md` §5。另立版本需先在持续优化路线写规划块。
 - **真实 LLM 已接**：DeepSeek 官方 `deepseek-chat`（backend/.env=llm，本地 git-ignored）；LLM 兜底阶段 1 已落地；前端 refresh 超时 Bug1 已收口（30s）。
 - 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（llm 模式）、frontend :5173。
 
 ## 4. 下一步（顺序与范围以 `docs/持续优化路线.md` 为准）
 0. **Phase 0 收口（审查遗留 §5）**：A1–A3 合并 change `knowledge-lifecycle`（knowledge/lesson 级联 + verify 单事务 + archive 列放宽）→ B1（run_all 用 `sys.executable`）→ 清理演示库 o2 矛盾残留。
-1. **3D.1 W1/W2**：`frontend-loop-pulse` / `frontend-loop-insight`（可并行；proposal 须含离线镜像迁移 + 字段盘点两项补强）。
+1. **3D.1 W2（其余 W1 已完成，迭代 39）**：`frontend-loop-insight`（InsightPage 静态回退字典下线；proposal 须含离线镜像迁移 + 字段盘点两项补强）。
 2. **3D.2 E1→E2→W3/E3**：`expert-registry-domain` → `expert-registry-orchestration` → W3/E3 汇合（回归锚点 ≥8 段）。
 3. **候选方向（§1）**：LLM 兜底阶段 2（异步 job + 状态接口 + SSE）、工具/Agent 执行层（D031-1 预留口）、Docker 全家桶（搭建文档 37）、Redis/Celery（D009 推迟项）。
 4. 维护跟踪：引擎结论与页面数字一致性核对收尾、AskBar/Dora Chat 追问 mock（F8）——均见 `持续优化路线.md` §2。

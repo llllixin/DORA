@@ -16,6 +16,10 @@ export interface Insight {
   semantics?: InsightSemantics;
   reasonSource?: 'template' | 'llm';
   generatedAt?: string;
+  /** 引擎/镜像额外字段：触发条件原文、归因因素、证据分类（evidence.kind=metric key）。 */
+  trigger?: string;
+  factors?: string[];
+  evidence?: { kind?: string; rows?: never[] };
 }
 
 export interface InsightSemantics {
