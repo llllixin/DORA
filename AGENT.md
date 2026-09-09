@@ -19,6 +19,7 @@
 | V5 验收清单 | `docs/V5_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅，V5 已完成） |
 | 优化方向 / 审计清单 | `docs/优化方向.md`（2026-09-07 全流程审计：F1–F11 + P0/P1/P2 候选） |
 | V3 验收清单 | `docs/V3_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅） |
+| 文档职责分层 / 一致性规则 | `docs/文档地图.md` | 防双源：哪些是快照、哪些是唯一维护点 |
 
 ## 3. 当前状态
 - **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；V5 后收尾迭代 34–38、**3D.1-W1 迭代 39（frontend-loop-pulse）**、**Phase0 迭代 40（knowledge-lifecycle）** 已归档，`run_all` **7 段** ALL GREEN（golden 9 不变）、`npm run build` 绿。
@@ -26,12 +27,10 @@
 - **真实 LLM 已接**：DeepSeek 官方 `deepseek-chat`（backend/.env=llm，本地 git-ignored）；LLM 兜底阶段 1 已落地；前端 refresh 超时 Bug1 已收口（30s）。
 - 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（llm 模式）、frontend :5173。
 
-## 4. 下一步（顺序与范围以 `docs/持续优化路线.md` 为准）
-0. **Phase 0 收口（审查遗留 §5）**：A1–A3 合并 change `knowledge-lifecycle`（knowledge/lesson 级联 + verify 单事务 + archive 列放宽）→ B1（run_all 用 `sys.executable`）→ 清理演示库 o2 矛盾残留。
-1. **3D.1 W2（其余 W1 已完成，迭代 39）**：`frontend-loop-insight`（InsightPage 静态回退字典下线；proposal 须含离线镜像迁移 + 字段盘点两项补强）。
-2. **3D.2 E1→E2→W3/E3**：`expert-registry-domain` → `expert-registry-orchestration` → W3/E3 汇合（回归锚点 ≥8 段）。
-3. **候选方向（§1）**：LLM 兜底阶段 2（异步 job + 状态接口 + SSE）、工具/Agent 执行层（D031-1 预留口）、Docker 全家桶（搭建文档 37）、Redis/Celery（D009 推迟项）。
-4. 维护跟踪：引擎结论与页面数字一致性核对收尾、AskBar/Dora Chat 追问 mock（F8）——均见 `持续优化路线.md` §2。
+## 4. 下一步（顺序与范围唯一在 `docs/持续优化路线.md`，本文不再维护候选清单）
+
+- **当前打开项**：3D.1-W2 `frontend-loop-insight`（未开工，propose 时带离线镜像+字段盘点补强）。Phase0 `knowledge-lifecycle` 已于 2026-09-09 归档（迭代 40，见持续优化路线 §5）。
+- 完整候选方向 / 遗留小项 / 审查遗留 / 推进顺序 → `docs/持续优化路线.md`（§1–§6）。
 
 ## 5. 本地运行 / 验证（新会话先跑）
 ```bash
@@ -41,6 +40,7 @@ python3 -m uvicorn app.main:app --reload --port 8000
 cd frontend && npm run dev           # 5173，/api 代理到 8000
 
 cd backend && python3 -m tests.run_all   # 7 段门禁（engine/ingest/reasoning/golden/e2e/watch/action）
+python3 -m tests.check_docs              # docs 一致性自检（改文档/归档前跑，死链/双源/编号）
 cd frontend && npm run build
 python3 /tmp/dora_smoke.py               # 冒烟（需 5173；脚本已绕代理 env）
 ```

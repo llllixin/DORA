@@ -1,6 +1,7 @@
 # Dora · V3（Dora Reasoning）验收与审查清单
 
 > 对应：docs/历史版本路线.md §3A（V3 规划已归档）。完成 V3-T1..T5 后填写；自动项给出命令，人工项给出核对标准。
+> 快照说明：本文为 V3 sign-off 验收记录（A/B/C 已确认，2026-09-07），**此后不再更新**；后续 backlog 见 `docs/持续优化路线.md`（文档职责分层见 `docs/文档地图.md`）。
 
 ## 审查状态（2026-09-07）
 - **A · 自动门禁 ✅**：`tests/run_all` 5 段 **ALL GREEN**（engine / ingest / reasoning / golden / e2e）；`npm run build` ✅；`/tmp/dora_smoke.py` 全绿 ✅
@@ -12,19 +13,19 @@
 - **已知问题跟踪**：**LLM 批量刷新同步耗时上界问题**（现状逐条 40s、最坏 ≈360s）→ 分析与兜底设计见 **P011 / D028**；**状态 = 已记录设计、阶段 1（超时拆分+预算+熔断）待开工**；阶段 2（异步 job/SSE）随前端配合。判定与来源标注不受影响。
 
 ## A. 自动门禁（提交/验收前置）
-- [ ] `cd backend && python3 -m tests.run_all` → **ALL GREEN（5 段）**
+- [x] `cd backend && python3 -m tests.run_all` → **ALL GREEN（5 段）**
   - engine_check：引擎判定回归
   - ingest_check：上传/映射入库回归
   - reasoning_check：parity + T2 缓存合并 + **T3 数值稳定/无 key fallback**
   - golden_check：模板模式输出与 V2/V3-template 基线一致（9 条洞察）
   - e2e_api_check：文档 4 个核心验收用例
-- [ ] `cd frontend && npm run build` 通过
-- [ ] 冒烟：`python3 /tmp/dora_smoke.py`（5173 代理、绕代理 env）3/2/4/4 全绿
+- [x] `cd frontend && npm run build` 通过
+- [x] 冒烟：`python3 /tmp/dora_smoke.py`（5173 代理、绕代理 env）3/2/4/4 全绿
 
 ## B. 红线审查（判定不被污染）
-- [ ] LLM mock 只改文案不改数字：`reasoning_check` 覆盖 causeA/B.value 锁引擎基线（命令同 A）
-- [ ] 触发/指标/证据/置信度逐字段不变：golden_check 快照含 trigger/metric/delta/factors/confidence/semantics
-- [ ] 数据写入/出厂重置后缓存失效（`/api/datasets`、`/datasets/mapped`、sample 后 `insight_reasoning`=0）
+- [x] LLM mock 只改文案不改数字：`reasoning_check` 覆盖 causeA/B.value 锁引擎基线（命令同 A）
+- [x] 触发/指标/证据/置信度逐字段不变：golden_check 快照含 trigger/metric/delta/factors/confidence/semantics
+- [x] 数据写入/出厂重置后缓存失效（`/api/datasets`、`/datasets/mapped`、sample 后 `insight_reasoning`=0）
 
 ## C. 功能人工核对（需在运行界面确认）
 - [x] 洞察详情显示来源徽标（模板解释 / AI 解释）

@@ -10,8 +10,9 @@
 | 单个变更怎么做、怎么验收 | `openspec/changes/<id>/`（proposal/spec/design/tasks） | 变更级事实源 |
 | 发生过什么（历史） | `docs/开发过程记录.md`（仅"迭代 N"流水，不含待办） | 唯一历史记录 |
 | 经验教训 / 决策 | `docs/开发问题与经验.md`（P / D 系列） | 反思落点 |
+| 文档职责分层 / 快照与活文件 | `docs/文档地图.md`（+ `tests.check_docs` 自检） | 防双源：快照加「截至」、唯一归属、改文档跑自检 |
 
-> 规则：任何"新待办/勾选/状态"只更新路线图；开发记录只追加流水；反思只进 P/D。
+> 规则：任何"新待办/勾选/状态"只更新**唯一 backlog = `docs/持续优化路线.md`**（或 hub 的「当前状态」一行）；开发记录只追加流水；反思只进 P/D；历史快照文件不再更新状态。
 
 ## 1. 唯一实现路径（代码改动必须走）
 
@@ -21,7 +22,7 @@
   → 用户 review
   → /opsx-apply（按 tasks 逐条实现，每条勾选必须附可复现验证）
   → /opsx-archive（归档信息必须带【测试证据】+【反思】两节）
-  → 同步：路线图勾选该项 + 开发过程记录追加"迭代 N" + 新经验/决策进 P/D
+  → 同步：持续优化路线勾选该项 + 开发过程记录追加"迭代 N" + 新经验/决策进 P/D
 ```
 
 - **代码改动（feature 或 bugfix）必须归属某个 change**：若在 in-flight change 内直接做；否则先开一个 change。
@@ -46,7 +47,8 @@
   - 后端：`cd backend && python3 -m tests.engine_check`
   - 前端：`cd frontend && npm run build`
   - 端点：curl 相关端点（绕代理环境变量，见速查 P 系列）
-  - **一键门禁**：`cd backend && python3 -m tests.run_all`（engine_check + ingest_check + e2e_api_check，需 DB 与后端在线）；change 归档/提交前默认跑一次
+  - 文档一致性：改 docs 结构/导航/归档后跑 `cd backend && python3 -m tests.check_docs`（死链 / 双源待办 / 编号连续性）
+  - **一键门禁**：`cd backend && python3 -m tests.run_all`（engine/ingest/reasoning/golden/e2e/watch/action，需 DB 与后端在线）；change 归档/提交前默认跑一次
 - 代码行为改变的任务，勾选前必须补对应断言（把"任务自测"与"spec 场景"对齐，杜绝再次出现 c1 阈值跌破漏测）。
 - C5（E2E 四用例）落地后纳入归档前自动 gate。
 

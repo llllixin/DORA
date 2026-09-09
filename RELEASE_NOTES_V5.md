@@ -2,6 +2,7 @@
 
 > 发布日期：2026-09-07 ｜ 验收：✅ sign-off（docs/V5_ACCEPTANCE_CHECKLIST.md）
 > 一句话：**把"加入行动回路"从静态页面升级为可追溯的 Case 状态机**——引擎判定的洞察一键建档 → 步骤执行（start/done/blocked + 回填）→ 验证（resolved 归档 / continue 继续观察）→ 档案回写；结果决定关闭，回写不污染引擎判定。
+> 快照说明：本文是 V5 sign-off 的阶段总结（2026-09-07），**冻结不再更新**；后续版本/backlog 状态以 `docs/版本路线图.md` 与 `docs/持续优化路线.md` 为准（文档职责分层见 `docs/文档地图.md`）。
 
 ## 1. V5 交付（迭代 28–33，全部 OpenSpec 归档）
 | 任务 | 交付 |

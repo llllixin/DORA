@@ -1,6 +1,7 @@
 # Dora · V5（Action 真闭环）验收与审查清单
 
 > 对应：docs/历史版本路线.md §3C（V5 规划已归档）。V5-T1..T5（迭代 28–33）归档后填写；自动项给命令，人工项给核对标准。
+> 快照说明：本文为 V5 sign-off 验收记录（A/B/C 已确认，2026-09-07），**此后不再更新**；后续 backlog 见 `docs/持续优化路线.md`（文档职责分层见 `docs/文档地图.md`）。
 
 ## 审查状态（2026-09-07）
 - **A · 自动门禁 ✅**：`tests/run_all` **7 段 ALL GREEN**（engine/ingest/reasoning/golden/e2e/watch/action）；`npm run build` ✅；action_check 4 节全绿 ✅
