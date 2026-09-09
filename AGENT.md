@@ -1,6 +1,6 @@
 # AGENT.md —— Dora 交接与速查（context 恢复后从这里继续）
 
-> 更新：2026-09-08 ｜ 分支 `main`（最新提交看 `git log -1`；本拆分为 docs 提交）
+> 更新：2026-09-09 ｜ 分支 `main`（最新提交看 `git log -1`）
 
 ## 1. 项目是什么
 把 v9 单文件 HTML Demo 演进为 **React + FastAPI + PostgreSQL 的 AI 主动经营系统**。判断由确定性引擎（Metric→Rule→Signal→Insight→Evidence）计算；V3 起"解释文案"可接 LLM（默认模板，永不改判定）。
@@ -11,8 +11,8 @@
 | 当前状态 / 现在是第几版 | `docs/版本路线图.md`（V1–V5 ✅ sign-off；无打开的版本，不预命名 V6） | 版本状态入口 |
 | 已完成版本历史（V1–V5） | `docs/历史版本路线.md` | 归档，不再改动状态 |
 | 未解决 / 候选 / backlog | `docs/持续优化路线.md` | **唯一 backlog**（3D.1 W1–W3、3D.2 E1–E3、遗留小项 §2、审查遗留 §5） |
-| 迭代历史（每步记录） | `docs/开发过程记录.md`（迭代 1–38） |
-| 问题/决策/经验 | `docs/开发问题与经验.md`（P 系列 + D 系列 001–034） |
+| 迭代历史（每步记录） | `docs/开发过程记录.md`（迭代 1–40） |
+| 问题/决策/经验 | `docs/开发问题与经验.md`（P 系列 + D 系列 001–036） |
 | 能力 spec（最终态）+ 需求来源表 | `openspec/specs/`（6 个能力：business-engine/business-data-store/data-ingest/upload-mapping/business-watch/business-action） |
 | change 导航 + 归档索引 | `openspec/README.md`；归档全量在 `openspec/changes/archive/` |
 | V2 / V3 / V4 / V5 阶段总结 | `RELEASE_NOTES_V2.md` / `RELEASE_NOTES_V3.md` / `RELEASE_NOTES_V4.md` / `RELEASE_NOTES_V5.md` |
