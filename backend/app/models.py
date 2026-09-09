@@ -1,5 +1,5 @@
 """SQLAlchemy 数据模型：引擎原始数据与规则配置（C2 PostgreSQL Repository）。"""
-from sqlalchemy import Column, Float, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import Column, Float, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -93,7 +93,7 @@ class ActionCase(Base):
     source = Column(String(200), nullable=False, default="")
     status = Column(String(16), nullable=False, default="open")  # open|running|waiting_verify|resolved
     orchestration = Column(JSON, nullable=False, default=dict)  # {experts, data, expertDesc}
-    archive = Column(String(500), nullable=False, default="")
+    archive = Column(Text, nullable=False, default="")  # A3：处理过程可超 500（多轮 continue/长 note）
     created_at = Column(String(32), nullable=False, default="")
     updated_at = Column(String(32), nullable=False, default="")
 
@@ -121,8 +121,8 @@ class CaseLesson(Base):
     code = Column(String(32), nullable=False, default="")
     kind = Column(String(16), nullable=False, default="problem")
     title = Column(String(300), nullable=False, default="")
-    archive = Column(String(2000), nullable=False, default="")   # 处理过程全文（含验证记录）
-    resolution = Column(String(1000), nullable=False, default="")  # 沉淀结论 note
+    archive = Column(Text, nullable=False, default="")      # 处理过程全文（可长）
+    resolution = Column(Text, nullable=False, default="")    # 沉淀结论 note（可长）
     created_at = Column(String(32), nullable=False, default="")
 
 
@@ -135,6 +135,6 @@ class KnowledgeArchive(Base):
     source_id = Column(String(48), nullable=False, default="")   # case_id / lesson case_id
     code = Column(String(32), nullable=False, default="")
     title = Column(String(300), nullable=False, default="")
-    content = Column(String(2000), nullable=False, default="")   # 处理过程全文（archive）
-    note = Column(String(1000), nullable=False, default="")       # 结论
+    content = Column(Text, nullable=False, default="")   # 处理过程全文（可长）
+    note = Column(Text, nullable=False, default="")       # 结论（可长）
     created_at = Column(String(32), nullable=False, default="")

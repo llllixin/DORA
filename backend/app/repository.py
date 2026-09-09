@@ -464,6 +464,10 @@ class Repository:
                         archive=case.get("archive", ""), created_at=now, updated_at=now,
                     ))
                 else:
+                    if row.status == "resolved":
+                        # 补充①（knowledge-lifecycle）：seed 不得倒退 resolved 案——
+                        # 已 resolved 档案保留其历史/知识/经验，跳过覆盖。
+                        return
                     row.kind = case.get("kind", row.kind)
                     row.tag = case.get("tag", row.tag)
                     row.tag_cls = case.get("tag_cls", row.tag_cls)
@@ -535,6 +539,8 @@ class Repository:
         """验证归档：resolved → case resolved；continue → case running（D031-3，只改档案态）。
 
         note 追加进 archive（形成验证记录，不改引擎判定/reasonSource）。
+        A2（knowledge-lifecycle）：outcome=resolved 时，置态 + archive 追加 + 知识自动入库
+        在同一事务内完成（消除"已 resolved 但知识缺失"窗口）；知识写入按 (entry_type, source_id) 幂等。
         """
         if outcome not in ("resolved", "continue"):
             raise ValueError(f"invalid verify outcome: {outcome}")
@@ -544,10 +550,22 @@ class Repository:
                 row = s.get(ActionCase, case_id)
                 if row is None:
                     return None
+                now = _now_iso()
                 row.status = "resolved" if outcome == "resolved" else "running"
-                row.updated_at = _now_iso()
+                row.updated_at = now
                 if note:
-                    row.archive = f"{row.archive}\n[{_now_iso()}] {outcome}: {note}"
+                    row.archive = f"{row.archive}\n[{now}] {outcome}: {note}"
+                if outcome == "resolved":
+                    exists = s.execute(
+                        select(KnowledgeArchive).where(
+                            KnowledgeArchive.entry_type == row.kind,
+                            KnowledgeArchive.source_id == case_id)
+                    ).scalars().first()
+                    if exists is None:
+                        s.add(KnowledgeArchive(
+                            entry_type=row.kind, source_id=case_id, code=row.code,
+                            title=row.case_title, content=row.archive, note=note,
+                            created_at=now))
                 s.commit()
                 return _action_case_dict(row)
         return self._wrap(_do)
@@ -569,13 +587,15 @@ class Repository:
         return self._wrap(_do)
 
     def delete_action_case(self, case_id: str) -> bool:
-        """删除档案并级联清理步骤；不存在返回 False（幂等）。"""
+        """删除档案并级联清理步骤/经验/知识（A1 同事务）；不存在返回 False（幂等）。"""
 
         def _do():
             with self._session_ctx() as s:
                 if s.get(ActionCase, case_id) is None:
                     return False
                 s.execute(delete(ActionStep).where(ActionStep.case_id == case_id))
+                s.execute(delete(CaseLesson).where(CaseLesson.case_id == case_id))
+                s.execute(delete(KnowledgeArchive).where(KnowledgeArchive.source_id == case_id))
                 s.delete(s.get(ActionCase, case_id))
                 s.commit()
                 return True
@@ -584,6 +604,8 @@ class Repository:
     def delete_all_action_cases(self) -> None:
         def _do():
             with self._session_ctx() as s:
+                s.execute(delete(CaseLesson))
+                s.execute(delete(KnowledgeArchive))
                 s.execute(delete(ActionStep))
                 s.execute(delete(ActionCase))
                 s.commit()

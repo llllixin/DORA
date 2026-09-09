@@ -21,7 +21,7 @@
 | V3 验收清单 | `docs/V3_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅） |
 
 ## 3. 当前状态
-- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；V5 后收尾迭代 34–38 与 **3D.1-W1 迭代 39（frontend-loop-pulse）** 已归档，`run_all` **7 段** ALL GREEN（golden 9 不变）、`npm run build` 绿。
+- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；V5 后收尾迭代 34–38、**3D.1-W1 迭代 39（frontend-loop-pulse）**、**Phase0 迭代 40（knowledge-lifecycle）** 已归档，`run_all` **7 段** ALL GREEN（golden 9 不变）、`npm run build` 绿。
 - **V5 之后 = 候选方向 + 两块 backlog（不占版本号）**：候选清单见 `docs/持续优化路线.md` §1；已选 backlog（3D.1 前端接线收口 W1–W3 / 3D.2 专家团领域化 E1–E3）见 §3–§4；已完成收尾见 `docs/历史版本路线.md` §5。另立版本需先在持续优化路线写规划块。
 - **真实 LLM 已接**：DeepSeek 官方 `deepseek-chat`（backend/.env=llm，本地 git-ignored）；LLM 兜底阶段 1 已落地；前端 refresh 超时 Bug1 已收口（30s）。
 - 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（llm 模式）、frontend :5173。

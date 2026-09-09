@@ -344,16 +344,47 @@ def section6_knowledge(repo: Repository) -> None:
     run_seed()
 
 
+def _purge_orphans(repo: Repository) -> dict[str, int]:
+    """生命周期不变式自愈（A1）：清理非 resolved / 不存在档案残留的 case_lesson 与 knowledge 孤儿行。"""
+    removed = {"case_lesson": 0, "knowledge": 0}
+    for lesson in repo.list_case_lessons():
+        case = repo.get_action_case(lesson["case_id"])
+        if case is None or case["status"] != "resolved":
+            if repo.delete_case_lesson(lesson["case_id"]):
+                removed["case_lesson"] += 1
+    for entry in repo.list_knowledge():
+        case = repo.get_action_case(entry["source_id"])
+        if case is None or case["status"] != "resolved":
+            if repo.delete_knowledge_by_source(entry["entry_type"], entry["source_id"]):
+                removed["knowledge"] += 1
+    return removed
+
+
+def assert_no_orphans(repo: Repository) -> None:
+    """不变式断言：case_lesson / knowledge 行只允许归属 resolved 档案（A1）。"""
+    for lesson in repo.list_case_lessons():
+        case = repo.get_action_case(lesson["case_id"])
+        assert case is not None and case["status"] == "resolved", f"orphan lesson for {lesson['case_id']}"
+    for entry in repo.list_knowledge():
+        case = repo.get_action_case(entry["source_id"])
+        assert case is not None and case["status"] == "resolved", \
+            f"orphan knowledge {entry['entry_type']}/{entry['source_id']}"
+
+
 def main() -> int:
     run_seed()
     repo = Repository()
+    removed = _purge_orphans(repo)
+    if removed["case_lesson"] or removed["knowledge"]:
+        print(f"[lifecycle] self-heal removed orphan rows: knowledge={removed['knowledge']}, case_lesson={removed['case_lesson']}")
     section1_crud(repo)
     section2_builder(repo)
     section3_flow(repo)
     section4_e2e(repo)
     section5_lesson(repo)
     section6_knowledge(repo)
-    print("action_check OK（第 1–6 节：CRUD/建档/状态机/闭环 E2E/经验沉淀/知识库 全绿）")
+    assert_no_orphans(repo)
+    print("action_check OK（第 1–6 节 + 生命周期不变式：CRUD/建档/状态机/闭环 E2E/经验沉淀/知识库/无孤儿 全绿）")
     return 0
 
 

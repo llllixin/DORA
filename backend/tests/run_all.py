@@ -2,19 +2,21 @@
 
 前置：PostgreSQL 运行且 seed 过；后端 API 在 :8000。
 运行：cd backend && python3 -m tests.run_all
+B1（knowledge-lifecycle）：各 check 用与 run_all 相同的解释器（sys.executable），
+避免 PATH 首位是无关 python3（如本机 homebrew 无 sqlalchemy，P012）。
 """
 import os
 import subprocess
 import sys
 
 STEPS = [
-    ("engine_check", ["python3", "-m", "tests.engine_check"]),
-    ("ingest_check", ["python3", "-m", "tests.ingest_check"]),
-    ("reasoning_check", ["python3", "-m", "tests.reasoning_check"]),
-    ("golden_check", ["python3", "-m", "tests.golden_check"]),
-    ("e2e_api_check", ["python3", "-m", "tests.e2e_api_check"]),
-    ("watch_check", ["python3", "-m", "tests.watch_check"]),
-    ("action_check", ["python3", "-m", "tests.action_check"]),
+    ("engine_check", [sys.executable, "-m", "tests.engine_check"]),
+    ("ingest_check", [sys.executable, "-m", "tests.ingest_check"]),
+    ("reasoning_check", [sys.executable, "-m", "tests.reasoning_check"]),
+    ("golden_check", [sys.executable, "-m", "tests.golden_check"]),
+    ("e2e_api_check", [sys.executable, "-m", "tests.e2e_api_check"]),
+    ("watch_check", [sys.executable, "-m", "tests.watch_check"]),
+    ("action_check", [sys.executable, "-m", "tests.action_check"]),
 ]
 
 
