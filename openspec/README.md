@@ -16,7 +16,7 @@
 2. **某条需求谁加的/验证证据** → 打开对应 spec，顶部「需求来源表」给出 change 归档目录与迭代号。
 3. **逐任务细节** → 进 `openspec/changes/archive/<date>-<id>/tasks.md`（每条任务含验证命令），proposal=为什么、design=怎么做。
 
-## 归档 Change 索引（30 个）
+## 归档 Change 索引（33 个）
 | Change | 归档目录（date-<id>） | 影响的 spec（+需求数） | 迭代 | 备注/决策 |
 |---|---|---|---|---|
 | C1 引擎覆盖 | 2026-09-07-extend-engine-coverage | business-engine +3 | 9 | 基线建 spec |
@@ -49,7 +49,9 @@
 | Action 经验沉淀 | 2026-09-08-action-lesson-archive | business-action +1 | 36 | D033 |
 | Action 布局修复 | 2026-09-08-fix-action-layout-flex | skip_specs（0） | 37 | — |
 | 知识/归档库 | 2026-09-08-knowledge-archive | business-action +1 | 38 | — |
+| 3D.1-W1 Pulse 真实化 | 2026-09-09-frontend-loop-pulse | skip_specs（0） | 39 | D035 |
 | Phase0 生命周期收口 | 2026-09-09-knowledge-lifecycle | business-action +1 | 40 | A1/A2/A3+B1/D036 |
+| 3D.1-W2 Insight 去静态 | 2026-09-09-frontend-loop-insight | skip_specs（0） | 41 | D037 |
 
 ## V2 → 能力 → Change 覆盖矩阵
 | 能力 | 需求数 | 建立于 | 后续补充自 |

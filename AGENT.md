@@ -22,14 +22,14 @@
 | 文档职责分层 / 一致性规则 | `docs/文档地图.md` | 防双源：哪些是快照、哪些是唯一维护点 |
 
 ## 3. 当前状态
-- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；V5 后收尾迭代 34–38、**3D.1-W1 迭代 39（frontend-loop-pulse）**、**Phase0 迭代 40（knowledge-lifecycle）** 已归档，`run_all` **7 段** ALL GREEN（golden 9 不变）、`npm run build` 绿。
+- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；V5 后收尾迭代 34–38、**3D.1-W1 迭代 39（frontend-loop-pulse）**、**Phase0 迭代 40（knowledge-lifecycle）**、**3D.1-W2 迭代 41（frontend-loop-insight）** 已归档，`run_all` **7 段** ALL GREEN（golden 9 不变）、`npm run build` 绿。
 - **V5 之后 = 候选方向 + 两块 backlog（不占版本号）**：候选清单见 `docs/持续优化路线.md` §1；已选 backlog（3D.1 前端接线收口 W1–W3 / 3D.2 专家团领域化 E1–E3）见 §3–§4；已完成收尾见 `docs/历史版本路线.md` §5。另立版本需先在持续优化路线写规划块。
 - **真实 LLM 已接**：DeepSeek 官方 `deepseek-chat`（backend/.env=llm，本地 git-ignored）；LLM 兜底阶段 1 已落地；前端 refresh 超时 Bug1 已收口（30s）。
 - 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（llm 模式）、frontend :5173。
 
 ## 4. 下一步（顺序与范围唯一在 `docs/持续优化路线.md`，本文不再维护候选清单）
 
-- **当前打开项**：3D.1-W2 `frontend-loop-insight`（未开工，propose 时带离线镜像+字段盘点补强）。Phase0 `knowledge-lifecycle` 已于 2026-09-09 归档（迭代 40，见持续优化路线 §5）。
+- **当前打开项**：`docs/workflow.md` §6.2 后端能力（query_* 工具层 / 知识检索 / agent 运行记录 / Dora Chat SSE，设计见 workflow.md，排期见 `docs/持续优化路线.md` §1）；§4 E1 专家注册表；§3 W3。
 - 完整候选方向 / 遗留小项 / 审查遗留 / 推进顺序 → `docs/持续优化路线.md`（§1–§6）。
 
 ## 5. 本地运行 / 验证（新会话先跑）

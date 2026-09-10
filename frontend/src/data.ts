@@ -10,14 +10,14 @@ export const insights: Record<InsightType, Insight[]> = {
     semantics: { causeA: { name: '订单量', value: '-1.8%' }, causeB: { name: '客单价', value: '¥2,998' }, next: ['拆分订单、客单价和商品结构，确认增长是否由少数大单贡献', '核查高价值订单的客户、渠道和商品组合是否可持续', '设置订单量与客单价联动观察，避免销售额增长掩盖订单风险'] } },
   ],
   opportunity: [
-    { id: 'o1', type: 'opportunity', tag: '增长机会', title: '客单价连续4周增长', desc: '客单价升至¥2,998，新品系列贡献62%的增长。', confidence: 74, metric: '¥2,998', delta: '↑ 5.1%', source: '客单价 + 商品 + 门店', question: '这个增长能复制吗？' },
-    { id: 'o2', type: 'opportunity', tag: '增长机会', title: '华东高客单门店形成集群', desc: 'Top 10 高客单门店中有7家来自华东，可能存在可复制的经营模式。', confidence: 68, metric: '7 / 10', delta: '华东占比70%', source: '门店画像 + 客单价', question: '这些门店做对了什么？' },
+    { id: 'o1', type: 'opportunity', tag: '增长机会', title: '客单价连续4周增长', desc: '客单价升至¥2,998，新品系列贡献62%的增长。', confidence: 74, metric: '¥2,998', delta: '↑ 5.1%', source: '客单价 + 商品 + 门店', question: '这个增长能复制吗？', semantics: { causeA: { name: '新品系列', value: '62%' }, causeB: { name: '高客单门店', value: '¥2,998' }, next: ['拆解新品系列对客单价增长的贡献，并区分价格与销量因素', '筛选高客单门店复用的商品组合、陈列和销售动作', '选择 3 家相似门店做两周小范围验证，再扩大推广'] } },
+    { id: 'o2', type: 'opportunity', tag: '增长机会', title: '华东高客单门店形成集群', desc: 'Top 10 高客单门店中有7家来自华东，可能存在可复制的经营模式。', confidence: 68, metric: '7 / 10', delta: '华东占比70%', source: '门店画像 + 客单价', question: '这些门店做对了什么？', semantics: { causeA: { name: '华东门店', value: '70%' }, causeB: { name: '高价值画像', value: '7 / 10' }, next: ['对比华东 Top 10 门店的商品、会员和导购经营特征', '提炼 7 家高客单门店的共同动作并评估复制成本', '选 2 家普通门店开展复制试点，以客单价和转化率验收'] } },
   ],
   change: [
-    { id: 'c1', type: 'change', tag: '观察中', title: '华东订单量下降1.8%', desc: '尚未达到-3%升级阈值，连续3天偏弱。', confidence: 81, metric: '4,286', delta: '↓ 1.8%', source: '华东订单 + 阈值', question: '为什么还没有升级成问题？' },
-    { id: 'c2', type: 'change', tag: '数据更新', title: '门店销售数据刚刚更新', desc: '09:32新增327条记录，Dora已重新计算主动发现。', confidence: 99, metric: '+327', delta: '09:32 更新', source: '数据源状态', question: '这次更新影响了哪些指标？' },
-    { id: 'c3', type: 'change', tag: '趋势出现', title: '新品销量连续3周增长', desc: '新品销量从1,820件升至2,460件，增长趋势尚未进入机会确认。', confidence: 77, metric: '2,460', delta: '↑ 35.2%', source: '新品销量 + 周趋势', question: '哪些门店贡献了这次增长？' },
-    { id: 'c4', type: 'change', tag: '结构变化', title: '高客单门店占比上升', desc: '高客单门店占比由18%升至24%，结构正在向高价值门店倾斜。', confidence: 69, metric: '24%', delta: '↑ 6pp', source: '门店分层 + 客单价', question: '是哪些门店推动了结构变化？' },
+    { id: 'c1', type: 'change', tag: '观察中', title: '华东订单量下降1.8%', desc: '尚未达到-3%升级阈值，连续3天偏弱。', confidence: 81, metric: '4,286', delta: '↓ 1.8%', source: '华东订单 + 阈值', question: '为什么还没有升级成问题？', semantics: { causeA: { name: '华东区域', value: '-1.8%' }, causeB: { name: '升级阈值', value: '-3%' }, next: ['继续观察华东订单量 3 天，确认是否接近 -3% 升级阈值', '同步检查客单价、流量和转化率，定位订单变化来源', '若订单量跌破 -3%，自动升级为问题洞察并进入归因分析'] } },
+    { id: 'c2', type: 'change', tag: '数据更新', title: '门店销售数据刚刚更新', desc: '09:32新增327条记录，Dora已重新计算主动发现。', confidence: 99, metric: '+327', delta: '09:32 更新', source: '数据源状态', question: '这次更新影响了哪些指标？', semantics: { causeA: { name: '当前变化', value: '09:32 更新' }, causeB: { name: '新的经营信号', value: '+327' }, next: ['核对新增 327 条记录的数据完整性和重复率', '确认刷新后的利润率、订单量、库存等核心指标是否异常', '保留本次更新为数据事件，若触发阈值则生成对应洞察'] } },
+    { id: 'c3', type: 'change', tag: '趋势出现', title: '新品销量连续3周增长', desc: '新品销量从1,820件升至2,460件，增长趋势尚未进入机会确认。', confidence: 77, metric: '2,460', delta: '↑ 35.2%', source: '新品销量 + 周趋势', question: '哪些门店贡献了这次增长？', semantics: { causeA: { name: '当前变化', value: '↑ 35.2%' }, causeB: { name: '新的经营信号', value: '2,460' }, next: ['拆解新品销量增长来自哪些区域、门店和商品规格', '核对增长门店的库存、补货和履约能力是否匹配', '选择高潜门店复制新品经营动作，并设置周度增长目标'] } },
+    { id: 'c4', type: 'change', tag: '结构变化', title: '高客单门店占比上升', desc: '高客单门店占比由18%升至24%，结构正在向高价值门店倾斜。', confidence: 69, metric: '24%', delta: '↑ 6pp', source: '门店分层 + 客单价', question: '是哪些门店推动了结构变化？', semantics: { causeA: { name: '当前变化', value: '↑ 6pp' }, causeB: { name: '新的经营信号', value: '24%' }, next: ['核对当前 24% 指标的统计口径与历史基线是否一致', '定位增长主要来自门店、客户还是商品结构变化', '建立周度跟踪，连续两周稳定后再评估是否扩大经营动作'] } },
   ],
 };
 
