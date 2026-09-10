@@ -153,6 +153,8 @@ expert_id | name | role | kind(problem|opportunity|all) | scope(指标口径[]) 
 
 ### 6.1 现有端点可直接作为工具（31 个端点中与本流相关）
 
+> 📌 可直接导入 Dify 的完整 OpenAPI schema + 逐条工具配置，见 **§11 Dify 配置手册**。
+
 | 工具 | 端点 | 用途 | 错误/断言 |
 |---|---|---|---|
 | `get_engine_snapshot` | `GET /api/engine/run` | 取判定与证据（唯一可信源） | 数值锁基线；503=数据源不可用（不回退演示） |
@@ -281,5 +283,382 @@ answer           → 前端契约                        → 每字段可指回�
 - 本文件是**设计稿**：改动不需 OpenSpec change，但涉及 backlog/排期的调整请只改 `docs/持续优化路线.md`。
 - 在 Dify 里落地时，建议**每个节点 id 与本文件保持一致**（便于断言与回放对齐）；workflow 导出文件另存版本（如 `dify/dora-agent-flow-v1.yml`）。
 - 与红线冲突的"捷径"（让 LLM 生成数字/置信度、或让 Agent 改判定）一律不接受——那会让整条流不可验证。
+
+---
+
+## 11. Dify 配置手册（可直接粘贴）
+
+### 11.0 连接信息（先解决"连不上"）
+
+| 项 | 值 / 说明 |
+|---|---|
+| 后端地址（浏览器 / 宿主机 curl） | `http://localhost:8000/api` |
+| **Dify 跑在 Docker**（最常见） | `http://host.docker.internal:8000/api`（macOS / Windows）；Linux 用宿主机内网 IP 或 `--add-host=host.docker.internal:host-gateway` |
+| **关键坑**：后端默认只听 127.0.0.1 | 容器访问不到。启动改为：`python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000` |
+| 鉴权 | 无（本项目未加 API Key）；Dify 自定义工具"鉴权"选 None |
+| CORS | 仅允许 `http://localhost:5173`（浏览器直连受限；**Dify 后端调用不受影响**） |
+| 数据源不可用 | 503 `{"detail":"data source unavailable"}`（不回落静态演示） |
+| 本机 curl 注意 | 加 `--noproxy '*'`（本地代理环境变量会吞请求，见 P 系列） |
+| 健康检查 | `GET /api/health` → `{"status":"ok","service":"dora-api"}` |
+
+### 11.1 OpenAPI Schema（Dify「自定义工具 → 导入 OpenAPI」直接粘贴）
+
+> 用途：一次性把下面所有端点导入成 Dify 工具集；导入后在每个工具里改 **Base URL** 为你的环境（§11.0）。
+> 若只想用部分工具，删掉对应 `paths` 即可。
+
+```yaml
+openapi: 3.0.0
+info:
+  title: Dora API (Agent Tools)
+  version: "1.0.0"
+  description: Dora 判定/证据/委托/行动/知识 REST —— Agent 流只读工具 + 受控写工具
+servers:
+  - url: http://host.docker.internal:8000/api   # Dify in Docker（改成本机情况下的 http://localhost:8000/api）
+paths:
+  /health:
+    get:
+      operationId: dora_health
+      summary: 健康检查
+      responses: { "200": { description: ok } }
+  /engine/run:
+    get:
+      operationId: get_engine_snapshot
+      summary: 引擎快照（判定+证据，唯一可信源）
+      responses: { "200": { description: "{ pulse, insights[] }" }, "503": { description: 数据源不可用 } }
+  /pulse:
+    get:
+      operationId: get_pulse
+      summary: 业务脉搏计数
+      responses: { "200": { description: "{ problems, opportunities, changes, watching, last_updated }" } }
+  /insights:
+    get:
+      operationId: list_insights
+      summary: 洞察列表（按类型）
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema: { type: string, enum: [problem, opportunity, change], default: problem }
+      responses: { "200": { description: "Insight[]（含 semantics/reasonSource/evidence.kind）" } }
+  /insights/{insight_id}:
+    get:
+      operationId: get_insight
+      summary: 洞察详情（含 route/trigger/factors/evidence/semantics）
+      parameters:
+        - name: insight_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { "200": { description: Insight detail }, "404": { description: 不在当前引擎判定集 } }
+  /evidence/{evidence_id}:
+    get:
+      operationId: get_evidence
+      summary: 证据链（事实→判断→建议 + 原始行）
+      parameters:
+        - name: evidence_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { "200": { description: EvidenceModel }, "404": { description: not found } }
+  /watch:
+    get:
+      operationId: list_watch
+      summary: 委托列表（卡片）
+      responses: { "200": { description: "WatchCard[]" } }
+    post:
+      operationId: create_watch
+      summary: 创建委托（解析失败 400）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, example: "帮我关注华东销售额，如果连续三天下降就提醒我" }
+                frequency: { type: string, enum: ["on_update", "daily 09:00", "weekly"] }
+      responses: { "200": { description: "{ ok, target }" }, "400": { description: 无法解析（返回 unsupported 原因） } }
+  /watch/parse:
+    post:
+      operationId: parse_watch
+      summary: 仅解析委托（不落库，供确认界面）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string }
+      responses: { "200": { description: "{ ok, intent{metric_key,dimension,condition,frequency,label,condition_defaulted}, unsupported[] }" } }
+  /watch/{watch_id}:
+    get:
+      operationId: get_watch
+      summary: 委托详情（含命中事件）
+      parameters:
+        - { name: watch_id, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: "{ ok, target, events[] }" }, "404": { description: not found } }
+    patch:
+      operationId: set_watch_status
+      summary: 暂停/恢复委托
+      parameters:
+        - { name: watch_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [watching, paused] }
+      responses: { "200": { description: "{ ok, target }" }, "404": { description: not found } }
+    delete:
+      operationId: delete_watch
+      summary: 删除委托（幂等）
+      parameters:
+        - { name: watch_id, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: "{ ok, deleted }" } }
+  /watch/{watch_id}/check:
+    post:
+      operationId: check_watch
+      summary: 立即评估一次（命中 change/escalate/miss）
+      parameters:
+        - { name: watch_id, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: "{ ok, kind: change|escalate|miss, ... }" }, "404": { description: not found } }
+  /action/cases:
+    get:
+      operationId: list_action_cases
+      summary: 行动档案列表（摘要，无 steps）
+      responses: { "200": { description: "{ ok, cases[] }" } }
+    post:
+      operationId: create_action_case
+      summary: 为引擎判定的洞察建档（按 insight_id 幂等；非判定 400）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [insight_id]
+              properties:
+                insight_id: { type: string, example: p1 }
+      responses: { "200": { description: "{ ok, created, case }" }, "400": { description: 只允许当前引擎判定的 problem/opportunity } }
+  /action/cases/{case_id}:
+    get:
+      operationId: get_action_case
+      summary: 档案详情（含步骤/编排/归档文本）
+      parameters:
+        - { name: case_id, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: "{ ok, case }" }, "404": { description: not found } }
+  /action/cases/{case_id}/steps/{seq}/start:
+    post:
+      operationId: step_start
+      summary: 开始步骤（pending|blocked → in_progress）
+      parameters:
+        - { name: case_id, in: path, required: true, schema: { type: string } }
+        - { name: seq, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: "{ ok, case }" }, "400": { description: 非法迁移 } }
+  /action/cases/{case_id}/steps/{seq}/done:
+    post:
+      operationId: step_done
+      summary: 完成步骤（in_progress → done，带 note/result）
+      parameters:
+        - { name: case_id, in: path, required: true, schema: { type: string } }
+        - { name: seq, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string }
+                result: { type: string }
+      responses: { "200": { description: "{ ok, case }" }, "400": { description: 非法迁移 } }
+  /action/cases/{case_id}/steps/{seq}/blocked:
+    post:
+      operationId: step_blocked
+      summary: 标记受阻（in_progress → blocked）
+      parameters:
+        - { name: case_id, in: path, required: true, schema: { type: string } }
+        - { name: seq, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string }
+      responses: { "200": { description: "{ ok, case }" }, "400": { description: 非法迁移 } }
+  /action/cases/{case_id}/verify:
+    post:
+      operationId: verify_action
+      summary: 验证归档（resolved 需全步 done + note；continue=继续观察）
+      parameters:
+        - { name: case_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome]
+              properties:
+                outcome: { type: string, enum: [resolved, continue] }
+                note: { type: string, example: "利润率回到 18.6%，验证通过" }
+      responses: { "200": { description: "{ ok, case }" }, "400": { description: 未全步 done / 缺 note / 已 resolved } }
+  /action/cases/{case_id}/archive-as-lesson:
+    post:
+      operationId: archive_as_lesson
+      summary: 沉淀经验进经验库（仅 resolved；幂等）
+      parameters:
+        - { name: case_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string, example: "供应商 B 成本需季度复核" }
+      responses: { "200": { description: "{ ok, created, lesson }" }, "400": { description: 非 resolved 或空结论 } }
+  /action/lessons:
+    get:
+      operationId: list_lessons
+      summary: 经验库列表
+      responses: { "200": { description: "{ ok, lessons[] }" } }
+  /knowledge:
+    get:
+      operationId: list_knowledge
+      summary: 知识/归档库（按类型筛选 + 各类型计数）
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema: { type: string, enum: ["", problem, opportunity, change, lesson], default: "" }
+      responses: { "200": { description: "{ ok, type, entries[], stats{problem,opportunity,change,lesson} }" } }
+  /reason/refresh:
+    post:
+      operationId: refresh_reasoning
+      summary: 刷新解释文案（不改判定；无 LLM key 自动回退模板）
+      responses: { "200": { description: "刷新结果（前端读 provider / updated；字段以实际响应为准）" } }
+```
+
+### 11.2 逐条工具配置表（HTTP 节点 / 自定义工具）
+
+| Dify 工具名 | 方法 + 路径（相对 `/api`） | 请求 | 关键响应字段 | 断言 / 错误 |
+|---|---|---|---|---|
+| `get_engine_snapshot` | `GET /engine/run` | — | `pulse`, `insights[]` | `insights.length==9`；`insights[i].evidence.kind` 存在 |
+| `get_pulse` | `GET /pulse` | — | `problems/opportunities/changes/watching` | `problems == insights(problem).length` |
+| `list_insights` | `GET /insights?type=` | query `type` | `Insight[]`（含 `semantics`、`reasonSource`） | 枚举合法；空数组是合法结果 |
+| `get_insight` | `GET /insights/{insight_id}` | path | `route/trigger/factors/evidence/semantics` | 404 = 不在判定集（**不许回退静态**） |
+| `get_evidence` | `GET /evidence/{evidence_id}` | path | `fact/judgment/suggestion/hits/rawRows` | `rawRows` 非空 |
+| `list_watch` | `GET /watch` | — | `WatchCard[]` | 卡片含 `name/value/color/logic/status` |
+| `parse_watch` | `POST /watch/parse` | `{text}` | `ok/intent/unsupported` | `ok=false` 时必须读 `unsupported[0].reason` |
+| `create_watch` | `POST /watch` | `{text, frequency?}` | `{ok,target}` | 400=不可解析；成功后 `GET /watch` 可见 |
+| `check_watch` | `POST /watch/{id}/check` | — | `kind∈{change,escalate,miss}` | `escalate` 必须带引擎 insight id |
+| `list_action_cases` | `GET /action/cases` | — | `{ok,cases[]}` | 摘要无 steps（详情另取） |
+| `create_action_case` | `POST /action/cases` | `{insight_id}` | `{ok,created,case}` | 重复=幂等；非判定 400 |
+| `get_action_case` | `GET /action/cases/{id}` | path | `{ok,case}`（含 steps/status/orchestration） | `status∈{open,running,waiting_verify,resolved}` |
+| `step_start/done/blocked` | `POST …/steps/{seq}/…` | `{note,result}`（done/blocked） | `{ok,case}` | 非法迁移 400 |
+| `verify_action` | `POST …/verify` | `{outcome,note}` | `{ok,case}` | resolved：全步 done+note；已 resolved 400 |
+| `archive_as_lesson` | `POST …/archive-as-lesson` | `{note}` | `{ok,created,lesson}` | 仅 resolved；重复 `created=false` |
+| `list_knowledge` | `GET /knowledge?type=` | query `type` | `entries[]`, `stats` | `stats.* == 对应 entries 计数` |
+| `refresh_reasoning` | `POST /reason/refresh` | — | `provider`, `updated` | 无 key 时 `provider=template`（不报错） |
+
+> 通用约定：写操作 **业务 4xx 一律显式上抛**（Dify 节点"失败重试"设 **0 次**，避免把拒绝吞成成功）；`503` = 数据源不可用，不要重试成"成功"。
+> 时间/网络：本地 curl 加 `--noproxy '*'`；Dify 节点超时建议 15s（`/reason/refresh` 真实 LLM 批量可到 30s，改 60s）。
+
+### 11.3 知识库（RAG）配置
+
+**① Dora 侧导出语料为 JSONL**（Dify 知识库按行导入）：
+
+```bash
+curl -sS --noproxy '*' 'http://localhost:8000/api/knowledge' | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for e in d['entries']:
+    print(json.dumps({
+      'name': e['entry_type'] + '-' + e['code'],
+      'text': (e['title'] + '\n' + e['content'] + '\n结论：' + e['note']).strip(),
+      'metadata': {'entry_type': e['entry_type'], 'code': e['code'], 'source_id': e['source_id'], 'created_at': e['created_at']}
+    }, ensure_ascii=False))
+" > dora_knowledge.jsonl
+```
+
+经验库同理：`GET /api/action/lessons` → 映射 `case_id/code/title/archive/resolution`。
+
+**② Dify 知识库设置建议**
+
+| 项 | 建议值 |
+|---|---|
+| Embedding 模型 | `bge-m3`（本地）或 `text-embedding-3-small`（API） |
+| 分段 | 自定义：分隔符 `\n`，最大 512 tokens，overlap 50（knowledge 条目天然短） |
+| 索引 | 高质量（high_quality） |
+| 检索 | 向量检索 top-k=5，score 阈值 0.5，**开启"引用/Retrieval 返回 references"** |
+| 元数据 | 保留 `entry_type / code / source_id / created_at`（检索节点可加过滤） |
+| 增量 | 每次 archive-as-lesson 后重跑导出 → Dify 知识库"重新索引"（或定时） |
+
+**③ 检索节点参数**：query = `{{#insight.title#}} {{#insight.metric#}}`；filters = `entry_type in (lesson, problem, opportunity)`；输出 `chunks[] + references[]`（§5 引用红线）。
+
+### 11.4 Workflow 变量与节点映射（Dify 里照抄）
+
+| 变量 | 类型 | 来源 | 示例 | 用在哪 |
+|---|---|---|---|---|
+| `trigger` | string | Start 输入 | `data_update` / `watch_tick` / `question` | 路由分支 |
+| `insight_id` | string | Start 输入 / 上游节点 | `p1` | 选洞察 |
+| `question` | string | Start 输入 | `为什么利润率会失速？` | 问答子流程 |
+| `pulse` | object | `{{#engine_snapshot.body.pulse#}}` | `{problems:3,...}` | Pulse 计数 |
+| `insights` | array | `{{#engine_snapshot.body.insights#}}` | 9 条 | 选洞察/信号板 |
+| `insight` | object | Code 节点：`insights.filter(i=>i.id==insight_id)[0]` | p1 | 主区/supervisor |
+| `references` | array | 知识库检索节点 | `[{source_id,code}]` | 会商引用 |
+| `synthesis` | object | 汇总节点 | `{consensus,disagreements,next_steps}` | 人工确认/建档 |
+| `case_id` | string | `{{#create_case.body.case.id#}}` | `p1` | 步骤执行/验证 |
+
+**页面契约回填**（Answer/End 节点的输出字段）：
+`pulse_counts` → Pulse 计数卡；`hero{copy,facts,note}` → 主区；`signal_rows[]` → 信号板；`monitor_rows[]` → 监控卡；`case{id,code,status}` → 行动档案；`watch{id,name}` → 持续关注；`knowledge_refs[]` → 知识库引用。
+
+> Dify 变量引用语法：`{{#节点ID.字段路径#}}`；HTTP 节点响应体在 `body` 下（如 `{{#engine_snapshot.body.insights#}}`）。
+
+### 11.5 LLM / Agent 节点参数
+
+| 项 | 值 |
+|---|---|
+| 模型供应商 | DeepSeek：Base `https://api.deepseek.com/v1`，Model `deepseek-chat`（需支持 tool calling） |
+| 生成参数 | temperature `0.2`（结构化输出）；max_tokens `1500`；失败重试 1；超时 60s |
+| Agent 节点（ReAct） | max_iterations **3–5**；开 tool calling；**工具白名单**：只读工具给所有专家；`create_* / step_* / verify_*` 只挂到 supervisor 与执行节点 |
+| 结构化 | 开 JSON 输出（如供应商支持）→ 后接 Code 断言（§7 L1/L2） |
+| 兜底 | 无 key / 断言失败 → 走"模板文案"分支（与后端 `reasonSource=template` 对齐），不阻断主流程 |
+
+### 11.6 还没建的能力 → 先用什么替代
+
+| 缺口 | 临时替代（现在就能跑） | 正式方案 |
+|---|---|---|
+| RAG 检索端点 | Dify 自带"知识库检索"节点（数据来自 §11.3 导出） | `POST /api/knowledge/search` |
+| 问答流式 SSE | Dify **Chatflow** 的 Answer 节点（原生流式） | `POST /api/dora/chat`（thought_step/tool_call/evidence/answer） |
+| `query_*` 指标时序工具 | `get_insight` + `get_evidence` + `list_insights` 组合 | `/api/tools/query_metric`（P2-7） |
+| 长任务/进度 | Dify 工作流串行执行（节点耗时可视） | job + SSE（D009 / LLM 阶段 2） |
+| 运行回放/审计 | Dify 自带 Run 记录 + 导出的 workflow YAML 版本化 | `POST/GET /api/agent/runs` |
+
+### 11.7 配置完成后的冒烟（先逐条点，再跑 Case 1）
+
+```bash
+curl -sS --noproxy '*' localhost:8000/api/health
+curl -sS --noproxy '*' localhost:8000/api/engine/run  | python3 -c "import json,sys;d=json.load(sys.stdin);print('insights',len(d['insights']))"
+curl -sS --noproxy '*' 'localhost:8000/api/insights?type=problem' | python3 -c "import json,sys;print([(i['id'],i.get('evidence',{}).get('kind')) for i in json.load(sys.stdin)])"
+curl -sS --noproxy '*' localhost:8000/api/watch/parse -H 'Content-Type: application/json' -d '{"text":"关注利润率，连续 3 天下跌提醒我"}'
+curl -sS --noproxy '*' localhost:8000/api/knowledge | python3 -c "import json,sys;print(json.load(sys.stdin)['stats'])"
+```
+
+期望：`health=ok`；`insights=9`；p1 的 `evidence.kind=margin`；parse `ok=true / metric_key=margin`；knowledge `stats` 与页面 chip 计数一致。
+
+Dify 侧验收顺序：每个工具"测试"按钮通过 → 跑 **Case 1（问题 p1）** → `assert_snapshot` / `guardrail_numbers` 不报错 → `create_action_case` 成功 → 打开前端「行动回路」能看到新档案（这就是"可验证"的最小闭环）。
+
+
+
 
 
