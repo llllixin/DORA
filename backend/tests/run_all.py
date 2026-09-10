@@ -1,6 +1,6 @@
-"""一键门禁（C5）：串联 engine_check + ingest_check + e2e_api_check。
+"""一键门禁（C5→迭代 42）：串联 8 段检查（engine/ingest/reasoning/golden/e2e/watch/action/agent）。
 
-前置：PostgreSQL 运行且 seed 过；后端 API 在 :8000。
+前置：PostgreSQL 运行且 seed 过；后端 API 在 :8000（agent_check 走 HTTP）。
 运行：cd backend && python3 -m tests.run_all
 B1（knowledge-lifecycle）：各 check 用与 run_all 相同的解释器（sys.executable），
 避免 PATH 首位是无关 python3（如本机 homebrew 无 sqlalchemy，P012）。
@@ -17,6 +17,7 @@ STEPS = [
     ("e2e_api_check", [sys.executable, "-m", "tests.e2e_api_check"]),
     ("watch_check", [sys.executable, "-m", "tests.watch_check"]),
     ("action_check", [sys.executable, "-m", "tests.action_check"]),
+    ("agent_check", [sys.executable, "-m", "tests.agent_check"]),
 ]
 
 

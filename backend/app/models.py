@@ -138,3 +138,16 @@ class KnowledgeArchive(Base):
     content = Column(Text, nullable=False, default="")   # 处理过程全文（可长）
     note = Column(Text, nullable=False, default="")       # 结论（可长）
     created_at = Column(String(32), nullable=False, default="")
+
+
+class AgentRun(Base):
+    """Agent 运行记录（agent-tool-layer，迭代 42）：轨迹可回放/审计（events 用 JSON 列存）。"""
+    __tablename__ = "agent_run"
+    id = Column(String(40), primary_key=True)      # r-<hex12>
+    trigger = Column(String(32), nullable=False, default="manual")  # manual|chat|data_update|watch_tick
+    status = Column(String(16), nullable=False, default="done")
+    input = Column(JSON, nullable=False, default=dict)
+    events = Column(JSON, nullable=False, default=list)
+    output = Column(JSON, nullable=False, default=dict)
+    created_at = Column(String(32), nullable=False, default="")
+    updated_at = Column(String(32), nullable=False, default="")

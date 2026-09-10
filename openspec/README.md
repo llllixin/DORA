@@ -12,11 +12,11 @@
 | `.clinerules/workflows` + `.cline/skills` | propose/apply/update/archive 工作流 | 流程操作 |
 
 ## 查找三步
-1. **系统要什么** → `openspec/specs/`（6 个能力：business-engine / business-data-store / data-ingest / upload-mapping / business-watch / business-action）。
+1. **系统要什么** → `openspec/specs/`（7 个能力：business-engine / business-data-store / data-ingest / upload-mapping / business-watch / business-action / business-agent）。
 2. **某条需求谁加的/验证证据** → 打开对应 spec，顶部「需求来源表」给出 change 归档目录与迭代号。
 3. **逐任务细节** → 进 `openspec/changes/archive/<date>-<id>/tasks.md`（每条任务含验证命令），proposal=为什么、design=怎么做。
 
-## 归档 Change 索引（33 个）
+## 归档 Change 索引（34 个）
 | Change | 归档目录（date-<id>） | 影响的 spec（+需求数） | 迭代 | 备注/决策 |
 |---|---|---|---|---|
 | C1 引擎覆盖 | 2026-09-07-extend-engine-coverage | business-engine +3 | 9 | 基线建 spec |
@@ -52,6 +52,7 @@
 | 3D.1-W1 Pulse 真实化 | 2026-09-09-frontend-loop-pulse | skip_specs（0） | 39 | D035 |
 | Phase0 生命周期收口 | 2026-09-09-knowledge-lifecycle | business-action +1 | 40 | A1/A2/A3+B1/D036 |
 | 3D.1-W2 Insight 去静态 | 2026-09-09-frontend-loop-insight | skip_specs（0） | 41 | D037 |
+| Agent 工具层/检索/运行/问答 | 2026-09-10-agent-tool-layer | **business-agent +4（新能力）** | 42 | D038 |
 
 ## V2 → 能力 → Change 覆盖矩阵
 | 能力 | 需求数 | 建立于 | 后续补充自 |
@@ -62,6 +63,7 @@
 | upload-mapping | 2 | C4 | — |
 | **business-watch** | 4 | V4-T1（2026-09-07-v4-watch-domain） | V4-T2(+1)·V4-T3(+1)·V4-T4(+1) |
 | **business-action** | 7 | V5-T1（2026-09-07-v5-action-domain） | V5-T2(+1)·V5-T3(+1)·V5-T4(+1)·经验沉淀(+1)·知识库(+1)·**Phase0 生命周期(+1)** |
+| **business-agent** | 4 | agent-tool-layer（2026-09-10-agent-tool-layer） | —（工具层/检索/运行记录/问答流） |
 
 ## 与外部文档的对应
 - 当前状态：`docs/版本路线图.md`；版本历史（V1–V5 归档）：`docs/历史版本路线.md`；持续优化 backlog/候选：`docs/持续优化路线.md`

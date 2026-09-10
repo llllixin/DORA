@@ -13,7 +13,7 @@
 | 未解决 / 候选 / backlog | `docs/持续优化路线.md` | **唯一 backlog**（3D.1 W1–W3、3D.2 E1–E3、遗留小项 §2、审查遗留 §5） |
 | 迭代历史（每步记录） | `docs/开发过程记录.md`（迭代 1–40） |
 | 问题/决策/经验 | `docs/开发问题与经验.md`（P 系列 + D 系列 001–036） |
-| 能力 spec（最终态）+ 需求来源表 | `openspec/specs/`（6 个能力：business-engine/business-data-store/data-ingest/upload-mapping/business-watch/business-action） |
+| 能力 spec（最终态）+ 需求来源表 | `openspec/specs/`（7 个能力：business-engine/business-data-store/data-ingest/upload-mapping/business-watch/business-action/business-agent） |
 | change 导航 + 归档索引 | `openspec/README.md`；归档全量在 `openspec/changes/archive/` |
 | V2 / V3 / V4 / V5 阶段总结 | `RELEASE_NOTES_V2.md` / `RELEASE_NOTES_V3.md` / `RELEASE_NOTES_V4.md` / `RELEASE_NOTES_V5.md` |
 | V5 验收清单 | `docs/V5_ACCEPTANCE_CHECKLIST.md`（A/B/C ✅ sign-off ✅，V5 已完成） |
@@ -22,14 +22,15 @@
 | 文档职责分层 / 一致性规则 | `docs/文档地图.md` | 防双源：哪些是快照、哪些是唯一维护点 |
 
 ## 3. 当前状态
-- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；V5 后收尾迭代 34–38、**3D.1-W1 迭代 39（frontend-loop-pulse）**、**Phase0 迭代 40（knowledge-lifecycle）**、**3D.1-W2 迭代 41（frontend-loop-insight）** 已归档，`run_all` **7 段** ALL GREEN（golden 9 不变）、`npm run build` 绿。
+- **V1 ✅ / V2 ✅ / V3 ✅ / V4 ✅ / V5 ✅（Action 真闭环，sign-off 完成）**——五个版本全部完成；V5 后收尾迭代 34–38、**3D.1-W1 迭代 39（frontend-loop-pulse）**、**Phase0 迭代 40（knowledge-lifecycle）**、**3D.1-W2 迭代 41（frontend-loop-insight）**、**Agent 能力迭代 42（agent-tool-layer）** 已归档，`run_all` **8 段** ALL GREEN（golden 9 不变）、`npm run build` 绿。
 - **V5 之后 = 候选方向 + 两块 backlog（不占版本号）**：候选清单见 `docs/持续优化路线.md` §1；已选 backlog（3D.1 前端接线收口 W1–W3 / 3D.2 专家团领域化 E1–E3）见 §3–§4；已完成收尾见 `docs/历史版本路线.md` §5。另立版本需先在持续优化路线写规划块。
 - **真实 LLM 已接**：DeepSeek 官方 `deepseek-chat`（backend/.env=llm，本地 git-ignored）；LLM 兜底阶段 1 已落地；前端 refresh 超时 Bug1 已收口（30s）。
 - 服务运行中：PG(docker `dora-postgres` healthy)、backend :8000（llm 模式）、frontend :5173。
 
 ## 4. 下一步（顺序与范围唯一在 `docs/持续优化路线.md`，本文不再维护候选清单）
 
-- **当前打开项**：`docs/workflow.md` §6.2 后端能力（query_* 工具层 / 知识检索 / agent 运行记录 / Dora Chat SSE，设计见 workflow.md，排期见 `docs/持续优化路线.md` §1）；§4 E1 专家注册表；§3 W3。
+- **已完成（迭代 42，`agent-tool-layer`）**：workflow.md §6.2 首四项后端能力——`GET /api/tools/query_metric`、`POST /api/knowledge/search`、`/api/agent/runs*`、`POST /api/dora/chat`(SSE)；Dify 配置见 workflow.md §11。
+- **下一步**：§4 E1 专家注册表（`expert-registry-domain`）→ E2/E3；§3 W3 前端框架接线；agent 栈剩余（向量 RAG / job·SSE 队列 / Confidence Aggregator / 真实工具执行）。
 - 完整候选方向 / 遗留小项 / 审查遗留 / 推进顺序 → `docs/持续优化路线.md`（§1–§6）。
 
 ## 5. 本地运行 / 验证（新会话先跑）
@@ -39,7 +40,7 @@ cd backend && python -m app.seed     # 出厂重置（含清 reasoning 缓存）
 python3 -m uvicorn app.main:app --reload --port 8000
 cd frontend && npm run dev           # 5173，/api 代理到 8000
 
-cd backend && python3 -m tests.run_all   # 7 段门禁（engine/ingest/reasoning/golden/e2e/watch/action）
+cd backend && python3 -m tests.run_all   # 8 段门禁（engine/ingest/reasoning/golden/e2e/watch/action/agent）
 python3 -m tests.check_docs              # docs 一致性自检（改文档/归档前跑，死链/双源/编号）
 cd frontend && npm run build
 python3 /tmp/dora_smoke.py               # 冒烟（需 5173；脚本已绕代理 env）
@@ -63,7 +64,7 @@ env（backend/.env 样例）：`DATABASE_URL`、`DORA_REASONING_PROVIDER=templat
 - 单一事实源：当前状态→`版本路线图.md`；版本历史→`历史版本路线.md`；待办/backlog→`持续优化路线.md`（只改那一处）；开发记录只追加"迭代 N"；经验只进 P/D。
 - 代码改动（feature/fix）必须归属一个 OpenSpec change：`openspec new change <kebab>` → proposal/spec/design/tasks → validate → **propose 关键取舍即时记 D 系列** → 用户 review 后 apply → 逐任务勾选+验证 → archive（含【测试证据】+【反思】）→ 同步持续优化路线勾选 / dev-log 追加 / P-D 落档。
 - docs/chore 可直提；提交信息中文 `feat/fix/docs/chore`；push 遇 SSL 抖动用 `GIT_HTTP_VERSION=HTTP/1.1 git push`。
-- 任务"完成"判据：run_all(7 段) ALL GREEN + build + 相关端点 curl（绕代理 env）+ 冒烟。
+- 任务"完成"判据：run_all(8 段) ALL GREEN + build + 相关端点 curl（绕代理 env）+ 冒烟。
 
 ## 8. 未决/注意（重要上下文）
 - **P011/D028/D030**：LLM 刷新兜底 **阶段 1 已落地**（迭代 27：单条 10s/整批预算 20s/并发 3/熔断/优先级/单飞）；**阶段 2（异步 job/SSE + 前端进度）在 `持续优化路线.md` §1 候选**。

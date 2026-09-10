@@ -1,13 +1,18 @@
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import StreamingResponse
 from datetime import datetime, timezone
 import json
 import threading
 
 from app.schemas import (
     ActionCreateRequest,
+    AgentRunCreateRequest,
+    AgentRunEventRequest,
     ArchiveLessonRequest,
+    ChatRequest,
     EvidenceModel,
     InsightSummary,
+    KnowledgeSearchRequest,
     Pulse,
     StepBodyRequest,
     VerifyRequest,
@@ -474,4 +479,151 @@ def list_knowledge(type: str = Query("", pattern="^(|problem|opportunity|change|
     for et in ("problem", "opportunity", "change", "lesson"):
         stats[et] = sum(1 for e in all_entries if e["entry_type"] == et)
     return {"ok": True, "type": type or "all", "entries": entries, "stats": stats}
+
+
+# ---------------------------------------------------------------------------
+# Agent 工具层 / 检索 / 运行记录 / Dora Chat（agent-tool-layer，迭代 42）
+# workflow.md §6.2 所需后端能力；Dify 侧配置见 docs/workflow.md §11
+# ---------------------------------------------------------------------------
+@router.get("/tools/query_metric")
+def query_metric(metric_key: str, dimension: str = "", limit: int = 200):
+    """只读工具：按口径读指标序列行；未知指标返回空数组（不 404、不编造）。"""
+    repo = Repository()
+    rows = repo.list_metric_series(metric_key, dimension or None, limit)
+    return {"ok": True, "metric_key": metric_key, "dimension": dimension or None, "count": len(rows), "rows": rows}
+
+
+@router.post("/knowledge/search")
+def knowledge_search(req: KnowledgeSearchRequest):
+    """RAG 检索：词法 top-k + 可回溯 references；空命中显式 empty=true。"""
+    repo = Repository()
+    hits = repo.search_knowledge(req.query, req.types or None, req.top_k)
+    refs = [{"entry_type": h["entry_type"], "source_id": h["source_id"], "code": h["code"], "title": h["title"]}
+            for h in hits]
+    return {"ok": True, "query": req.query, "empty": not hits, "hits": hits, "references": refs}
+
+
+@router.post("/agent/runs")
+def create_agent_run(req: AgentRunCreateRequest):
+    repo = Repository()
+    run = repo.create_agent_run(req.trigger, req.input, req.events, req.output)
+    return {"ok": True, "run": run}
+
+
+@router.get("/agent/runs/{run_id}")
+def get_agent_run(run_id: str):
+    repo = Repository()
+    run = repo.get_agent_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="agent run not found")
+    return {"ok": True, "run": run}
+
+
+@router.post("/agent/runs/{run_id}/events")
+def append_agent_run_event(run_id: str, body: AgentRunEventRequest):
+    repo = Repository()
+    run = repo.append_agent_run_event(run_id, body.event)
+    if run is None:
+        raise HTTPException(status_code=404, detail="agent run not found")
+    return {"ok": True, "run": run}
+
+
+CHAT_INTENT_RULES = (
+    ("why", ("为什么", "原因", "归因", "为何")),
+    ("evidence", ("证据", "依据", "凭什么", "数据支持")),
+    ("opportunity", ("机会", "增长", "可复制")),
+    ("delegate", ("关注", "提醒", "盯着", "跟踪")),
+    ("handle", ("处理", "怎么办", "行动", "解决")),
+)
+
+
+def _chat_intent(question: str) -> str:
+    for name, keys in CHAT_INTENT_RULES:
+        if any(k in (question or "") for k in keys):
+            return name
+    return "what"
+
+
+def _sse(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+def _compose_answer(intent: str, insight: dict | None, engine: dict, references: list[dict]) -> dict:
+    """答案只由引擎字段 + 检索引用组装（数字锁：不引入引擎外数字/判定）。"""
+    if insight is None:
+        pulse = engine.get("pulse", {})
+        return {"text": f"当前没有引擎判定的洞察；脉搏计数：{json.dumps(pulse, ensure_ascii=False)}",
+                "references": references, "number_source": "engine"}
+    sem = insight.get("semantics") or {}
+    parts: list[str] = []
+    if intent == "why":
+        parts.append(f"「{insight.get('title', '')}」的判断来自引擎：{insight.get('desc', '')}")
+        if sem.get("causeA"):
+            parts.append(f"主要影响因素：{sem['causeA'].get('name', '')} {sem['causeA'].get('value', '')}".strip())
+        if sem.get("causeB"):
+            parts.append(f"进一步定位：{sem['causeB'].get('name', '')} {sem['causeB'].get('value', '')}".strip())
+    elif intent == "evidence":
+        parts.append(f"可回溯证据：指标 {insight.get('metric', '')}，变化 {insight.get('delta', '')}，来源 {insight.get('source', '')}。")
+    elif intent == "opportunity":
+        parts.append(f"这是 {insight.get('type', '')} 类洞察：{insight.get('desc', '')}")
+    elif intent == "delegate":
+        parts.append("建议到「持续关注」用一句话委托，例如：关注利润率，连续三天走弱时提醒我。")
+    elif intent == "handle":
+        parts.append("建议进入「行动回路」建档，按步骤执行并在完成后验证归档。")
+    else:
+        parts.append(f"{insight.get('title', '')}：{insight.get('desc', '')}")
+    nxt = sem.get("next") or []
+    if nxt:
+        parts.append("下一步建议：" + "；".join(str(n) for n in nxt[:3]))
+    if references:
+        parts.append("可参考历史先例：" + "、".join(f"{r['title']}（{r['code']}）" for r in references))
+    else:
+        parts.append("历史知识库暂无同指标先例。")
+    return {"text": "\n".join(parts), "references": references, "number_source": "engine"}
+
+
+@router.post("/dora/chat")
+def dora_chat(req: ChatRequest):
+    """Dora Chat（SSE）：thought_step/tool_call/evidence/answer/done；落一条 agent_run（trigger=chat）。"""
+    repo = Repository()
+    intent = _chat_intent(req.question)
+    engine = run_engine(repo)
+    insights = engine.get("insights", [])
+    insight = None
+    if req.insight_id:
+        insight = next((i for i in insights if i.get("id") == req.insight_id), None)
+    if insight is None and insights:
+        insight = insights[0]
+
+    tool_calls = [{"tool": "get_engine_snapshot", "args": {"question": req.question}, "status": "ok"}]
+    if insight is not None:
+        ev = engine_evidence(insight["id"])
+        tool_calls.append({"tool": "get_evidence", "args": {"id": insight["id"]}, "status": "ok" if ev else "empty"})
+
+    query = f"{insight.get('title', '')} {insight.get('metric', '')}".strip() if insight else (req.question or "")
+    hit_rows = repo.search_knowledge(query, ["lesson", "problem", "opportunity"], 3)
+    references = [{"entry_type": h["entry_type"], "source_id": h["source_id"], "code": h["code"], "title": h["title"]}
+                  for h in hit_rows]
+
+    answer = _compose_answer(intent, insight, engine, references)
+    events = [
+        {"type": "thought_step", "data": {"node": "intent", "intent": intent, "text": f"识别意图：{intent}"}},
+        {"type": "thought_step", "data": {"node": "engine_snapshot", "text": "读取引擎判定与证据"}},
+        *[{"type": "tool_call", "data": tc} for tc in tool_calls],
+        {"type": "evidence", "data": {"insight_id": insight.get("id") if insight else None, "refs": references}},
+        {"type": "answer", "data": answer},
+    ]
+    run = repo.create_agent_run(
+        trigger="chat",
+        input_data={"question": req.question, "page": req.page, "workspace": req.workspace, "insight_id": req.insight_id},
+        events=events,
+        output={"answer": answer["text"], "intent": intent, "references": references},
+    )
+
+    def _gen():
+        for ev in events:
+            yield _sse(ev["type"], ev["data"])
+        yield _sse("done", {"run_id": run["id"], "intent": intent})
+
+    return StreamingResponse(_gen(), media_type="text/event-stream")
 

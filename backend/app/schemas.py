@@ -106,3 +106,28 @@ class VerifyRequest(BaseModel):
 
 class ArchiveLessonRequest(BaseModel):
     note: str = ""
+
+
+# ---------- agent-tool-layer（迭代 42）：工具层 / 检索 / 运行记录 / 问答 ----------
+class KnowledgeSearchRequest(BaseModel):
+    query: str
+    types: list[str] = []
+    top_k: int = 5
+
+
+class AgentRunCreateRequest(BaseModel):
+    trigger: str = "manual"
+    input: dict = {}
+    events: list = []
+    output: dict = {}
+
+
+class AgentRunEventRequest(BaseModel):
+    event: dict = {}
+
+
+class ChatRequest(BaseModel):
+    question: str
+    page: str = "pulse"
+    insight_id: str | None = None
+    workspace: str = "门店经营"

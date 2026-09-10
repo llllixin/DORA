@@ -1,4 +1,5 @@
 """数据访问层：引擎从 Repository 读取原始数据与规则配置（默认 PostgreSQL）。"""
+import re
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
@@ -10,6 +11,7 @@ from app import db
 from app.models import (
     ActionCase,
     ActionStep,
+    AgentRun,
     CaseLesson,
     DataUpdateLog,
     InsightReasoning,
@@ -262,6 +264,7 @@ class Repository:
             "action_step": ActionStep,
             "case_lesson": CaseLesson,
             "knowledge_archive": KnowledgeArchive,
+            "agent_run": AgentRun,
         }[table]
 
         def _do():
@@ -711,6 +714,102 @@ class Repository:
         return self._wrap(_do)
 
 
+    # ---------- Agent 工具层 / 检索 / 运行记录（agent-tool-layer，迭代 42） ----------
+    def list_metric_series(self, metric_key: str, dimension: str | None = None, limit: int = 200) -> list[dict[str, Any]]:
+        """只读工具：按 metric_key（可选 dimension）读序列行；无数据返回空数组（不抛错）。"""
+        lim = max(1, int(limit or 1))
+
+        def _do():
+            with self._session_ctx() as s:
+                q = select(MetricSeries).where(MetricSeries.metric_key == metric_key)
+                if dimension:
+                    q = q.where(MetricSeries.dimension == dimension)
+                rows = s.execute(q.order_by(MetricSeries.id).limit(lim)).scalars().all()
+                return [_series_dict(r) for r in rows]
+        return self._wrap(_do)
+
+    def search_knowledge(self, query: str, types: list[str] | None = None, top_k: int = 5) -> list[dict[str, Any]]:
+        """词法打分检索（确定性、零依赖）；命中条目带 score，供 RAG references 使用。"""
+        q = (query or "").strip()
+        if not q or int(top_k or 0) <= 0:
+            return []
+
+        def _do():
+            with self._session_ctx() as s:
+                stmt = select(KnowledgeArchive)
+                if types:
+                    stmt = stmt.where(KnowledgeArchive.entry_type.in_(list(types)))
+                rows = s.execute(stmt).scalars().all()
+                scored: list[tuple[int, str, dict[str, Any]]] = []
+                for r in rows:
+                    text = " ".join([r.title or "", r.content or "", r.note or "", r.code or ""])
+                    sc = _lexical_score(q, text)
+                    if sc > 0:
+                        scored.append((sc, r.created_at or "", dict(_knowledge_dict(r))))
+                scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+                out = []
+                for sc, _ts, d in scored[: int(top_k)]:
+                    d["score"] = sc
+                    out.append(d)
+                return out
+        return self._wrap(_do)
+
+    def create_agent_run(self, trigger: str = "manual", input_data: dict | None = None,
+                         events: list | None = None, output: dict | None = None,
+                         status: str = "done") -> dict[str, Any]:
+        now = _now_iso()
+        run_id = f"r-{uuid4().hex[:12]}"
+
+        def _do():
+            with self._session_ctx() as s:
+                row = AgentRun(id=run_id, trigger=trigger or "manual", status=status,
+                               input=input_data or {}, events=events or [], output=output or {},
+                               created_at=now, updated_at=now)
+                s.add(row)
+                s.commit()
+                return _agent_run_dict(row)
+        return self._wrap(_do)
+
+    def append_agent_run_event(self, run_id: str, event: dict[str, Any]) -> dict[str, Any] | None:
+        """追加运行事件；不存在返回 None（幂等读语义由上层映射 404）。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(AgentRun, run_id)
+                if row is None:
+                    return None
+                events = list(row.events or [])
+                events.append(event or {})
+                row.events = events
+                row.updated_at = _now_iso()
+                s.commit()
+                return _agent_run_dict(row)
+        return self._wrap(_do)
+
+    def get_agent_run(self, run_id: str) -> dict[str, Any] | None:
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(AgentRun, run_id)
+                return _agent_run_dict(row) if row else None
+        return self._wrap(_do)
+
+    def list_agent_runs(self, limit: int = 20) -> list[dict[str, Any]]:
+        def _do():
+            with self._session_ctx() as s:
+                rows = s.execute(
+                    select(AgentRun).order_by(AgentRun.created_at.desc(), AgentRun.id.desc()).limit(max(1, int(limit)))
+                ).scalars().all()
+                return [_agent_run_dict(r) for r in rows]
+        return self._wrap(_do)
+
+    def delete_all_agent_runs(self) -> None:
+        def _do():
+            with self._session_ctx() as s:
+                s.execute(delete(AgentRun))
+                s.commit()
+        self._wrap(_do)
+
+
 def _insert_steps(s, case_id: str, steps: list[dict[str, Any]]) -> None:
     for i, st in enumerate(steps):
         s.add(ActionStep(
@@ -753,6 +852,33 @@ def _knowledge_dict(row: KnowledgeArchive) -> dict[str, Any]:
         "code": row.code, "title": row.title, "content": row.content,
         "note": row.note, "created_at": row.created_at,
     }
+
+
+_TOKEN_RE = re.compile(r"[0-9a-zA-Z_]+|[\u4e00-\u9fff]{2,}")
+
+
+def _series_dict(row: MetricSeries) -> dict[str, Any]:
+    return {"metric_key": row.metric_key, "label": row.label,
+            "dimension": row.dimension, "value": row.value, "unit": row.unit}
+
+
+def _lexical_score(query: str, text: str) -> int:
+    """确定性词法打分：整串命中 +3；ASCII 词 / ≥2 字中文片段各 +1。"""
+    q = (query or "").lower()
+    t = (text or "").lower()
+    if not q or not t:
+        return 0
+    score = 3 if q in t else 0
+    for tok in _TOKEN_RE.findall(q):
+        if tok and tok in t:
+            score += 1
+    return score
+
+
+def _agent_run_dict(row: AgentRun) -> dict[str, Any]:
+    return {"id": row.id, "trigger": row.trigger, "status": row.status,
+            "input": row.input, "events": row.events, "output": row.output,
+            "created_at": row.created_at, "updated_at": row.updated_at}
 
 
 class _Ctx:

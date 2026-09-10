@@ -3,7 +3,7 @@
 > 定位：把「前端页面期望 Dora 做的事」翻译成 **Dify 可落地的节点图 + 多 Agent 编排 + RAG + 工具契约 + 验证断言**。
 > 用途：在 Dify 里搭建一条**可验证的 agent 流**（能跑、能断言、能回放），并映射回本项目的页面与后端。
 > 性质：设计稿（不承载 backlog 状态）。候选/排期见 `docs/持续优化路线.md`；文档职责见 `docs/文档地图.md`。
-> 依据：搭建文档 #19–#26（Agent 思维链 / Tool Calling / Evidence First / Confidence / 后台流程）、#36（4 个核心 E2E 用例）、本仓 6 个能力 spec、31 个 REST 端点、前端 5 个页面契约。
+> 依据：搭建文档 #19–#26（Agent 思维链 / Tool Calling / Evidence First / Confidence / 后台流程）、#36（4 个核心 E2E 用例）、本仓 7 个能力 spec、37 个 REST 端点（含迭代 42 新增的 tools/knowledge-search/agent-runs/dora-chat）、前端 5 个页面契约。
 
 ## 0. 一句话架构
 
@@ -173,12 +173,14 @@ expert_id | name | role | kind(problem|opportunity|all) | scope(指标口径[]) 
 
 | 待建 | 说明 | 归属候选 |
 |---|---|---|
-| `query_metric / query_supplier_price / query_returns / …` | 把「指标序列查询」抽成显式工具（现在藏在引擎/证据里），供 Agent 直接调用 | P2-7 工具层 |
-| `POST /api/dora/chat`（SSE） | 问答子流程流式：`thought_step / tool_call / evidence / answer` | F8 Dora Chat |
-| `POST /api/knowledge/search` | RAG 检索端点（top-k + filters + references） | 本设计 / P2-7 |
-| `POST /api/agent/runs` + `GET /api/agent/runs/{id}` | Agent 运行记录（可回放/可审计：节点轨迹、工具调用、token、耗时） | 本设计 |
-| job/SSE 状态（Redis/Celery） | 长任务不阻塞请求；前端 `更新中 n/m` | D009 推迟项 / LLM 阶段 2 |
+| ✅ `GET /api/tools/query_metric`（迭代 42 已建） | 指标序列查询工具（`metric_key`+`dimension`），所有已入库口径通用 | — |
+| ✅ `POST /api/dora/chat`（SSE，迭代 42 已建） | 问答子流程流式：`thought_step / tool_call / evidence / answer / done`（当前为模板语义组装；LLM 编排在 Dify 侧） | — |
+| ✅ `POST /api/knowledge/search`（迭代 42 已建） | RAG 检索（词法 top-k + filters + 可回溯 `references`；向量化另立） | — |
+| ✅ `/api/agent/runs`（迭代 42 已建） | Agent 运行记录（可回放/可审计：事件轨迹 JSON） | — |
+| job/SSE 队列状态（Redis/Celery） | 长任务不阻塞请求；前端 `更新中 n/m` | D009 推迟项 / LLM 阶段 2 |
 | Confidence Aggregator | 由 6 项输入算 confidence（禁止 prompt 生成） | 引擎侧增强 |
+| 向量 RAG（embedding/pgvector） | 语义召回（当前为词法，空命中显式「暂无先例」） | 本设计后续 |
+| 真实工具执行（外呼/建单/改价…） | Action 步骤绑定真实外部动作，先 mock 执行记录 | P2-7 工具层 |
 
 ---
 
@@ -223,9 +225,10 @@ expert_id | name | role | kind(problem|opportunity|all) | scope(指标口径[]) 
 | 委托 | `watch/parser|evaluator|scheduler` + `/api/watch*` | 队列化调度（Redis/Celery，多进程前置） |
 | 行动 | `action/builder|flow` + `/api/action/cases*` | 工具执行器（真实外部动作，先 mock execution record） |
 | 解释 | `reasoning/{provider,llm,semantics,cache,policy}`（模板/LLM 双模，数值锁） | 多 Agent 会商（supervisor+roles）、会商纪要落库 |
-| 记忆 | `knowledge_archive`/`case_lesson` + `/api/knowledge` | 向量化 + `/api/knowledge/search`（RAG） |
+| 记忆 | `knowledge_archive`/`case_lesson` + `/api/knowledge` + `/api/knowledge/search`（词法，迭代 42） | 向量化（embedding/pgvector） |
+| Agent 面 | `agent_run` + `/api/tools/query_metric` + `/api/dora/chat` SSE（迭代 42） | 多 Agent 会商编排（Dify 侧）、Confidence Aggregator |
 | 前端 | 5 页 + `doraApi.ts` 三模式；Pulse 已真实化（W1） | `/api/dora/chat` SSE 消费（AskBar/FollowupCard 逐块渲染） |
-| 工程 | `run_all` 7 段门禁、`check_docs`、OpenSpec 归档 | job/SSE、Agent run 回放、Dify workflow 版本化导出 |
+| 工程 | `run_all` **8 段**门禁、`check_docs`、OpenSpec 归档 | job/SSE、Dify workflow 版本化导出 |
 
 **降级策略**：暂不做的展示项（Action 列表完成态、页面美化、图表引擎驱动）与本流解耦；它们是"演示质量"，不阻塞 agent 流验证。
 
@@ -238,9 +241,9 @@ expert_id | name | role | kind(problem|opportunity|all) | scope(指标口径[]) 
    验收：Dify Run 轨迹可见；`POST /api/action/cases` 落库；前端 Action 抽屉出现新档案。
 2. **Step 2（委托/升级）**：Case 3 + Case 4 跑通（parse→create_watch→check→escalate→create_case）。
    验收：Watch 列表与 Pulse 变化卡一致；升级事件引用引擎 insight id。
-3. **Step 3（RAG 先例）**：接 `/api/knowledge/search`，让 Step 1 的会商引用历史 lesson（references 非空）。
+3. **Step 3（RAG 先例）**：接 `/api/knowledge/search`（✅ 已建，迭代 42），让 Step 1 的会商引用历史 lesson（references 非空）。
    验收：同 metric 历史经验被召回并入纪要；引用可回溯。
-4. **Step 4（问答 SSE）**：`POST /api/dora/chat` 流式（thought_step/tool_call/evidence/answer）→ 前端 AskBar/FollowupCard 逐块渲染。
+4. **Step 4（问答 SSE）**：`POST /api/dora/chat`（✅ 已建，迭代 42）流式（thought_step/tool_call/evidence/answer）→ 前端 AskBar/FollowupCard 逐块渲染。
 5. **Step 5（真实工具 + 回放）**：`/api/agent/runs` 记录轨迹；工具层从 mock 切真实（采购/CRM/IM）；Dify workflow 导出并版本化管理。
 
 ---
@@ -546,6 +549,86 @@ paths:
       operationId: refresh_reasoning
       summary: 刷新解释文案（不改判定；无 LLM key 自动回退模板）
       responses: { "200": { description: "刷新结果（前端读 provider / updated；字段以实际响应为准）" } }
+  /tools/query_metric:
+    get:
+      operationId: query_metric
+      summary: 只读工具：按口径读指标序列（未知指标返回空数组）
+      parameters:
+        - { name: metric_key, in: query, required: true, schema: { type: string, example: margin } }
+        - { name: dimension, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 200 } }
+      responses: { "200": { description: "{ ok, metric_key, dimension, count, rows[] }" } }
+  /knowledge/search:
+    post:
+      operationId: search_knowledge
+      summary: RAG 检索（词法 top-k + 可回溯 references）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query: { type: string, example: "利润率 18.5%" }
+                types: { type: array, items: { type: string, enum: [problem, opportunity, change, lesson] } }
+                top_k: { type: integer, default: 5 }
+      responses: { "200": { description: "{ ok, query, empty, hits[], references[] }" } }
+  /agent/runs:
+    post:
+      operationId: create_agent_run
+      summary: 记录一次 Agent 运行（轨迹，可回放）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trigger: { type: string, example: manual }
+                input: { type: object }
+                events: { type: array, items: { type: object } }
+                output: { type: object }
+      responses: { "200": { description: "{ ok, run }" } }
+  /agent/runs/{run_id}:
+    get:
+      operationId: get_agent_run
+      summary: 读取运行记录（回放/审计）
+      parameters:
+        - { name: run_id, in: path, required: true, schema: { type: string, example: r-0123456789ab } }
+      responses: { "200": { description: "{ ok, run }" }, "404": { description: not found } }
+  /agent/runs/{run_id}/events:
+    post:
+      operationId: append_agent_run_event
+      summary: 追加运行事件
+      parameters:
+        - { name: run_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event: { type: object }
+      responses: { "200": { description: "{ ok, run }" }, "404": { description: not found } }
+  /dora/chat:
+    post:
+      operationId: dora_chat
+      summary: Dora Chat（SSE：thought_step/tool_call/evidence/answer/done）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question: { type: string, example: "为什么利润率会失速？" }
+                page: { type: string, example: insight }
+                insight_id: { type: string, example: p1 }
+                workspace: { type: string, example: 门店经营 }
+      responses: { "200": { description: "text/event-stream（5 类事件；done.run_id 可回放）" } }
 ```
 
 ### 11.2 逐条工具配置表（HTTP 节点 / 自定义工具）
@@ -569,6 +652,10 @@ paths:
 | `archive_as_lesson` | `POST …/archive-as-lesson` | `{note}` | `{ok,created,lesson}` | 仅 resolved；重复 `created=false` |
 | `list_knowledge` | `GET /knowledge?type=` | query `type` | `entries[]`, `stats` | `stats.* == 对应 entries 计数` |
 | `refresh_reasoning` | `POST /reason/refresh` | — | `provider`, `updated` | 无 key 时 `provider=template`（不报错） |
+| `query_metric` | `GET /tools/query_metric?metric_key=&dimension=&limit=` | query | `{ok,count,rows[]}` | 未知指标 `count=0`（HTTP 200，不 404） |
+| `search_knowledge` | `POST /knowledge/search` | `{query,types?,top_k?}` | `{ok,empty,hits[],references[]}` | 命中 `references[].source_id` 可回溯；无关词 `empty=true` |
+| `create_agent_run` / `get_agent_run` / `append_agent_run_event` | `POST /agent/runs`、`GET /agent/runs/{id}`、`POST /agent/runs/{id}/events` | `{trigger,input,events,output}` / `{event}` | `{ok,run}` | id 形如 `r-<hex12>`；不存在 404 |
+| `dora_chat`（SSE） | `POST /dora/chat` | `{question,page?,insight_id?,workspace?}` | SSE：`thought_step/tool_call/evidence/answer/done` | `done.run_id` 可 `GET /agent/runs/{id}` 回放；答案数字只来自引擎 |
 
 > 通用约定：写操作 **业务 4xx 一律显式上抛**（Dify 节点"失败重试"设 **0 次**，避免把拒绝吞成成功）；`503` = 数据源不可用，不要重试成"成功"。
 > 时间/网络：本地 curl 加 `--noproxy '*'`；Dify 节点超时建议 15s（`/reason/refresh` 真实 LLM 批量可到 30s，改 60s）。
@@ -638,11 +725,11 @@ for e in d['entries']:
 
 | 缺口 | 临时替代（现在就能跑） | 正式方案 |
 |---|---|---|
-| RAG 检索端点 | Dify 自带"知识库检索"节点（数据来自 §11.3 导出） | `POST /api/knowledge/search` |
-| 问答流式 SSE | Dify **Chatflow** 的 Answer 节点（原生流式） | `POST /api/dora/chat`（thought_step/tool_call/evidence/answer） |
-| `query_*` 指标时序工具 | `get_insight` + `get_evidence` + `list_insights` 组合 | `/api/tools/query_metric`（P2-7） |
+| RAG 检索端点 | ✅ 已建：`POST /api/knowledge/search`（词法 top-k + references，迭代 42） | 向量化（embedding/pgvector） |
+| 问答流式 SSE | ✅ 已建：`POST /api/dora/chat`（SSE 5 类事件，迭代 42；Dify 侧也可用 Chatflow Answer） | 接真实 LLM 编排（Dify 负责） |
+| `query_*` 指标时序工具 | ✅ 已建：`GET /api/tools/query_metric`（通用口径，迭代 42） | 更细粒度工具（供应商/批次等）按需扩展 |
 | 长任务/进度 | Dify 工作流串行执行（节点耗时可视） | job + SSE（D009 / LLM 阶段 2） |
-| 运行回放/审计 | Dify 自带 Run 记录 + 导出的 workflow YAML 版本化 | `POST/GET /api/agent/runs` |
+| 运行回放/审计 | ✅ 已建：`/api/agent/runs*`（迭代 42）+ Dify Run 记录 + workflow YAML 版本化 | 运行面板/回放 UI |
 
 ### 11.7 配置完成后的冒烟（先逐条点，再跑 Case 1）
 
