@@ -418,3 +418,60 @@ export async function listKnowledge(type = ''): Promise<{ entries: KnowledgeEntr
   return { entries: (r as { entries: KnowledgeEntry[] }).entries, stats: (r as { stats: KnowledgeStats }).stats };
 }
 
+export interface DoraChatAnswer {
+  text: string;
+  references: { entry_type: string; source_id: string; code: string; title: string }[];
+  intent: string;
+  runId: string;
+}
+
+/** Dora Chat（SSE，迭代 42 后端能力）：逐事件解析 `thought_step/tool_call/evidence/answer/done` 后返回完整答案。
+ *  离线或失败抛错，由调用方降级为引擎语义（模板）。 */
+export async function askDora(
+  question: string,
+  opts: { insightId?: string; page?: string } = {},
+): Promise<DoraChatAnswer> {
+  if (MODE === 'mock') throw new Error('mock mode: chat disabled');
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const res = await fetch(`${BASE}/dora/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, insight_id: opts.insightId, page: opts.page ?? 'insight' }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let answer = '';
+    let references: DoraChatAnswer['references'] = [];
+    let intent = '';
+    let runId = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const chunks = buf.split('\n\n');
+      buf = chunks.pop() ?? '';
+      for (const chunk of chunks) {
+        let ev = '';
+        let data = '';
+        for (const line of chunk.split('\n')) {
+          if (line.startsWith('event: ')) ev = line.slice(7).trim();
+          else if (line.startsWith('data: ')) data = line.slice(6);
+        }
+        if (!ev) continue;
+        const payload = data ? JSON.parse(data) : {};
+        if (ev === 'answer') { answer = payload.text ?? ''; references = payload.references ?? []; }
+        else if (ev === 'thought_step' && payload.intent) intent = payload.intent;
+        else if (ev === 'done') runId = payload.run_id ?? '';
+      }
+    }
+    return { text: answer, references, intent, runId };
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+

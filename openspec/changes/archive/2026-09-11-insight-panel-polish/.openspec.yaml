@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-09-11
+skip_specs: true   # 纯前端展示层收敛：判断列去复述 + 先例归位 + 置信度贴底；后端/契约零改动

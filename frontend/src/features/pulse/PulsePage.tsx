@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { InsightType, Page } from '../../types';
-import { insights, watchItems } from '../../data';
+import { insights, watchItems, capabilities, autoExpertNotes } from '../../data';
 import { Tag } from '../../components/ui/Tag';
 import { AskBar } from '../../components/dora/AskBar';
 import { createWatch, deleteWatch, detectApi, syncRemoteData } from '../../services/doraApi';
@@ -23,6 +23,8 @@ export function PulsePage({
   const [followBusy, setFollowBusy] = useState(false);
   const [online, setOnline] = useState<boolean | null>(null);
   const [tick, setTick] = useState(0);
+  const expertEntries = capabilities['专家团'] ?? [];
+  const [expert, setExpert] = useState<string>(expertEntries[0]?.[0] ?? '');
 
   const refresh = useCallback(async () => {
     let ok = false;
@@ -121,7 +123,7 @@ export function PulsePage({
         <Summary label="需要处理" num={String(insights.problem.length)} cls="problem" desc="高影响问题 · 优先进入问题洞察" onClick={() => onInsight('problem')} />
         <Summary label="增长机会" num={String(insights.opportunity.length)} cls="opportunity" desc="可放大机会 · 看增长来源" onClick={() => onInsight('opportunity')} />
         <Summary label="重要变化" num={String(insights.change.length)} cls="change" desc="正在观察 · 看是否升级" onClick={() => onInsight('change')} />
-        <Summary label="持续关注" num={String(watchItems.length)} cls="watch" desc="Dora 正在替你持续检查" note="委托命中变化会回到这里" onClick={() => onPage('watch')} />
+        <Summary label="持续关注" num={String(watchItems.length)} cls="watch" desc="Dora 正在替你持续检查" onClick={() => onPage('watch')} />
       </div>
       <div className="cockpit-kicker">
         <span>今日经营主线</span>
@@ -234,7 +236,23 @@ export function PulsePage({
             <Step active title="判断值得关注什么" sub={`${insights.problem.length} 问题 · ${insights.opportunity.length} 机会 · ${insights.change.length} 变化`} />
             <div className="auto">
               <div className="auto-title">自动编排 · 专家团能力说明</div>
-              <div className="auto-note">Dora 编排经营分析 / 趋势 / 归因等专家能力解读信号（能力详情见侧栏「专家团」）。</div>
+              <div className="auto-tags">
+                {expertEntries.map(([name]) => (
+                  <button
+                    key={name}
+                    className={'auto-tag ' + (expert === name ? 'active' : '')}
+                    onClick={() => setExpert(name)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+              {expert && (
+                <div className="auto-note">
+                  <b>{expert}</b>：{(expertEntries.find(([n]) => n === expert)?.[1] ?? '')}
+                  {autoExpertNotes[expert] ? ` ${autoExpertNotes[expert]}` : ''}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -262,10 +280,10 @@ export function PulsePage({
   );
 }
 
-function Summary({ label, num, cls, desc, onClick, note }: { label: string; num: string; cls: string; desc: string; onClick: () => void; note?: string }) {
+function Summary({ label, num, cls, desc, onClick }: { label: string; num: string; cls: string; desc: string; onClick: () => void }) {
   return (
     <button className={`card summary-card ${cls}`} onClick={onClick}>
-      <div className="label">{label}{note ? <span className="q" title={note}>?</span> : null}</div>
+      <div className="label">{label}</div>
       <div className="num">{num}</div>
       <div className="desc">{desc}</div>
     </button>
@@ -297,7 +315,7 @@ function Signal({ type, title, desc, value, onClick }: { type: 'op' | 'ch'; titl
       <div className={`signal-kind ${type}`}>{type === 'op' ? '增长机会' : '重要变化'}</div>
       <div className="signal-main"><b>{title}</b><p>{desc}</p></div>
       <div className="signal-value"><span className="base">{parts[0] ?? value}</span>{parts[1] ? <span className={`delta ${type === 'op' ? 'pos' : 'neutral'}`}>{parts[1]}</span> : null}</div>
-      <button className="btn" onClick={onClick}>查看 →</button>
+      <button className="btn signal-action" onClick={onClick}>查看 →</button>
     </div>
   );
 }
