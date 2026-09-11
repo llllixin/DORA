@@ -69,11 +69,22 @@ export interface WatchItem {
   source: string;
 }
 
+/** watch-delegate-flow：委托最近一次命中事件（卡片增量字段；无命中时后端返回 null） */
+export interface WatchEventCard {
+  kind: 'change' | 'escalate';
+  summary: string;
+  triggeredAt: string;
+}
+
 /** V4-T4：真实委托卡片（后端 /api/watch 返回，WatchItem 超集） */
 export interface WatchTargetCard extends WatchItem {
   status?: 'watching' | 'paused';
   frequency?: string;
   lastEventAt?: string;
+  /** watch-delegate-flow：委托生命周期回显（全部可选，缺字段按「无委托 / 未命中」渲染） */
+  intent?: WatchParseIntent;
+  lastCheckedAt?: string;
+  lastEvent?: WatchEventCard | null;
 }
 
 export interface WatchCondition {

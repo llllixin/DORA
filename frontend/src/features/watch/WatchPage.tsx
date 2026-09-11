@@ -1,15 +1,28 @@
 import { useEffect, useState } from 'react';
-import { watchItems } from '../../data';
 import { AskBar } from '../../components/dora/AskBar';
 import { Tag } from '../../components/ui/Tag';
 import type { WatchParseIntent, WatchTargetCard } from '../../types';
 import { checkWatch, createWatch, deleteWatch, listWatch, parseWatch, setWatchStatus } from '../../services/doraApi';
+import { buildDelegateFlow, conditionText, frequencyText } from './delegateFlow';
+import type { DelegateStepState } from './delegateFlow';
 
-const FREQS: { value: string; label: string }[] = [
-  { value: 'on_update', label: '数据更新时' },
-  { value: 'daily 09:00', label: '每日 09:00' },
-  { value: 'weekly', label: '每周' },
-];
+// 频率选项文案与面板步骤 note 共用同一份（单一事实源，避免两处分叉）
+const FREQS: { value: string; label: string }[] = ['on_update', 'daily 09:00', 'weekly'].map((value) => ({
+  value,
+  label: frequencyText(value),
+}));
+
+// 面板步骤态 → 既有 Tag 色调/文案（watch-delegate-flow D3：状态由真实委托推导，组件只渲染）
+const STEP_TONE: Record<DelegateStepState, 'default' | 'green' | 'blue'> = {
+  done: 'green', active: 'blue', paused: 'default', pending: 'default',
+};
+// 头部状态 pill → 既有 Tag 色调（与步骤态同源，D3）
+const FLOW_TONE: Record<string, 'default' | 'red' | 'green' | 'blue' | 'ai'> = {
+  idle: 'default', parsed: 'ai', watching: 'green', hit: 'blue', escalated: 'red', paused: 'default', offline: 'ai',
+};
+const STEP_TEXT: Record<DelegateStepState, string> = {
+  done: '已完成', active: '进行中', paused: '已暂停', pending: '待推进',
+};
 const SUGGESTS = ['关注利润率', '关注库存周转', '关注华东销售', '关注新品增长', '关注退货率', '关注大额订单'];
 
 type Props = { onTrace: (id: string) => void; onNotice: (m: string) => void; onInsight: (id: string) => void };
@@ -20,13 +33,14 @@ export function WatchPage({ onNotice }: Props) {
   const [intent, setIntent] = useState<WatchParseIntent | null>(null);
   const [error, setError] = useState('');
   const [targets, setTargets] = useState<WatchTargetCard[]>([]);
+  const [offline, setOffline] = useState(false);      // D5：load() 回退演示数据即离线
+  const [focusId, setFocusId] = useState<string | null>(null); // D4：面板跟随的当前委托
 
   const load = async () => {
-    try {
-      setTargets(await listWatch());
-    } catch {
-      setTargets([...watchItems]);
-    }
+    let fallback = false;
+    const list = await listWatch(() => { fallback = true; }); // 服务层内部兜底不抛错，用回调判离线（D5）
+    setTargets(list as WatchTargetCard[]);
+    setOffline(fallback);
   };
   useEffect(() => {
     void load();
@@ -59,6 +73,7 @@ export function WatchPage({ onNotice }: Props) {
       setIntent(null);
       setError('');
       onNotice(`✓ 已开始持续关注${r.target?.name ? `：${r.target.name}` : ''}；后续变化会回到业务脉搏`);
+      setFocusId(r.target?.id ?? null); // D4：面板跟随刚创建的委托
       void load();
     } catch (err) {
       onNotice(`✗ ${err instanceof Error ? err.message : String(err)}`);
@@ -85,15 +100,12 @@ export function WatchPage({ onNotice }: Props) {
     void load();
   };
 
-  const condText = intent
-    ? intent.condition.type === 'streak_below'
-      ? `连续 ${intent.condition.days} 天下跌`
-      : intent.condition.type === 'streak_above'
-        ? `连续 ${intent.condition.days} 天上涨`
-        : intent.condition.type === 'below'
-          ? `跌破 ${intent.condition.ref}`
-          : `超过 ${intent.condition.ref}`
-    : '';
+  const condText = intent ? conditionText(intent.condition) : '';
+
+  // D4：面板跟随「当前委托」——本会话刚理解/创建的委托优先，否则列表最新一条（标注「最近委托」）
+  const current = targets.find((t) => t.id === focusId) ?? targets[0] ?? null;
+  const isRecent = !!current && current.id !== focusId;
+  const flow = buildDelegateFlow({ intent, target: offline ? null : current, online: !offline });
 
   return (
     <section className="page active">
@@ -103,10 +115,13 @@ export function WatchPage({ onNotice }: Props) {
           <div className="h1">把业务目标交给 Dora，后面不用一直盯</div>
           <p className="sub">持续关注是“业务目标委托”。Dora 按你选的频率评估，命中变化会回到业务脉搏并升级。</p>
         </div>
-        <span className="status">
-          <span className="dot" />
-          {targets.length} 个业务目标持续关注中
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {offline && <Tag tone="ai">离线演示</Tag>}
+          <span className="status">
+            <span className="dot" />
+            {targets.length} 个业务目标持续关注中
+          </span>
+        </div>
       </div>
 
       <div className="delegate">
@@ -158,12 +173,27 @@ export function WatchPage({ onNotice }: Props) {
             <b style={{ fontSize: 15 }}>Dora 接到委托后会做什么</b>
             <Tag tone="ai">自动完成</Tag>
           </div>
-          {[['1', '理解目标', '识别指标、范围、条件和频率'], ['2', '匹配数据口径', '自动关联引擎支持的指标序列'], ['3', '持续检查', '数据更新 / 每日 / 每周按频率评估'], ['4', '回到业务脉络', '命中变化 → 升级只引用引擎判定']].map(([n, t, p]) => (
-            <div className="mstep" key={n}>
-              <div className="mnum">{n}</div>
-              <div><b>{t}</b><p>{p}</p></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, gap: 8 }}>
+            <span style={{ fontSize: 12, opacity: 0.7 }}>
+              {offline
+                ? '当前委托 · 未连接后端'
+                : current
+                  ? `当前委托 · ${current.name}${isRecent ? '（最近委托）' : ''}`
+                  : '当前委托 · 尚未创建'}
+            </span>
+            <Tag tone={FLOW_TONE[flow.state] ?? 'default'}>{flow.stateLabel}</Tag>
+          </div>
+          {flow.steps.map((st) => (
+            <div className="mstep" key={st.n}>
+              <div className="mnum">{st.n}</div>
+              <div>
+                <b>{st.title}</b> <Tag tone={STEP_TONE[st.state]}>{STEP_TEXT[st.state]}</Tag>
+                <p>{st.desc}</p>
+                <p style={{ fontWeight: 600, color: st.state === 'pending' ? undefined : '#5149dc' }}>{st.note}</p>
+              </div>
             </div>
           ))}
+          {flow.hint && <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>{flow.hint}</div>}
         </div>
       </div>
 

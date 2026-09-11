@@ -201,6 +201,14 @@ def section4_e2e(repo: Repository) -> None:
     assert created.get("ok") and created["target"]["status"] == "watching"
     tid = created["target"]["id"]
 
+    # watch-delegate-flow：创建卡片即刻回显解析结果 + 最近检查时刻 + 最近命中（change）
+    ccard = created["target"]
+    assert ccard["intent"]["metric_key"] == "east_orders", f"create card intent expected, got {ccard.get('intent')}"
+    assert ccard["lastCheckedAt"], f"create card lastCheckedAt expected non-empty, got {ccard!r}"
+    assert ccard["lastEvent"] and ccard["lastEvent"]["kind"] == "change", \
+        f"create card change event expected, got {ccard.get('lastEvent')}"
+    assert ccard["lastEvent"]["summary"], "create card event summary expected non-empty"
+
     # Case 3：创建即评估 → 变化命中（watch 事件）
     det = get(f"/watch/{tid}")
     kinds = [e["kind"] for e in det["events"]]
@@ -219,6 +227,25 @@ def section4_e2e(repo: Repository) -> None:
     card = next(c for c in cards if c["id"] == tid)
     assert card["value"] == "已升级" and card["color"] == "red", f"card should be escalated, got {card}"
 
+    # watch-delegate-flow：升级卡片回显 escalate 事件且文案引用引擎判定（run_engine 的 trigger）
+    ins = get("/insights/e2")
+    assert card["intent"]["metric_key"] == "east_orders" and card["intent"]["dimension"] == "华东", \
+        f"escalate card intent expected, got {card.get('intent')}"
+    assert card["lastCheckedAt"], "escalate card lastCheckedAt expected non-empty"
+    ev = card["lastEvent"]
+    assert ev and ev["kind"] == "escalate", f"escalate event expected, got {ev}"
+    assert ev["summary"] == f"已升级：{ins['trigger']}", \
+        f"event summary must quote engine judgement, got {ev['summary']!r} vs {ins['trigger']!r}"
+    assert ev["triggeredAt"], "lastEvent.triggeredAt expected non-empty"
+
+    # watch-delegate-flow：未命中委托不伪造事件（lastEvent is None），但仍记录最近检查时刻
+    miss = post("/watch", {"text": "帮我关注华东销售额，如果超过 999999 就提醒我", "frequency": "on_update"})
+    miss_id = miss["target"]["id"]
+    mcard = next(c for c in get("/watch") if c["id"] == miss_id)
+    assert mcard["lastEvent"] is None, f"miss target must keep lastEvent null, got {mcard['lastEvent']}"
+    assert mcard["lastCheckedAt"], "miss target still evaluated (lastCheckedAt set)"
+
+    delete(f"/watch/{miss_id}")
     delete(f"/watch/{tid}")
     post("/datasets/sample")  # 还原出厂
 

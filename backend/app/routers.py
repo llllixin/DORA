@@ -117,6 +117,13 @@ def _watch_card(repo: Repository, target: dict) -> dict:
         "status": target["status"],
         "frequency": freq,
         "lastEventAt": target.get("last_event_at") or (last["triggered_at"] if last else ""),
+        # watch-delegate-flow：委托生命周期回显（增量字段，复用上面已取到的 intent/last，不新增查询）
+        "intent": intent,
+        "lastCheckedAt": target.get("last_checked_at") or "",
+        "lastEvent": (
+            {"kind": last["kind"], "summary": last["summary"], "triggeredAt": last["triggered_at"]}
+            if last else None
+        ),
     }
 
 

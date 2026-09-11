@@ -206,8 +206,16 @@ export async function detectApi(): Promise<boolean> {
   }
 }
 
-export async function listWatch(): Promise<WatchItem[]> {
-  return apiGet('/watch', () => [...watchItems]);
+/**
+ * V4-T4：委托列表。
+ * watch-delegate-flow：`onFallback` 在「未取到后端、落到 data.ts 镜像」时回调——
+ * auto 模式的服务层内部兜底不抛错（apiGet），组件无法靠 catch 判离线，故由本函数显式上报。
+ */
+export async function listWatch(onFallback?: () => void): Promise<WatchItem[]> {
+  return apiGet('/watch', () => {
+    onFallback?.();
+    return [...watchItems];
+  });
 }
 
 /** V4-T2：解析委托语句（后端无 parse 概念时前端回退静态演示解析）。 */
