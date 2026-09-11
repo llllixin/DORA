@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { actionCases } from '../../data';
-import type { ActionCase, ActionCaseCard, ActionCaseDetail, CaseLesson } from '../../types';
+import { actionCases, capabilities } from '../../data';
+import type { ActionCase, ActionCaseCard, ActionCaseDetail, CaseStep } from '../../types';
 import { Tag } from '../../components/ui/Tag';
 import {
-  archiveAsLesson, blockStep, doneStep, fetchActionCase, listActionCases, listLessons, startStep, verifyAction,
+  archiveAsLesson, blockStep, doneStep, fetchActionCase, listActionCases, setStepExperts, startStep, verifyAction,
 } from '../../services/doraApi';
 
 type Props = {
@@ -21,6 +21,31 @@ const STEP_LABEL: Record<string, string> = {
 const CASE_LABEL: Record<string, string> = {
   open: '已建档', running: '执行中', waiting_verify: '待验证', resolved: '已归档',
 };
+/** 列表状态 = 展示层二值映射（D1）：不改状态机与接口；详情页仍显示细粒度状态。 */
+const caseStateLabel = (status: string) => (status === 'resolved' ? '已归档' : '执行中');
+const STEP_TONE: Record<string, 'green' | 'red' | 'blue'> = {
+  done: 'green', blocked: 'red', in_progress: 'blue', pending: 'blue',
+};
+/** 时间线节点色（复用既有 .tl.done/.tl.active 死 CSS）。 */
+const tlClass = (status: string) => (status === 'done' ? 'done ' : status === 'in_progress' ? 'active ' : '');
+
+/** 默认展开「当前步」：首个 in_progress → 首个非 done → 末步（D3，纯展示层 state）。 */
+function defaultOpenSeq(steps: CaseStep[]) {
+  const active = steps.find((s) => s.status === 'in_progress');
+  if (active) return active.seq;
+  const todo = steps.find((s) => s.status !== 'done');
+  if (todo) return todo.seq;
+  return steps.length ? steps[steps.length - 1].seq : -1;
+}
+
+/** 候选专家池 = 前端能力目录 ∪ 档案级系统建议（D6；后端不校验白名单）。 */
+function expertPool(d: ActionCaseDetail) {
+  const caps = (capabilities['专家团'] ?? []).map(([name, desc]) => ({ name, hint: desc, system: false }));
+  const extra = (d.orchestration?.experts ?? [])
+    .filter((n) => !caps.some((c) => c.name === n))
+    .map((name) => ({ name, hint: '档案级系统建议', system: true }));
+  return [...caps, ...extra];
+}
 
 export function ActionPage({ joined, onTrace, onNotice }: Props) {
   const [cases, setCases] = useState<ActionCaseCard[]>([]);
@@ -30,10 +55,10 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
   const [verifyNote, setVerifyNote] = useState('');
   const [stepNote, setStepNote] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(true);
-  const [lessons, setLessons] = useState<CaseLesson[]>([]);
-  const [showLessons, setShowLessons] = useState(false);
   const [lessonNote, setLessonNote] = useState('');
   const [learned, setLearned] = useState(false);
+  const [openSteps, setOpenSteps] = useState<Record<number, boolean>>({});
+  const [poolOpen, setPoolOpen] = useState<Record<number, boolean>>({});
 
   const loadList = async () => {
     try {
@@ -65,6 +90,8 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
       if (alive && d) {
         setDetail(d);
         setLearned(false);
+        setOpenSteps({ [defaultOpenSeq(d.steps)]: true }); // 换档案重置展开态（D3）
+        setPoolOpen({});
       }
     })();
     return () => { alive = false; };
@@ -96,25 +123,23 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
     }
   };
 
-  const loadLessons = async () => {
+  /** 整体设置某步负责专家（D4/D5）：失败仅提示、不做乐观更新。 */
+  const applyExperts = async (caseId: string, seq: number, next: string[], msg: string) => {
     try {
-      setLessons(await listLessons());
-    } catch {
-      setLessons([]);
+      const r = await setStepExperts(caseId, seq, next);
+      if (r.case) setDetail(r.case);
+      onNotice(msg);
+      void reload();
+    } catch (err) {
+      onNotice(`✗ ${err instanceof Error ? err.message : String(err)}`);
     }
   };
-
-  useEffect(() => {
-    void loadLessons();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const archiveLesson = async (c: ActionCaseDetail) => {
     try {
       const r = await archiveAsLesson(c.id, lessonNote.trim() || '该问题已按档案处理并验证通过');
-      onNotice(r.created ? '✓ 已沉淀经验并加入经验库' : '该档案经验已沉淀（幂等返回既有）');
+      onNotice(r.created ? '✓ 已沉淀到知识库 → 经验（可在「知识库」查看）' : '该档案经验已沉淀（幂等返回既有，可在「知识库」查看）');
       setLearned(true);
-      void loadLessons();
     } catch (err) {
       onNotice(`✗ ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -123,6 +148,13 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
   const demoCases = joined
     .map((id) => actionCases[id])
     .filter((x): x is ActionCase => Boolean(x));
+
+  // 列表排序：执行中在前（D1）；计数供列表头展示
+  const sortedCases = [...cases].sort(
+    (a, b) => Number(a.status === 'resolved') - Number(b.status === 'resolved') || a.code.localeCompare(b.code),
+  );
+  const runningCount = cases.filter((c) => c.status !== 'resolved').length;
+  const archivedCount = cases.length - runningCount;
 
   if (demo) {
     return (
@@ -138,10 +170,18 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
         <div className="card" style={{ padding: 16 }}>
           {demoCases.length === 0 && <div className="action-empty">还没有行动档案。前往「洞察」加入问题 / 机会。</div>}
           {demoCases.map((it) => (
-            <div key={it.id} style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
-              <Tag tone={it.tagCls as 'red' | 'green'}>{it.kind === 'problem' ? '问题' : '机会'}</Tag>
-              <b> {it.caseTitle}</b> <small style={{ opacity: 0.6 }}>{it.code}</small>
-              <button className="btn" onClick={() => onTrace(it.id)}>打开证据链 →</button>
+            <div key={it.id} className="insight-item" style={{ cursor: 'default' }}>
+              <div className="itop">
+                <Tag tone={it.tagCls as 'red' | 'green'}>{it.kind === 'problem' ? '问题' : '机会'}</Tag>
+                <small style={{ opacity: 0.6 }}>{it.code}</small>
+              </div>
+              <div className="iname">{it.caseTitle}</div>
+              <div className="idesc">{it.source}</div>
+              <div className="list-status none">离线演示</div>
+              <div style={{ marginTop: 6, fontSize: 11, opacity: 0.7 }}>
+                演示数据不含步骤状态与负责专家；步骤执行 / 专家分配需后端在线。
+              </div>
+              <button className="btn" style={{ marginTop: 8 }} onClick={() => onTrace(it.id)}>打开证据链 →</button>
             </div>
           ))}
         </div>
@@ -167,21 +207,27 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
               <button className="rowbtn" onClick={() => setDrawerOpen(false)}>收起 «</button>
             </div>
           {cases.length === 0 && <div className="action-empty">还没有行动档案。前往「洞察」把问题 / 机会加入行动回路。</div>}
-          {cases.map((it) => (
-            <button key={it.id} className="suggest" style={{ width: '100%', textAlign: 'left', marginBottom: 6 }}
+          {sortedCases.length > 0 && (
+            <div className="list-head"><span>执行中 {runningCount} · 已归档 {archivedCount}</span></div>
+          )}
+          {sortedCases.map((it) => (
+            <button key={it.id} className={'insight-item ' + (it.id === currentId ? 'active' : '')}
                     onClick={() => { setCurrentId(it.id); setDetail(null); }}>
-              <Tag tone={it.kind === 'problem' ? 'red' : 'green'}>{it.kind === 'problem' ? '问题' : '机会'}</Tag>{' '}
-              {it.case_title} <small style={{ opacity: 0.6 }}> · {it.code} · {CASE_LABEL[it.status]}</small>
+              <div className="itop">
+                <Tag tone={it.kind === 'problem' ? 'red' : 'green'}>{it.kind === 'problem' ? '问题' : '机会'}</Tag>
+                <small style={{ opacity: 0.6 }}>{it.code}</small>
+              </div>
+              <div className="iname">{it.case_title}</div>
+              <div className="idesc">{it.source}</div>
+              <div className={'list-status ' + (it.status === 'resolved' ? 'none' : 'action')}>
+                {caseStateLabel(it.status)}
+              </div>
             </button>
           ))}
             <div style={{ borderTop: '1px solid #eee', marginTop: 8 }}>
-              <button className="rowbtn" onClick={() => setShowLessons((v) => !v)}>🧠 学习经验（{lessons.length}）{showLessons ? '▾' : '▸'}</button>
-              {showLessons && lessons.map((l) => (
-                <div key={l.case_id} style={{ fontSize: 12, marginTop: 6 }}>
-                  <b>{l.code} · {l.title}</b>
-                  <div style={{ opacity: 0.75 }}>结论：{l.resolution}</div>
-                </div>
-              ))}
+              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 6 }}>
+                经验已收口到「知识库 → 经验」：沉淀后在知识库查看处理过程与结论。
+              </div>
             </div>
           </div>
           {!drawerOpen && (
@@ -210,30 +256,85 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
               </div>
               <button className="btn" onClick={() => onTrace(detail.id)}>打开证据链 →</button>
 
-              {detail.steps.map((st) => (
-                <div key={st.seq} style={{ borderTop: '1px solid #eee', padding: '8px 0' }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Tag tone={st.status === 'done' ? 'green' : st.status === 'blocked' ? 'red' : st.status === 'in_progress' ? 'blue' : 'blue'}>
-                      {STEP_LABEL[st.status]}
-                    </Tag>
-                    <b>{st.title}</b>
-                    <small style={{ opacity: 0.6 }}>#{st.seq}</small>
-                  </div>
-                  <p style={{ margin: '4px 0' }}>{st.desc}</p>
-                  {st.why && <small style={{ opacity: 0.7 }}>为什么：{st.why}</small>}
-                  {st.note && <div style={{ opacity: 0.85 }}>备注：{st.note}</div>}
-                  {st.result && <div style={{ opacity: 0.85 }}>结果：{st.result}</div>}
-                  {(st.status === 'pending' || st.status === 'blocked') && (
-                    <button className="btn" onClick={() => act(() => startStep(detail.id, st.seq), `已开始「${st.title}」`)}>开始</button>
-                  )}
-                  {st.status === 'in_progress' && (
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn primary" onClick={() => act(() => doneStep(detail.id, st.seq, { note: stepNote || '完成', result: stepNote }), `已完成「${st.title}」`)}>完成</button>
-                      <button className="btn" onClick={() => act(() => blockStep(detail.id, st.seq, stepNote || '受阻待处理'), `「${st.title}」已标记受阻`)}>受阻</button>
+              <div className="timeline">
+                {detail.steps.map((st) => {
+                  const open = !!openSteps[st.seq];
+                  const experts = st.experts ?? [];
+                  const pool = expertPool(detail).filter((c) => !experts.includes(c.name));
+                  const frozen = detail.status === 'resolved'; // resolved 冻结推进与专家设置（D5）
+                  return (
+                    <div key={st.seq} className={'tl ' + tlClass(st.status)}>
+                      <div className="tldot">{st.seq + 1}</div>
+                      <div className="tl-body">
+                        <div className="tl-head">
+                          <h4>
+                            <Tag tone={STEP_TONE[st.status]}>{STEP_LABEL[st.status]}</Tag>
+                            {' '}{st.title} <small style={{ opacity: 0.6 }}>#{st.seq}</small>
+                          </h4>
+                          <div className="tl-actions">
+                            {!frozen && (st.status === 'pending' || st.status === 'blocked') && (
+                              <button className="btn" onClick={() => act(() => startStep(detail.id, st.seq), `已开始「${st.title}」`)}>开始</button>
+                            )}
+                            {!frozen && st.status === 'in_progress' && (
+                              <>
+                                <button className="btn primary" onClick={() => act(() => doneStep(detail.id, st.seq, { note: stepNote || '完成', result: stepNote }), `已完成「${st.title}」`)}>完成</button>
+                                <button className="btn" onClick={() => act(() => blockStep(detail.id, st.seq, stepNote || '受阻待处理'), `「${st.title}」已标记受阻`)}>受阻</button>
+                              </>
+                            )}
+                            <button className="rowbtn" onClick={() => setOpenSteps((v) => ({ ...v, [st.seq]: !v[st.seq] }))}>
+                              {open ? '收起' : '展开'}
+                            </button>
+                          </div>
+                        </div>
+                        {open && (
+                          <div className="tl-more">
+                            <p>{st.desc}</p>
+                            {st.why && <p>为什么：{st.why}</p>}
+                            {st.note && <div style={{ opacity: 0.85 }}>备注：{st.note}</div>}
+                            {st.result && <div style={{ opacity: 0.85 }}>结果：{st.result}</div>}
+                            <div className="os-title" style={{ marginTop: 8 }}>
+                              <span>负责专家团</span>
+                              {!frozen && experts.length < 8 && (
+                                <button className="add-mini" onClick={() => setPoolOpen((v) => ({ ...v, [st.seq]: !v[st.seq] }))}>
+                                  {poolOpen[st.seq] ? '收起候选' : '+ 添加专家'}
+                                </button>
+                              )}
+                            </div>
+                            <div className="expert-chips">
+                              {experts.length === 0 && <span style={{ fontSize: 12, opacity: 0.7 }}>未指定负责专家</span>}
+                              {experts.map((e) => (
+                                <span className="expert-chip user" key={e}>
+                                  <i>👤</i>{e}<em>用户指定</em>
+                                  {!frozen && (
+                                    <button style={{ border: 0, background: 'transparent', color: 'inherit', font: 'inherit', cursor: 'pointer' }}
+                                            onClick={() => applyExperts(detail.id, st.seq, experts.filter((x) => x !== e), `✓ 已移除「${st.title}」的负责专家 ${e}`)}>×</button>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                            {poolOpen[st.seq] && !frozen && (
+                              <div className="expert-chips" style={{ marginTop: 6 }}>
+                                {pool.length === 0 && <span style={{ fontSize: 12, opacity: 0.7 }}>候选专家已全部加入</span>}
+                                {pool.map((c) => (
+                                  <button className="expert-chip" key={c.name}
+                                          onClick={() => applyExperts(detail.id, st.seq, [...experts, c.name], `✓ 已把「${c.name}」指定给「${st.title}」`)}>
+                                    <i>＋</i>{c.name}<em>{c.system ? '系统建议' : c.hint}</em>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <div className="os-title" style={{ marginTop: 8 }}>
+                              <span>数据定位</span>
+                              <button className="step-trace" onClick={() => onTrace(detail.id)}>定位数据 →</button>
+                            </div>
+                            <span className="step-evidence">{st.evidence || '暂无定位说明'}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                })}
+              </div>
 
               {detail.status === 'waiting_verify' && (
                 <div style={{ border: '1px solid #cfe3ff', borderRadius: 8, padding: 10, marginTop: 8 }}>
@@ -253,23 +354,25 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
                   <pre style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0', font: 'inherit' }}>{detail.archive}</pre>
                   {!learned ? (
                     <div style={{ marginTop: 8 }}>
-                      <input className="delegate-input" style={{ width: '100%' }} placeholder="沉淀结论（经验库，供自我学习；选填，默认=已验证通过）"
+                      <input className="delegate-input" style={{ width: '100%' }} placeholder="沉淀结论（写入知识库「经验」；选填，默认=已验证通过）"
                              value={lessonNote} onChange={(e) => setLessonNote(e.target.value)} />
-                      <button className="btn primary" onClick={() => archiveLesson(detail)}>沉淀经验 → 经验库</button>
+                      <button className="btn primary" onClick={() => archiveLesson(detail)}>沉淀经验 → 知识库</button>
                     </div>
                   ) : (
-                    <div style={{ marginTop: 8, opacity: 0.85 }}>🧠 已沉淀进经验库（可在抽屉「学习经验」查看处理过程）</div>
+                    <div style={{ marginTop: 8, opacity: 0.85 }}>🧠 已沉淀到知识库「经验」（在「知识库」页查看处理过程与结论）</div>
                   )}
                 </div>
               )}
 
               <div style={{ marginTop: 12 }}>
-                <div className="os-title"><span>专家团</span></div>
+                <div className="os-title"><span>档案级专家团 · 系统建议</span></div>
                 <div className="expert-chips">
+                  {(detail.orchestration?.experts ?? []).length === 0 && <span style={{ fontSize: 12, opacity: 0.7 }}>暂无系统建议</span>}
                   {(detail.orchestration?.experts ?? []).map((e) => (
-                    <span className="expert-chip" key={e}><i>👥</i>{e}<em>系统已选</em></span>
+                    <span className="expert-chip" key={e}><i>👥</i>{e}<em>系统建议</em></span>
                   ))}
                 </div>
+                <small style={{ opacity: 0.7 }}>每步「谁负责」以步骤时间线内的负责专家为准；此处为引擎建档时的整体建议。</small>
               </div>
               <div style={{ marginTop: 8 }}>
                 <input className="delegate-input" style={{ width: '100%' }} placeholder="当前步骤备注 / 结果（选填，用于“完成 / 受阻”）"

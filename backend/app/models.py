@@ -112,6 +112,8 @@ class ActionStep(Base):
     note = Column(String(500), nullable=False, default="")
     result = Column(String(1000), nullable=False, default="")
     finished_at = Column(String(32), nullable=False, default="")
+    # action-loop-timeline：该步负责专家（整体设置的幂等名单；空列表 = 未指定负责专家）
+    experts = Column(JSON, nullable=False, default=list)
 
 
 class CaseLesson(Base):

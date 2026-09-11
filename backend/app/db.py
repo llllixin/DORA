@@ -27,6 +27,12 @@ _TEXT_ALTERS: list[tuple[str, str]] = [
     ("knowledge_archive", "note"),
 ]
 
+# action-loop-timeline：新增列同样走「create_all 之外补 DDL」的幂等模式（PG 方言，
+# `IF NOT EXISTS` 对新建表 no-op），旧行读回缺省 `[]` → 界面空态（无数据回填、无破坏性变更）。
+_COLUMN_ADDS: list[tuple[str, str]] = [
+    ("action_step", "experts JSON NOT NULL DEFAULT '[]'"),
+]
+
 
 def init_db():
     from app.models import Base
@@ -41,6 +47,13 @@ def init_db():
         except SQLAlchemyError as exc:
             # 幂等宽容：列已 TEXT/表缺失时打印并继续，不阻断建表与门禁
             print(f"[db.init_db] ALTER {table}.{column} skipped: {exc}")
+    for table, definition in _COLUMN_ADDS:
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {definition}"))
+        except SQLAlchemyError as exc:
+            # 幂等宽容：列已存在/表缺失时打印并继续（create_all 对旧库不补列，故需此 DDL）
+            print(f"[db.init_db] ADD {table} {definition} skipped: {exc}")
 
 
 def make_session():

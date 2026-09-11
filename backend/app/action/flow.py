@@ -66,6 +66,29 @@ def block_step(repo: Repository, case_id: str, seq: int, note: str = "") -> dict
     return repo.get_action_case(case_id)
 
 
+MAX_STEP_EXPERTS = 8
+
+
+def set_step_experts(repo: Repository, case_id: str, seq: int, experts: list[str]) -> dict:
+    """action-loop-timeline：整体设置某步负责专家（结构性校验 + resolved 冻结）。
+
+    - 元素必须是 strip 后非空的字符串；同名校验去重保序；数量上限 MAX_STEP_EXPERTS。
+    - **不**做专家池白名单校验：池属前端能力目录（design D6）；E1 专家注册表落地后再收紧。
+    - 返回最新 case（与 start/done/blocked/verify 同形），调用方一次拿到权威状态。
+    """
+    if any(not isinstance(name, str) or not name.strip() for name in experts):
+        raise ActionFlowError("experts must be non-empty strings")
+    names = list(dict.fromkeys(name.strip() for name in experts))
+    if len(names) > MAX_STEP_EXPERTS:
+        raise ActionFlowError(f"too many experts: {len(names)} > {MAX_STEP_EXPERTS}")
+    case = _get(repo, case_id)  # case 不存在 / resolved 冻结
+    _step(case, seq)            # seq 存在性
+    updated = repo.set_action_step_experts(case_id, seq, names)
+    if updated is None:         # 理论上不可达（_step 已确认该 seq 存在）
+        raise ActionFlowError(f"action step not found: seq={seq}")
+    return repo.get_action_case(case_id) or case
+
+
 def verify(repo: Repository, case_id: str, outcome: str, note: str = "") -> dict:
     if outcome not in ("resolved", "continue"):
         raise ActionFlowError(f"invalid verify outcome: {outcome}")

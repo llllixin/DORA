@@ -128,6 +128,8 @@ export interface CaseStep {
   note: string;
   result: string;
   finished_at: string;
+  /** action-loop-timeline：该步负责专家（整体设置的幂等名单；缺失按空态渲染，向后兼容） */
+  experts?: string[];
 }
 
 export interface ActionCaseDetail {

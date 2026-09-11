@@ -1,7 +1,8 @@
 """V5 action_check：第 1 节 = 领域/持久化 CRUD（T1）；后续节（闭环 E2E）T5 追加。
 
 运行：cd backend && python3 -m tests.action_check
-前置：PostgreSQL 已 seed + 后端在运行（第 1 节仅需 DB）。
+前置：PostgreSQL 已 seed + 后端在运行（第 1 节仅需 DB；第 7 节 HTTP 4xx/404 断言需后端在线，
+离线时该节仅打印跳过——门禁 run_all 内 e2e/agent 段已强制后端在线）。
 """
 import sys
 
@@ -371,6 +372,132 @@ def assert_no_orphans(repo: Repository) -> None:
             f"orphan knowledge {entry['entry_type']}/{entry['source_id']}"
 
 
+def _http_expert_checks() -> None:
+    """HTTP 层：200 设置/重放 + 400（空名/超限/缺步）+ 404（缺案）+ 422（名单非法）。
+
+    离线（后端未运行）时打印跳过，不阻断：门禁 run_all 内 e2e/agent 段已强制后端在线。
+    """
+    import json
+    import os
+    import urllib.error
+    import urllib.request
+
+    base = os.environ.get("DORA_API_BASE", "http://localhost:8000/api")
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+    def _post(path: str, payload: dict) -> tuple[int, dict]:
+        req = urllib.request.Request(base + path, method="POST",
+                                     data=json.dumps(payload).encode(),
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with opener.open(req, timeout=8) as resp:
+                return resp.status, json.load(resp)
+        except urllib.error.HTTPError as exc:
+            return exc.code, json.loads(exc.read().decode() or "{}")
+
+    try:
+        status, body = _post("/action/cases/exp-test/steps/1/experts", {"experts": ["经营分析专家"]})
+    except OSError as exc:
+        print(f"[experts] HTTP 断言跳过（后端未运行：{exc}）")
+        return
+    assert status == 200 and body["ok"] is True, (status, body)
+    assert [s["experts"] for s in body["case"]["steps"]][1] == ["经营分析专家"], body["case"]["steps"][1]
+    # 重放同值幂等（不追加、不报错）
+    status, body = _post("/action/cases/exp-test/steps/1/experts", {"experts": ["经营分析专家"]})
+    assert status == 200 and [s["experts"] for s in body["case"]["steps"]][1] == ["经营分析专家"]
+    # 4xx：空名 / 超限 / 缺步
+    assert _post("/action/cases/exp-test/steps/1/experts", {"experts": [""]})[0] == 400
+    assert _post("/action/cases/exp-test/steps/1/experts", {"experts": [f"专家{i}" for i in range(9)]})[0] == 400
+    assert _post("/action/cases/exp-test/steps/42/experts", {"experts": ["财务专家"]})[0] == 400
+    # 4xx：名单非字符串列表（pydantic 校验）
+    assert _post("/action/cases/exp-test/steps/1/experts", {"experts": "财务专家"})[0] in (400, 422)
+    # 拒绝后库中值不变（仍为重放后的名单）
+    kept = _post("/action/cases/exp-test/steps/1/experts", {"experts": ["经营分析专家"]})[1]
+    assert [s["experts"] for s in kept["case"]["steps"]][1] == ["经营分析专家"], "拒绝请求后名单不得被改写"
+    # 404：缺案
+    assert _post("/action/cases/no-such-case/steps/0/experts", {"experts": ["财务专家"]})[0] == 404
+    # 空列表 = 清除
+    status, body = _post("/action/cases/exp-test/steps/1/experts", {"experts": []})
+    assert status == 200 and [s["experts"] for s in body["case"]["steps"]][1] == [], body["case"]["steps"][1]
+    print("[experts] HTTP 200/400/404/422 断言已执行（后端在线）")
+
+
+def section7_step_experts(repo: Repository) -> None:
+    """action-loop-timeline：每步负责专家（整体设置幂等 / 去重 / 上限 / 冻结 / 404）。"""
+    from app.action import flow
+
+    # 迁移前历史步行缺省空名单（不伪造专家、不报错）
+    for cid in ("p1", "o1"):
+        detail = repo.get_action_case(cid)
+        assert all(s["experts"] == [] for s in detail["steps"]), f"{cid} seeded steps should have empty experts"
+
+    repo.create_action_case(
+        case={"id": "exp-test", "kind": "problem", "code": "TST-0911",
+              "case_title": "专家测试", "tag_cls": "red", "source": "测试"},
+        steps=[{"seq": 0, "title": "A", "desc": "d", "evidence": "e", "status": "pending"},
+               {"seq": 1, "title": "B", "desc": "d2", "evidence": "e2", "status": "pending"}],
+        status="open",
+    )
+    assert repo.get_action_case("exp-test")["steps"][0]["experts"] == [], "新建步骤应为空名单"
+
+    # repo 层：去重保序 + 不牵连其它步骤 + 不存在 seq/case 返回 None（幂等）
+    step = repo.set_action_step_experts("exp-test", 1, ["财务专家", "财务专家", "销售专家"])
+    assert step is not None and step["experts"] == ["财务专家", "销售专家"], step and step.get("experts")
+    again = repo.get_action_case("exp-test")
+    assert again["steps"][1]["experts"] == ["财务专家", "销售专家"], "往返一致"
+    assert again["steps"][0]["experts"] == [], "设置某步不得牵连其它步骤"
+    assert repo.set_action_step_experts("exp-test", 9, ["x"]) is None
+    assert repo.set_action_step_experts("no-such-case", 0, ["x"]) is None
+
+    # flow 层：幂等重放不追加 → 整体替换（移除靠缺席）→ 空白裁剪 → 空列表清除
+    c1 = flow.set_step_experts(repo, "exp-test", 1, ["财务专家", "销售专家"])
+    assert c1["steps"][1]["experts"] == ["财务专家", "销售专家"], "重放不得追加"
+    c2 = flow.set_step_experts(repo, "exp-test", 0, ["经营分析专家", " 供应链专家 "])
+    assert c2["steps"][0]["experts"] == ["经营分析专家", "供应链专家"], c2["steps"][0]["experts"]
+    assert c2["steps"][1]["experts"] == ["财务专家", "销售专家"], "设置 seq=0 不得动 seq=1"
+    assert flow.set_step_experts(repo, "exp-test", 0, [])["steps"][0]["experts"] == [], "空列表=清除"
+
+    # 结构性校验：空名 / 超 8 → 拒绝且不写库；恰好 8 个接受
+    for bad in ([""], ["财务专家", "   "], [f"专家{i}" for i in range(9)]):
+        try:
+            flow.set_step_experts(repo, "exp-test", 1, bad)
+            raise AssertionError(f"illegal experts must be rejected: {bad}")
+        except flow.ActionFlowError:
+            pass
+    assert repo.get_action_case("exp-test")["steps"][1]["experts"] == ["财务专家", "销售专家"], "拒绝后不得写库"
+    eight = [f"专家{i}" for i in range(8)]
+    assert flow.set_step_experts(repo, "exp-test", 1, eight)["steps"][1]["experts"] == eight, "恰好 8 个应接受"
+
+    # 不存在 seq / case → 拒绝语义（router 分别映射 400 / 404）
+    for bad_args in (("exp-test", 42), ("no-such-case", 0)):
+        try:
+            flow.set_step_experts(repo, bad_args[0], bad_args[1], ["财务专家"])
+            raise AssertionError(f"missing step/case must be rejected: {bad_args}")
+        except flow.ActionFlowError:
+            pass
+
+    # HTTP 层 200/400/404/422（后端在线时；必须在 resolved 之前，冻结后一律 4xx）
+    _http_expert_checks()
+
+    # resolved 冻结：设置专家 4xx 且不写库
+    flow.start_step(repo, "exp-test", 0)
+    flow.done_step(repo, "exp-test", 0)
+    flow.start_step(repo, "exp-test", 1)
+    flow.done_step(repo, "exp-test", 1)
+    assert flow.verify(repo, "exp-test", "resolved", note="专家测试归档")["status"] == "resolved"
+    before = repo.get_action_case("exp-test")["steps"][1]["experts"]
+    try:
+        flow.set_step_experts(repo, "exp-test", 1, ["财务专家"])
+        raise AssertionError("resolved case must freeze expert assignment")
+    except flow.ActionFlowError:
+        pass
+    assert repo.get_action_case("exp-test")["steps"][1]["experts"] == before, "冻结后不得写库"
+
+    repo.delete_action_case("exp-test")
+    repo.delete_knowledge_by_source("problem", "exp-test")
+    print("[experts] 每步负责专家：往返/去重/幂等/整体替换/上限/冻结/404 全绿")
+
+
 def main() -> int:
     run_seed()
     repo = Repository()
@@ -383,8 +510,9 @@ def main() -> int:
     section4_e2e(repo)
     section5_lesson(repo)
     section6_knowledge(repo)
+    section7_step_experts(repo)
     assert_no_orphans(repo)
-    print("action_check OK（第 1–6 节 + 生命周期不变式：CRUD/建档/状态机/闭环 E2E/经验沉淀/知识库/无孤儿 全绿）")
+    print("action_check OK（第 1–7 节 + 生命周期不变式：CRUD/建档/状态机/闭环 E2E/经验沉淀/知识库/步骤负责专家/无孤儿 全绿）")
     return 0
 
 

@@ -375,6 +375,33 @@ export function blockStep(id: string, seq: number, note = '') {
   return apiSend('POST', `/action/cases/${id}/steps/${seq}/blocked`, { note }, () => ({ ok: true }));
 }
 
+/** action-loop-timeline：整体设置某步负责专家（幂等：请求体即完整名单，空数组=清除）。
+ *  离线/演示模式**不静默成功**——抛错让界面提示原因（D5：不做乐观更新、不伪造状态）。 */
+export async function setStepExperts(
+  caseId: string, seq: number, experts: string[],
+): Promise<{ ok: boolean; case: ActionCaseDetail | null }> {
+  if (MODE === 'mock') throw new Error('离线演示：专家分配需后端在线');
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(`${BASE}/action/cases/${caseId}/steps/${seq}/experts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ experts }),
+      signal: ctrl.signal,
+    });
+    const body = (await res.json().catch(() => null)) as { detail?: string; ok?: boolean; case?: ActionCaseDetail } | null;
+    if (!res.ok) throw new Error(body?.detail || `HTTP ${res.status}`);
+    return { ok: true, case: body?.case ?? null };
+  } catch (err) {
+    if (MODE === 'http') throw err;
+    if (err instanceof Error && /HTTP|detail|专家|步骤|冻结/.test(err.message)) throw err; // 业务 4xx：不静默 mock
+    throw new Error('离线：专家分配需后端在线');
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 export function verifyAction(id: string, outcome: 'resolved' | 'continue', note = '') {
   return apiSend('POST', `/action/cases/${id}/verify`, { outcome, note }, () => ({ ok: true }));
 }

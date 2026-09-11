@@ -104,6 +104,11 @@ class VerifyRequest(BaseModel):
     note: str = ""
 
 
+class StepExpertsRequest(BaseModel):
+    """action-loop-timeline：整体设置某步负责专家（请求体即完整名单；空列表 = 清除）。"""
+    experts: list[str] = []
+
+
 class ArchiveLessonRequest(BaseModel):
     note: str = ""
 

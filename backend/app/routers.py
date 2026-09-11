@@ -15,6 +15,7 @@ from app.schemas import (
     KnowledgeSearchRequest,
     Pulse,
     StepBodyRequest,
+    StepExpertsRequest,
     VerifyRequest,
     WatchCreateRequest,
     WatchParseRequest,
@@ -437,6 +438,17 @@ def action_step_done(case_id: str, seq: int, body: StepBodyRequest):
 @router.post("/action/cases/{case_id}/steps/{seq}/blocked")
 def action_step_blocked(case_id: str, seq: int, body: StepBodyRequest):
     return _step_action(case_id, seq, "blocked", note=body.note)
+
+
+@router.post("/action/cases/{case_id}/steps/{seq}/experts")
+def action_step_experts(case_id: str, seq: int, body: StepExpertsRequest):
+    """action-loop-timeline：整体设置该步负责专家（幂等；空列表=清除）。4xx=非法/resolved 冻结。"""
+    repo, _ = _action_detail_or_404(case_id)
+    try:
+        updated = action_flow.set_step_experts(repo, case_id, seq, body.experts)
+    except action_flow.ActionFlowError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"ok": True, "case": updated}
 
 
 @router.post("/action/cases/{case_id}/verify")

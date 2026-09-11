@@ -242,7 +242,7 @@ export default function App() {
             }}
           />
         )}
-        {page === "knowledge" && <KnowledgePage onNotice={notify} />}
+        {page === "knowledge" && <KnowledgePage />}
       </main>
       <EvidenceDrawer
         data={drawer}

@@ -538,6 +538,32 @@ class Repository:
                 return _action_step_dict(step)
         return self._wrap(_do)
 
+    def set_action_step_experts(
+        self, case_id: str, seq: int, experts: list[str],
+    ) -> dict[str, Any] | None:
+        """整体设置某步负责专家（action-loop-timeline）：同名校验去重保序；step 不存在返回 None。
+
+        幂等语义：请求体即**完整名单**（重放同值不改变结果）；空列表 = 清除（回到「未指定负责专家」）。
+        结构性校验（空名/上限）在 flow 层，本层只做去重与落库。
+        """
+        unique = list(dict.fromkeys(name.strip() for name in experts))
+
+        def _do():
+            with self._session_ctx() as s:
+                step = s.execute(
+                    select(ActionStep).where(
+                        ActionStep.case_id == case_id, ActionStep.seq == seq)
+                ).scalars().first()
+                if step is None:
+                    return None
+                step.experts = unique  # 整体替换（非追加），重放安全
+                case = s.get(ActionCase, case_id)
+                if case is not None:
+                    case.updated_at = _now_iso()
+                s.commit()
+                return _action_step_dict(step)
+        return self._wrap(_do)
+
     def verify_action_case(self, case_id: str, outcome: str, note: str = "") -> dict[str, Any] | None:
         """验证归档：resolved → case resolved；continue → case running（D031-3，只改档案态）。
 
@@ -835,6 +861,7 @@ def _action_step_dict(row: ActionStep) -> dict[str, Any]:
         "title": row.title, "desc": row.desc, "evidence": row.evidence,
         "why": row.why, "status": row.status, "note": row.note,
         "result": row.result, "finished_at": row.finished_at,
+        "experts": list(row.experts or []),
     }
 
 

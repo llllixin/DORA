@@ -11,10 +11,12 @@ const FILTERS: { value: '' | 'problem' | 'opportunity' | 'change' | 'lesson'; la
   { value: 'lesson', label: '经验', tone: 'ai' },
 ];
 
-export function KnowledgePage({ onNotice }: { onNotice: (m: string) => void }) {
+export function KnowledgePage() {
   const [type, setType] = useState<'' | 'problem' | 'opportunity' | 'change' | 'lesson'>('');
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [stats, setStats] = useState<KnowledgeStats>({ problem: 0, opportunity: 0, change: 0, lesson: 0 });
+  /** 处理过程展开态（action-loop-timeline）：默认收起，点击展开；key = 条目唯一键。 */
+  const [openKey, setOpenKey] = useState('');
 
   const load = async (t: typeof type) => {
     const r = await listKnowledge(t);
@@ -58,21 +60,28 @@ export function KnowledgePage({ onNotice }: { onNotice: (m: string) => void }) {
             还没有该类别的归档知识。完成行动档案并「沉淀经验」后会自动出现在这里。
           </div>
         )}
-        {entries.map((e) => (
-          <div key={`${e.entry_type}-${e.source_id}-${e.id}`} className="card" style={{ padding: 14 }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Tag tone={toneFor(e.entry_type)}>{labelFor(e.entry_type)}</Tag>
-              <b>{e.title}</b>
-              <small style={{ opacity: 0.6 }}>{e.code} · {e.created_at.replace('T', ' ').slice(0, 16)}</small>
+        {entries.map((e) => {
+          const rowKey = `${e.entry_type}-${e.source_id}-${e.id}`;
+          const open = openKey === rowKey;
+          return (
+            <div key={rowKey} className="card" style={{ padding: 14 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Tag tone={toneFor(e.entry_type)}>{labelFor(e.entry_type)}</Tag>
+                <b>{e.title}</b>
+                <small style={{ opacity: 0.6 }}>{e.code} · {e.created_at.replace('T', ' ').slice(0, 16)}</small>
+              </div>
+              {e.note && <div style={{ marginTop: 8, opacity: 0.9 }}>结论：{e.note}</div>}
+              <div style={{ marginTop: 6 }}>
+                <button className="rowbtn" onClick={() => setOpenKey((v) => (v === rowKey ? '' : rowKey))}>
+                  处理过程 {open ? '▾' : '▸'}
+                </button>
+                {open && (
+                  <pre style={{ whiteSpace: 'pre-wrap', font: 'inherit', opacity: 0.85, margin: '4px 0 0' }}>{e.content || '（无处理过程记录）'}</pre>
+                )}
+              </div>
             </div>
-            {e.note && <div style={{ marginTop: 8, opacity: 0.9 }}>结论：{e.note}</div>}
-            <div style={{ marginTop: 6 }}>
-              <b style={{ fontSize: 12, opacity: 0.7 }}>处理过程</b>
-              <pre style={{ whiteSpace: 'pre-wrap', font: 'inherit', opacity: 0.85, margin: '4px 0 0' }}>{e.content}</pre>
-            </div>
-            <button className="btn" style={{ marginTop: 8 }} onClick={() => onNotice(`已打开「${e.code}」处理过程（完整过程见上方内容）`)}>查看处理过程</button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
