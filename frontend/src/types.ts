@@ -2,6 +2,30 @@ export type Page = 'pulse' | 'insight' | 'action' | 'watch' | 'knowledge';
 export type InsightType = 'problem' | 'opportunity' | 'change';
 export type StatusKind = 'none' | 'action' | 'watch';
 
+/** insight-judgment-structure：判级 / 后果里的因子（值均可回溯到引擎快照） */
+export interface InsightFactor {
+  name: string;
+  value: string;
+}
+
+/** 引擎严重等级：由数据算（偏离幅度 / 持续 / 距阈值 / 影响面），basis 固定 engine */
+export interface InsightSeverity {
+  level: 'high' | 'medium' | 'low';
+  score: number;
+  rule: string;
+  drivers: InsightFactor[];
+  basis: 'engine';
+}
+
+/** 引擎可能后果：确定性外推（summary 以「若…」开头 + 前提 condition + 观察窗口 horizon） */
+export interface InsightConsequence {
+  summary: string;
+  horizon: string;
+  condition: string;
+  impacts: InsightFactor[];
+  basis: 'engine';
+}
+
 export interface Insight {
   id: string;
   type: InsightType;
@@ -20,6 +44,9 @@ export interface Insight {
   trigger?: string;
   factors?: string[];
   evidence?: { kind?: string; rows?: never[] };
+  /** insight-judgment-structure：引擎增量字段（mock / 旧缓存缺失时整段不渲染，回退迭代 43 形态）。 */
+  severity?: InsightSeverity;
+  consequence?: InsightConsequence;
 }
 
 export interface InsightSemantics {

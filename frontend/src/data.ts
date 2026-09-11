@@ -1,4 +1,4 @@
-import type { ActionCase, ChartData, Evidence, Insight, InsightType, WatchTargetCard } from './types';
+import type { ActionCase, ChartData, Evidence, Insight, InsightConsequence, InsightSeverity, InsightType, WatchTargetCard } from './types';
 
 export const insights: Record<InsightType, Insight[]> = {
   problem: [
@@ -52,6 +52,62 @@ export const actionCases: Record<string, ActionCase> = {
   o1: { id:'o1', kind:'opportunity', tag:'机会', tagCls:'green', caseTitle:'机会验证 · UPC-0418', code:'UPC-0418', source:'来源：机会洞察 · 客单价连续 4 周增长', steps:[{title:'发现机会',desc:'客单价升至 ¥2,998，新品系列贡献 62% 的增长。',evidence:'商品周汇总 · 客单价口径'},{title:'拆解来源',desc:'拆解新品系列对客单价的贡献，区分价格与销量因素。',evidence:'新品销售明细 · 价格/销量'},{title:'小范围验证',desc:'选择 3 家相似门店做两周小范围验证，再扩大推广。',evidence:'3 家相似门店 · 两周实验'},{title:'复制推广',desc:'验证通过后把动作复制到更多门店，Dora 才结束 UPC-0418。',evidence:'复制结果 · UPC-0418 档案'}], current:{title:'当前行动 · 拆解新品贡献',desc:'先拆解新品系列对客单价的贡献。',why:'机会进入行动回路，目标是验证“增长来源是否可复制”，拆清楚来源、动作和门店差异才值得放大。',evidence:'新品贡献分解 · 商品组合'}, experts:['经营增长专家','商品专家'], data:['商品周汇总.xlsx','门店周汇总.xlsx'], expertDesc:'增长来源拆解与复制验证', archive:'执行结果、增长贡献、复制试点和验证结果都会回写到 UPC-0418。' },
   o2: { id:'o2', kind:'opportunity', tag:'机会', tagCls:'green', caseTitle:'机会验证 · STO-0607', code:'STO-0607', source:'来源：机会洞察 · 华东高客单门店形成集群', steps:[{title:'发现机会',desc:'Top 10 高客单门店中 7 家来自华东，形成高价值集群。',evidence:'门店画像 · Top 高客单门店'},{title:'拆解来源',desc:'提炼 7 家高客单门店的共同经营动作。',evidence:'7 家华东门店共同动作'},{title:'小范围验证',desc:'选 2 家普通门店开展复制试点，以客单价和转化率验收。',evidence:'2 家普通门店 · 复制试点'},{title:'复制推广',desc:'试点通过后扩大推广，Dora 才结束 STO-0607。',evidence:'复制结果 · STO-0607 档案'}], current:{title:'当前行动 · 提炼高客单动作',desc:'先提炼 7 家门店的共同经营动作。',why:'机会不是看到好结果就结束，要进入行动回路验证可复制性，提炼出共性动作才可能推广。',evidence:'门店经营动作对比'}, experts:['门店经营专家','会员运营专家'], data:['门店画像.xlsx','会员数据'], expertDesc:'门店共性动作提炼与试点', archive:'执行结果、门店对比、试点结论和复制建议都会回写到 STO-0607。' },
 };
+
+/**
+ * insight-judgment-structure：9 条离线镜像的 severity / consequence。
+ * 镜像自迭代 46 引擎输出（`backend/app/engine/engine.py` 的 `SEVERITY_WEIGHTS` / `_consequence`）——
+ * **引擎口径变化时必须同步本表**（否则离线态与在线态判级不一致，任务 5.2 以「同名同值」断言守）；
+ * 本表只补这两个引擎字段，镜像其余数值（metric/delta/desc）仍是更早的演示快照，不在本轮同步范围。
+ */
+const engineJudgment: Record<string, { severity: InsightSeverity; consequence: InsightConsequence }> = {
+  c1: {
+    severity: { level: 'low', score: 37, rule: '引擎启发式 · 变化：偏离常态 2.1%、距升级阈值 0.9pp、受影响区域 1 个、归因因素 1 项', drivers: [{ name: '偏离常态', value: '2.1%' }, { name: '距升级阈值', value: '0.9pp' }, { name: '受影响区域', value: '1 个' }, { name: '归因因素', value: '1 项' }], basis: 'engine' },
+    consequence: { summary: '若继续走弱，订单量再降 0.9pp 即触及 -3.0% 升级阈值，将自动升级为问题', horizon: '5 天', condition: '若趋势延续', impacts: [{ name: '当前偏离', value: '-2.1%' }, { name: '距升级阈值', value: '0.9pp' }, { name: '升级阈值', value: '-3.0%' }], basis: 'engine' },
+  },
+  c2: {
+    severity: { level: 'low', score: 35, rule: '引擎启发式 · 变化：受影响指标 4 项、归因因素 1 项', drivers: [{ name: '受影响指标', value: '4 项' }, { name: '归因因素', value: '1 项' }], basis: 'engine' },
+    consequence: { summary: '数据事件本身不构成经营后果；重算后若指标触发阈值，将生成对应洞察', horizon: '下次更新前', condition: '若重算结果触发阈值', impacts: [{ name: '受影响指标', value: '4 项' }], basis: 'engine' },
+  },
+  c3: {
+    severity: { level: 'low', score: 49, rule: '引擎启发式 · 变化：高于常态 35.2%、受影响指标 1 项、归因因素 1 项', drivers: [{ name: '高于常态', value: '35.2%' }, { name: '受影响指标', value: '1 项' }, { name: '归因因素', value: '1 项' }], basis: 'engine' },
+    consequence: { summary: '若增长延续，新品销量将继续以 35.2% 的幅度抬升（当前 2,460 件），需先验证增长门店的共性动作', horizon: '5 天', condition: '若增长延续', impacts: [{ name: '当前销量', value: '2,460' }, { name: '增长率', value: '35.2%' }], basis: 'engine' },
+  },
+  c4: {
+    severity: { level: 'low', score: 49, rule: '引擎启发式 · 变化：高于基线 6.0pp、受影响指标 1 项、归因因素 1 项', drivers: [{ name: '高于基线', value: '6.0pp' }, { name: '受影响指标', value: '1 项' }, { name: '归因因素', value: '1 项' }], basis: 'engine' },
+    consequence: { summary: '若结构变化延续，高客单门店占比将在 24.0% 基础上继续走高（高于基线 6.0pp）', horizon: '5 天', condition: '若结构变化延续', impacts: [{ name: '当前占比', value: '24.0%' }, { name: '高于基线', value: '6.0pp' }], basis: 'engine' },
+  },
+  o1: {
+    severity: { level: 'medium', score: 59, rule: '引擎启发式 · 机会：高于常态 4.4%、受影响指标 1 项、归因因素 1 项', drivers: [{ name: '高于常态', value: '4.4%' }, { name: '受影响指标', value: '1 项' }, { name: '归因因素', value: '1 项' }], basis: 'engine' },
+    consequence: { summary: '若增长来源可复制，客单价将延续 4.4% 的抬升（当前 ¥2,985）', horizon: '2 周', condition: '若增长来源可复制', impacts: [{ name: '当前客单价', value: '¥2,985' }, { name: '增长率', value: '4.4%' }], basis: 'engine' },
+  },
+  o2: {
+    severity: { level: 'medium', score: 67, rule: '引擎启发式 · 机会：距机会阈值 已越线、受影响门店 7 家、归因因素 1 项', drivers: [{ name: '距机会阈值', value: '已越线' }, { name: '受影响门店', value: '7 家' }, { name: '归因因素', value: '1 项' }], basis: 'engine' },
+    consequence: { summary: '若可复制性成立，华东高客单集群将从 7 家向更多门店扩散（当前占 Top 10 家的 70%）', horizon: '2 周', condition: '若可复制性成立', impacts: [{ name: '集群门店', value: '7 家' }, { name: '占 Top 门店', value: '70%' }, { name: '机会阈值', value: '60.0%' }], basis: 'engine' },
+  },
+  p1: {
+    severity: { level: 'high', score: 76, rule: '引擎启发式 · 问题：偏离目标 5.4%、距目标线 已越线、连续低于目标 4 天、受影响供应商 1 家、归因因素 2 项', drivers: [{ name: '偏离目标', value: '5.4%' }, { name: '距目标线', value: '已越线' }, { name: '连续低于目标', value: '4 天' }, { name: '受影响供应商', value: '1 家' }, { name: '归因因素', value: '2 项' }], basis: 'engine' },
+    consequence: { summary: '若不干预，利润率将延续 5.4% 的偏离幅度（当前 18.1%，目标 18.5%），成本端压力继续放大', horizon: '4 天', condition: '若成本端未干预', impacts: [{ name: '目标线', value: '18.5%' }, { name: '当前利润率', value: '18.1%' }, { name: '受影响供应商', value: '1 家' }], basis: 'engine' },
+  },
+  p2: {
+    severity: { level: 'medium', score: 74, rule: '引擎启发式 · 问题：高于基线 1.7pp、连续上升 5 周、受影响门店 2 家、归因因素 1 项', drivers: [{ name: '高于基线', value: '1.7pp' }, { name: '连续上升', value: '5 周' }, { name: '受影响门店', value: '2 家' }, { name: '归因因素', value: '1 项' }], basis: 'engine' },
+    consequence: { summary: '若不处理，退货率将延续每周 1.7pp 的上升（当前最高 4.9%，基线 3.2%），高贡献门店持续受损', horizon: '5 周', condition: '若退货原因未处理', impacts: [{ name: '基线', value: '3.2%' }, { name: '当前最高门店退货率', value: '4.9%' }, { name: '高于基线', value: '1.7pp' }], basis: 'engine' },
+  },
+  p3: {
+    severity: { level: 'medium', score: 64, rule: '引擎启发式 · 问题：订单量偏离 1.7%、受影响指标 2 项、归因因素 2 项', drivers: [{ name: '订单量偏离', value: '1.7%' }, { name: '受影响指标', value: '2 项' }, { name: '归因因素', value: '2 项' }], basis: 'engine' },
+    consequence: { summary: '若不复核，订单量 1.7% 的下滑与销售额 2.7% 的增长将持续背离', horizon: '3 天', condition: '若结构变化延续', impacts: [{ name: '订单量变化', value: '-1.7%' }, { name: '销售额变化', value: '+2.7%' }], basis: 'engine' },
+  },
+};
+
+// 把两个引擎字段挂到 9 条镜像上（页面组件按 id 读同一批对象引用；缺字段时整段不渲染）
+for (const list of Object.values(insights)) {
+  for (const item of list) {
+    const judged = engineJudgment[item.id];
+    if (judged) {
+      item.severity = judged.severity;
+      item.consequence = judged.consequence;
+    }
+  }
+}
 
 export const watchItems: WatchTargetCard[] = [
   { id:'c1', name:'华东订单量', value:'-1.8%', color:'red', logic:'连续 3 天偏弱 → 未达 -3% 升级阈值，持续观察', source:'订单明细.xlsx · 华东' },

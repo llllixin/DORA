@@ -299,6 +299,227 @@ def _confidence(sig: dict) -> int:
 
 
 
+# ---- 洞察严重等级 / 可能后果（change insight-judgment-structure；design D1/D2、D040）----
+# 判级口径集中在此常量：改口径 = 改这里一处 + 跑 engine_check（不进 DB、不入 reasoning 缓存）。
+SEVERITY_WEIGHTS = {
+    "base": {"problem": 50, "opportunity": 45, "change": 25},
+    "trend_pct": ((10.0, 20), (5.0, 14), (3.0, 10), (1.5, 6)),  # 百分比量纲的偏离幅度分档
+    "trend_pp": ((5.0, 20), (3.0, 14), (1.5, 10)),              # 百分点量纲的偏离幅度分档
+    "trend_floor": 2,                                           # 有幅度但未达最小档
+    "threshold": {"crossed": 12, "near1": 8, "near2": 5},       # 已越线 / 距线 <=1 / <=2
+    "duration_per": 1.5, "duration_cap": 6,
+    "impact_per": 2, "impact_cap": 4,
+    "attribution_per": 2, "attribution_cap": 3,
+    "level_high": 75, "level_medium": 55,
+}
+
+SEVERITY_LABEL = {"problem": "问题", "opportunity": "机会", "change": "变化"}
+
+
+def _severity_measures(sig: dict, snap: dict) -> dict:
+    """判级所需的快照量（全部由同一份 snap 派生，供文案生成与门禁回溯）。
+
+    每项含义（None = 该洞察没有这个量）：
+    - trend：(偏离幅度, 量纲 pct|pp, 文案名)
+    - threshold：(是否已越线, 距线绝对值, 阈值线, 文案名)
+    - duration：(连续量, 单位, 文案名)
+    - impact：(受影响对象数, 单位, 文案名)
+    - attribution：归因因素条数（来自信号）
+    """
+    m, r = snap["margin"], snap["returns"]
+    e, n, h = snap["east_orders"], snap["new_sku"], snap["high_value"]
+    o, a = snap["orders"], snap["aov"]
+    sc, u = snap["store_cluster"], snap["data_event"]
+    factors = len(sig.get("factors") or [])
+
+    if sig["insight"] == "p1":
+        return {"trend": (abs(m["delta_pct"]), "pct", "偏离目标"),
+                "threshold": (m["current"] < m["target"], round(abs(m["current"] - m["target"]), 1),
+                              m["target"], "距目标线"),
+                "duration": (m["streak_below"], "天", "连续低于目标"),
+                "impact": (1, "家", "受影响供应商"), "attribution": factors}
+    if sig["insight"] == "p2":
+        return {"trend": (abs(r["delta_pp"]), "pp", "高于基线"),
+                "threshold": None,
+                "duration": (r["rising_weeks"], "周", "连续上升"),
+                "impact": (len(r["latest_store"]), "家", "受影响门店"), "attribution": factors}
+    if sig["insight"] == "p3":
+        return {"trend": (abs(o["delta_pct"]), "pct", "订单量偏离"),
+                "threshold": None, "duration": (0, "天", ""),
+                "impact": (2, "项", "受影响指标"),  # 信号口径：订单量 + 销售额
+                "attribution": factors}
+    if sig["insight"] == "o1":
+        return {"trend": (a["delta_pct"], "pct", "高于常态"),
+                "threshold": None, "duration": (0, "天", ""),
+                "impact": (1, "项", "受影响指标"), "attribution": factors}
+    if sig["insight"] in ("c1", "e2"):
+        return {"trend": (abs(e["delta_pct"]), "pct", "偏离常态"),
+                "threshold": (_breach(e["delta_pct"], e["threshold"]),
+                              round(abs(e["delta_pct"] - e["threshold"]), 1), e["threshold"], "距升级阈值"),
+                "duration": (0, "天", ""),
+                "impact": (1, "个", "受影响区域"), "attribution": factors}
+    if sig["insight"] == "c3":
+        return {"trend": (n["delta_pct"], "pct", "高于常态"),
+                "threshold": None, "duration": (0, "天", ""),
+                "impact": (1, "项", "受影响指标"), "attribution": factors}
+    if sig["insight"] == "c4":
+        return {"trend": (h["delta_pp"], "pp", "高于基线"),
+                "threshold": None, "duration": (0, "天", ""),
+                "impact": (1, "项", "受影响指标"), "attribution": factors}
+    if sig["insight"] == "c2":
+        return {"trend": None, "threshold": None, "duration": (0, "天", ""),
+                "impact": (len(u["metrics"]), "项", "受影响指标"), "attribution": factors}
+    if sig["insight"] == "o2":
+        return {"trend": None,
+                "threshold": (sc["ratio"] >= sc["threshold"], round(sc["ratio"] - sc["threshold"], 1),
+                              sc["threshold"], "距机会阈值"),
+                "duration": (0, "天", ""),
+                "impact": (sc["region_count"], "家", "受影响门店"), "attribution": factors}
+    return {"trend": None, "threshold": None, "duration": (0, "天", ""),
+            "impact": (1, "项", "受影响指标"), "attribution": factors}
+
+
+def _trend_score(measures: dict, w: dict) -> float:
+    """偏离幅度分档分（pct / pp 两套档位）。"""
+    trend = measures.get("trend")
+    if not trend:
+        return 0.0
+    table = w["trend_pct"] if trend[1] == "pct" else w["trend_pp"]
+    for cut, points in table:
+        if abs(trend[0]) >= cut:
+            return float(points)
+    return float(w["trend_floor"])
+
+
+def _threshold_score(measures: dict, w: dict) -> float:
+    """距阈值分档分（与 trend 取 max：两者度量同一件事，相加会重复计分）。"""
+    thr = measures.get("threshold")
+    if not thr:
+        return 0.0
+    crossed, distance, _line, _name = thr
+    if crossed:
+        return float(w["threshold"]["crossed"])
+    if distance <= 1.0:
+        return float(w["threshold"]["near1"])
+    if distance <= 2.0:
+        return float(w["threshold"]["near2"])
+    return 0.0
+
+
+def _severity_drivers(measures: dict) -> list[dict]:
+    """参与判级的因子（值全部由快照量格式化，保证每个数字可回溯）。"""
+    out: list[dict] = []
+    trend = measures.get("trend")
+    if trend:
+        out.append({"name": trend[2], "value": f"{abs(trend[0])}{'%' if trend[1] == 'pct' else 'pp'}"})
+    thr = measures.get("threshold")
+    if thr:
+        crossed, distance, _line, name = thr
+        out.append({"name": name, "value": "已越线" if crossed else f"{distance}pp"})
+    dur = measures.get("duration")
+    if dur and dur[0]:
+        out.append({"name": dur[2], "value": f"{dur[0]} {dur[1]}"})
+    imp = measures.get("impact")
+    if imp and imp[0]:
+        out.append({"name": imp[2], "value": f"{imp[0]} {imp[1]}"})
+    if measures.get("attribution"):
+        out.append({"name": "归因因素", "value": f"{measures['attribution']} 项"})
+    return out
+
+
+def _severity(sig: dict, snap: dict) -> dict:
+    """洞察严重等级：由同一份快照按 SEVERITY_WEIGHTS 显式加权（与 tag 文案无关）。"""
+    w = SEVERITY_WEIGHTS
+    me = _severity_measures(sig, snap)
+    duration = min(me["duration"][0], w["duration_cap"]) * w["duration_per"]
+    impact = min(me["impact"][0], w["impact_cap"]) * w["impact_per"]
+    attribution = min(me["attribution"], w["attribution_cap"]) * w["attribution_per"]
+    raw = (w["base"][sig["type"]] + max(_trend_score(me, w), _threshold_score(me, w))
+           + duration + impact + attribution)
+    score = int(round(min(99.0, raw)))
+    level = "high" if score >= w["level_high"] else "medium" if score >= w["level_medium"] else "low"
+    drivers = _severity_drivers(me)
+    rule = (f"引擎启发式 · {SEVERITY_LABEL[sig['type']]}："
+            + "、".join(f"{d['name']} {d['value']}" for d in drivers))
+    return {"level": level, "score": score, "rule": rule, "drivers": drivers, "basis": "engine"}
+
+
+def _consequence_of(summary: str, horizon: str, condition: str, impacts: list[tuple[str, str]]) -> dict:
+    return {"summary": summary, "horizon": horizon, "condition": condition,
+            "impacts": [{"name": k, "value": v} for k, v in impacts], "basis": "engine"}
+
+
+def _consequence(sig: dict, snap: dict) -> dict:
+    """洞察可能后果：按当前快照做确定性外推（只用快照数字；无趋势字段时给定性后果）。
+
+    口径（design D2）：`summary` 以「若…」开头 + 强制 `condition`（前提）与 `horizon`（观察窗口）；
+    `impacts` 的值只引用快照量；证据不足（c2 数据更新事件无趋势字段）→ 定性表述、不造数字。
+    """
+    m, r = snap["margin"], snap["returns"]
+    e, n = snap["east_orders"], snap["new_sku"]
+    o, rev, a = snap["orders"], snap["revenue"], snap["aov"]
+    sc, u = snap["store_cluster"], snap["data_event"]
+    ins = sig["insight"]
+
+    if ins == "p1":
+        return _consequence_of(
+            f"若不干预，利润率将延续 {abs(m['delta_pct'])}% 的偏离幅度（当前 {m['current']}%，目标 {m['target']}%），成本端压力继续放大",
+            f"{max(m['streak_below'], 3)} 天", "若成本端未干预",
+            [("目标线", f"{m['target']}%"), ("当前利润率", f"{m['current']}%"), ("受影响供应商", "1 家")])
+    if ins == "p2":
+        latest = max(r["latest_store"].values()) if r["latest_store"] else 0.0
+        return _consequence_of(
+            f"若不处理，退货率将延续每周 {r['delta_pp']}pp 的上升（当前最高 {latest}%，基线 {r['baseline']}%），高贡献门店持续受损",
+            f"{max(r['rising_weeks'], 3)} 周", "若退货原因未处理",
+            [("基线", f"{r['baseline']}%"), ("当前最高门店退货率", f"{latest}%"), ("高于基线", f"{r['delta_pp']}pp")])
+    if ins == "p3":
+        return _consequence_of(
+            f"若不复核，订单量 {abs(o['delta_pct'])}% 的下滑与销售额 {rev['delta_pct']}% 的增长将持续背离",
+            "3 天", "若结构变化延续",
+            [("订单量变化", f"{o['delta_pct']}%"), ("销售额变化", f"+{rev['delta_pct']}%")])
+    if ins == "o1":
+        return _consequence_of(
+            f"若增长来源可复制，客单价将延续 {a['delta_pct']}% 的抬升（当前 ¥{a['current']:,}）",
+            "2 周", "若增长来源可复制",
+            [("当前客单价", f"¥{a['current']:,}"), ("增长率", f"{a['delta_pct']}%")])
+    if ins == "c1":
+        distance = round(abs(e["delta_pct"] - e["threshold"]), 1)
+        return _consequence_of(
+            f"若继续走弱，订单量再降 {distance}pp 即触及 {e['threshold']}% 升级阈值，将自动升级为问题",
+            "5 天", "若趋势延续",
+            [("当前偏离", f"{e['delta_pct']}%"), ("距升级阈值", f"{distance}pp"), ("升级阈值", f"{e['threshold']}%")])
+    if ins == "e2":
+        return _consequence_of(
+            f"若不干预，华东订单量将延续 {abs(e['delta_pct'])}% 的下滑（已跌破 {e['threshold']}% 升级阈值）",
+            "3 天", "若趋势延续",
+            [("升级阈值", f"{e['threshold']}%"), ("当前偏离", f"{e['delta_pct']}%")])
+    if ins == "c3":
+        return _consequence_of(
+            f"若增长延续，新品销量将继续以 {n['delta_pct']}% 的幅度抬升（当前 {n['current']:,} 件），需先验证增长门店的共性动作",
+            "5 天", "若增长延续",
+            [("当前销量", f"{n['current']:,}"), ("增长率", f"{n['delta_pct']}%")])
+    if ins == "c4":
+        h = snap["high_value"]
+        return _consequence_of(
+            f"若结构变化延续，高客单门店占比将在 {h['current']}% 基础上继续走高（高于基线 {h['delta_pp']}pp）",
+            "5 天", "若结构变化延续",
+            [("当前占比", f"{h['current']}%"), ("高于基线", f"{h['delta_pp']}pp")])
+    if ins == "c2":
+        # 证据不足路径：数据更新事件没有趋势/阈值字段 → 定性后果，不造新数字
+        return _consequence_of(
+            "数据事件本身不构成经营后果；重算后若指标触发阈值，将生成对应洞察",
+            "下次更新前", "若重算结果触发阈值",
+            [("受影响指标", f"{len(u['metrics'])} 项")])
+    if ins == "o2":
+        return _consequence_of(
+            f"若可复制性成立，{sc['region']}高客单集群将从 {sc['region_count']} 家向更多门店扩散（当前占 Top {sc['top_total']} 家的 {sc['ratio']:.0f}%）",
+            "2 周", "若可复制性成立",
+            [("集群门店", f"{sc['region_count']} 家"), ("占 Top 门店", f"{sc['ratio']:.0f}%"),
+             ("机会阈值", f"{sc['threshold']}%")])
+    return _consequence_of("若当前状态延续，该洞察的影响面将保持现状，需结合证据链进一步定位",
+                           "3 天", "若当前状态延续", [("受影响指标", "1 项")])
+
+
 def build_insights(signals: list[dict], snap: dict) -> tuple[list[dict], dict]:
     """Signal → Insight：注入计算数值 + 生成置信度 + 汇总 Pulse。"""
     insights: list[dict] = []
@@ -327,6 +548,9 @@ def build_insights(signals: list[dict], snap: dict) -> tuple[list[dict], dict]:
                 "rows": [],  # 证据行由 engine_evidence 从 Repository 实时生成（cleanup）
             },
             "semantics": _semantics(sig["insight"], snap),
+            # 增量字段（每算每出、不入库、不进 reasoning 缓存）：严重等级 + 可能后果
+            "severity": _severity(sig, snap),
+            "consequence": _consequence(sig, snap),
         })
     counts = {k: 0 for k in ("problems", "opportunities", "changes", "watching")}
     for i in insights:

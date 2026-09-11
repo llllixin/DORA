@@ -347,3 +347,27 @@ body{font-size:14px}
 .verdict-conf{margin-top:auto;padding-top:14px}
 .verdict-bar{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:800;color:#8b87c9;letter-spacing:.3px}
 .verdict-bar b{font-size:15px;color:#5149dc}
+
+/* 判断列段①：严重等级徽章 + 判级依据（insight-judgment-structure；等级由引擎算，前端只渲染字段） */
+.sev-block{margin:2px 0 10px;padding:9px 11px;border:1px solid #ece9ff;border-radius:9px;background:#fff}
+.sev-row{display:flex;align-items:center;gap:8px}
+.sev-title{font-size:12px;font-weight:800;color:#8b87c9}
+.sev-badge{font-size:11px;font-weight:900;color:#fff;border-radius:6px;padding:2px 7px}
+.sev-badge.high{background:#e2455f}
+.sev-badge.medium{background:#e08a1e}
+.sev-badge.low{background:#7b8497}
+.sev-score{margin-left:auto;font-size:14px;font-weight:900;color:#211d33}
+.sev-score i{font-size:10.5px;font-weight:700;font-style:normal;color:#a6a9b8}
+.sev-rule{margin-top:6px;font-size:11.5px;line-height:1.6;color:#7c8296}
+.sev-drivers{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.sev-chip{font-size:11px;color:#5149dc;background:#f1efff;border-radius:6px;padding:2px 7px;white-space:nowrap}
+
+/* 判断列段③：可能后果（summary 以「若…」开头 + 前提/观察窗口 + 影响项） */
+.consq-block{margin-top:12px;padding:9px 11px;border:1px solid #eef0f6;border-radius:9px;background:#fff}
+.consq-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.consq-title{font-size:12px;font-weight:850;letter-spacing:.4px;color:#8b87c9}
+.consq-head em{font-size:11px;font-style:normal;color:#a6a9b8}
+.consq-summary{margin:6px 0 0;font-size:12.5px;line-height:1.6;color:#3d4351}
+.consq-impacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.consq-chip{display:inline-flex;align-items:baseline;gap:5px;font-size:11.5px;color:#242938;background:#f7f7fb;border:1px solid #eef0f6;border-radius:6px;padding:2px 7px}
+.consq-chip b{font-weight:800;color:#8b87c9}

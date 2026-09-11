@@ -14,6 +14,8 @@ import { askDora } from '../../services/doraApi';
  * | 下一步建议 | semantics.next | /api/insights | 镜像 | 无 → 「暂无引擎建议（可重新解释刷新）」 |
  * | 图表 | chartData[id] | 前端静态（F11，另立候选） | 静态 | —（注释显式暴露，不假装真实） |
  * | 判断列 | /api/dora/chat(why) 判断原文 | dora chat SSE | 引擎 semantics 兜底句 | AI 不可用 → 「引擎语义兜底」note |
+ * | 判断·等级 | severity{level,score,rule,drivers} | /api/insights 引擎字段 | data.ts 镜像 | 缺字段 → 段①不渲染（回退本页旧形态） |
+ * | 判断·后果 | consequence{summary,condition,horizon,impacts} | /api/insights 引擎字段 | data.ts 镜像 | 缺字段 → 段③不渲染（回退本页旧形态） |
  * 规则：本页不再按洞察 id 写死归因/下一步；cause/next 只消费引擎 semantics。
  * 规则：判断列不重复其它区块已有的行——归因行→左栏归因卡、下一步建议→下方面板、历史先例→左栏「历史先例」行（见 belongsElsewhere）。
  */
@@ -26,6 +28,9 @@ const splitVerdict = (t: string): { lead: string; rest: string } => {
   if (m) return { lead: m[0].trim(), rest: s.slice(m[0].length).trim() };
   return { lead: s, rest: '' };
 };
+
+// insight-judgment-structure：严重等级中文文案（等级由引擎算，前端只做文案映射）
+const SEV_LABEL: Record<'high' | 'medium' | 'low', string> = { high: '高', medium: '中', low: '低' };
 
 export function InsightPage({type,selected,onType,onSelect,onTrace,onRoute,onNotice,onRefreshReasoning}:{type:InsightType;selected:number;onType:(t:InsightType)=>void;onSelect:(i:number)=>void;onTrace:(id:string)=>void;onRoute:(type:InsightType,id:string)=>void;onNotice:(m:string)=>void;onRefreshReasoning?:()=>void|Promise<void>}){
  const [explainBusy,setExplainBusy]=useState(false);const runExplain=async()=>{if(explainBusy||!onRefreshReasoning)return;setExplainBusy(true);try{await onRefreshReasoning()}finally{setExplainBusy(false)}};
@@ -74,6 +79,8 @@ export function InsightPage({type,selected,onType,onSelect,onTrace,onRoute,onNot
   const belongsElsewhere = [
     /^(主要影响因素|主要因素|主要贡献|当前变化|进一步定位)[：:]/, // → 左栏归因卡
     /^下一步建议[：:]/, // → 下方「下一步建议」面板
+    /^严重等级[：:]/, // insight-judgment-structure：→ 判断列段①（等级徽章）
+    /^可能后果[：:]/, // insight-judgment-structure：→ 判断列段③（后果块）
     /^(可参考历史先例|历史知识库暂无同指标先例)/, // → 左栏「历史先例」行
   ];
   const ownRest = restLines.filter((l) => !belongsElsewhere.some((re) => re.test(l)));
@@ -124,6 +131,19 @@ export function InsightPage({type,selected,onType,onSelect,onTrace,onRoute,onNot
           </div>
           <div className="judge-col verdict">
             <div className="jc-head"><span className="jc-title">判断</span><Tag tone="ai">Dora AI 判断</Tag></div>
+            {x.severity ? (
+              <div className="sev-block">
+                <div className="sev-row">
+                  <span className="sev-title">严重等级</span>
+                  <span className={`sev-badge ${x.severity.level}`}>{SEV_LABEL[x.severity.level]}</span>
+                  <b className="sev-score">{x.severity.score}<i>/100</i></b>
+                </div>
+                <div className="sev-rule">{x.severity.rule}</div>
+                <div className="sev-drivers">
+                  {x.severity.drivers.map((d) => <span key={d.name} className="sev-chip">{d.name} {d.value}</span>)}
+                </div>
+              </div>
+            ) : null}
             {judge.loading ? (
               <p className="verdict-lead muted">正在结合证据判断…</p>
             ) : (
@@ -136,6 +156,18 @@ export function InsightPage({type,selected,onType,onSelect,onTrace,onRoute,onNot
               </>
             )}
             {judge.err && !judge.loading ? <div className="verdict-note">AI 暂不可用，以上为引擎语义兜底</div> : null}
+            {x.consequence ? (
+              <div className="consq-block">
+                <div className="consq-head">
+                  <span className="consq-title">可能后果</span>
+                  <em>{x.consequence.condition} · 窗口 {x.consequence.horizon}</em>
+                </div>
+                <p className="consq-summary">{x.consequence.summary}</p>
+                <div className="consq-impacts">
+                  {x.consequence.impacts.map((it) => <span key={it.name} className="consq-chip"><b>{it.name}</b>{it.value}</span>)}
+                </div>
+              </div>
+            ) : null}
             <div className="verdict-conf">
               <div className="verdict-bar"><span>置信度</span><b>{x.confidence}%</b></div>
               <div className="cbar"><i style={{ width: `${x.confidence}%` }} /></div>

@@ -3,8 +3,10 @@
 验证链路 Metric→Rule→Signal→Insight 的确定性结论。
 后续接入 PostgreSQL 后，本文件保留为"判定逻辑不回归"的第一道护栏。
 """
+import json
+import re
 import sys
-from app.engine.engine import _below, _breach, engine_evidence, run_engine
+from app.engine.engine import _below, _breach, _severity, _severity_measures, engine_evidence, run_engine
 
 
 def main() -> int:
@@ -44,9 +46,71 @@ def main() -> int:
     for i in insights:
         assert engine_evidence(i["id"]) and engine_evidence(i["id"])["rawRows"], f"{i['id']} evidence rows expected"
 
+    # ---- insight-judgment-structure：severity / consequence 契约（design D1/D2、D040）----
+    signals = r["signals"]
+    sig_by_id = {s["insight"]: s for s in signals}
+
+    def _nums(text: str) -> set[str]:
+        return set(re.findall(r"\d+(?:\.\d+)?", str(text).replace(",", "")))
+
+    for i in insights:
+        s, c = i["severity"], i["consequence"]
+        assert set(s) == {"level", "score", "rule", "drivers", "basis"}, (i["id"], s)
+        assert s["level"] in ("high", "medium", "low"), (i["id"], s["level"])
+        assert isinstance(s["score"], int) and 0 <= s["score"] <= 100, (i["id"], s["score"])
+        assert s["basis"] == "engine" and s["rule"].strip() and s["drivers"], (i["id"], s)
+        assert all(d.get("name") and d.get("value") for d in s["drivers"]), (i["id"], s["drivers"])
+        assert set(c) == {"summary", "horizon", "condition", "impacts", "basis"}, (i["id"], c)
+        assert c["summary"].strip() and c["horizon"].strip() and c["condition"].strip(), (i["id"], c)
+        assert c["impacts"] and c["basis"] == "engine", (i["id"], c)
+        assert all(x.get("name") and x.get("value") for x in c["impacts"]), (i["id"], c["impacts"])
+
+    # 等级由数据算：本合同数据下 p1 高 / 问题·机会中 / 观察态低（数据变则随之变，见下方敏感性断言）
+    assert {k: v["severity"]["level"] for k, v in by_id.items()} == {
+        "p1": "high", "p2": "medium", "p3": "medium", "o1": "medium", "o2": "medium",
+        "c1": "low", "c2": "low", "c3": "low", "c4": "low"}, {k: v["severity"] for k, v in by_id.items()}
+    assert by_id["p1"]["severity"]["score"] >= 75, by_id["p1"]["severity"]
+
+    # 未达阈值的观察项不得高于「已跌破阈值升级为问题」的对照项（e2 当前未触发，故用同一快照构造对照）
+    e2_sig = {**sig_by_id["c1"], "insight": "e2", "type": "problem"}
+    breached_snap = {**snap, "east_orders": {**snap["east_orders"], "delta_pct": -3.4}}
+    e2_sev = _severity(e2_sig, breached_snap)
+    assert e2_sev["level"] == "medium" and by_id["c1"]["severity"]["level"] == "low", e2_sev
+    assert by_id["c1"]["severity"]["score"] <= e2_sev["score"], (by_id["c1"]["severity"], e2_sev)
+
+    # 敏感性（判级随驱动数据变化）：连续天数增加 → 分数不降；离阈值越远 → 分数不升
+    base_p1 = by_id["p1"]["severity"]["score"]
+    longer = _severity(sig_by_id["p1"], {**snap, "margin": {**snap["margin"], "streak_below": 6}})
+    assert longer["score"] >= base_p1, (longer, base_p1)
+    c1_sig = sig_by_id["c1"]
+    c1_scores = [_severity(c1_sig, {**snap, "east_orders": {**snap["east_orders"], "delta_pct": d}})["score"]
+                 for d in (-2.9, -1.5, -0.5)]
+    assert c1_scores[0] >= c1_scores[1] >= c1_scores[2], c1_scores
+
+    # 数字锁：drivers 的数字必须可回溯（payload 不含 severity 自身，避免自证）+ 快照派生量
+    snap_nums = _nums(json.dumps(snap, ensure_ascii=False))
+    for i in insights:
+        me = _severity_measures(sig_by_id[i["id"]], snap)
+        derived = snap_nums | _nums(json.dumps(me, ensure_ascii=False))
+        payload_wo_sev = {k: v for k, v in i.items() if k != "severity"}
+        allowed_sev = derived | _nums(json.dumps(payload_wo_sev, ensure_ascii=False))
+        for d in i["severity"]["drivers"]:
+            assert _nums(d["value"]) <= allowed_sev, (i["id"], d, _nums(d["value"]) - allowed_sev)
+        # 后果：payload（含 severity）+ 快照派生量（spec: business-engine「后果数字可回溯到快照」）
+        allowed_cq = derived | _nums(json.dumps(i, ensure_ascii=False))
+        for text in (i["consequence"]["summary"], *(x["value"] for x in i["consequence"]["impacts"])):
+            assert _nums(text) <= allowed_cq, (i["id"], text, _nums(text) - allowed_cq)
+
+    # 证据不足不臆造：c2（数据更新事件）无趋势字段 → 定性后果 + 只保留受影响指标计数
+    c2q = by_id["c2"]["consequence"]
+    assert "不构成经营后果" in c2q["summary"] and not _nums(c2q["summary"]), c2q
+    assert len(c2q["impacts"]) == 1 and c2q["impacts"][0]["name"] == "受影响指标", c2q
+
     # 确定性：两次运行结果一致
     r2 = run_engine()
     assert r["pulse"] == r2["pulse"] and [i["id"] for i in insights] == [i["id"] for i in r2["insights"]]
+    assert ([i["severity"] for i in insights] == [i["severity"] for i in r2["insights"]]
+            and [i["consequence"] for i in insights] == [i["consequence"] for i in r2["insights"]]), "severity/consequence must be deterministic"
 
     print("engine self-check OK")
     print(f"pulse = {pulse}")

@@ -1,6 +1,30 @@
 from pydantic import BaseModel
 
 
+class InsightFactor(BaseModel):
+    """判级/后果里的因子（name + value，值全部可回溯到引擎快照）。"""
+    name: str
+    value: str
+
+
+class InsightSeverity(BaseModel):
+    """洞察严重等级（引擎按快照显式计算；insight-judgment-structure）。"""
+    level: str  # high | medium | low
+    score: int
+    rule: str
+    drivers: list[InsightFactor]
+    basis: str  # engine
+
+
+class InsightConsequence(BaseModel):
+    """洞察可能后果（引擎确定性外推；数字全部可回溯）。"""
+    summary: str
+    horizon: str
+    condition: str
+    impacts: list[InsightFactor]
+    basis: str  # engine
+
+
 class InsightSummary(BaseModel):
     id: str
     type: str
@@ -12,6 +36,8 @@ class InsightSummary(BaseModel):
     delta: str
     source: str
     question: str
+    severity: InsightSeverity
+    consequence: InsightConsequence
 
 
 class Pulse(BaseModel):

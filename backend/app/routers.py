@@ -550,10 +550,15 @@ def append_agent_run_event(run_id: str, body: AgentRunEventRequest):
 CHAT_INTENT_RULES = (
     ("why", ("为什么", "原因", "归因", "为何")),
     ("evidence", ("证据", "依据", "凭什么", "数据支持")),
+    # insight-judgment-structure：后果一问（必须早于 handle——「不处理」也含「处理」子串）
+    ("consequence", ("后果", "不处理", "会怎样", "会不会", "风险", "影响面")),
     ("opportunity", ("机会", "增长", "可复制")),
     ("delegate", ("关注", "提醒", "盯着", "跟踪")),
     ("handle", ("处理", "怎么办", "行动", "解决")),
 )
+
+# 严重等级文案（与引擎 severity.level 同源；只在答案文本里做中文映射）
+SEVERITY_TEXT = {"high": "高", "medium": "中", "low": "低"}
 
 
 def _chat_intent(question: str) -> str:
@@ -583,6 +588,15 @@ def _compose_answer(intent: str, insight: dict | None, engine: dict, references:
             parts.append(f"进一步定位：{sem['causeB'].get('name', '')} {sem['causeB'].get('value', '')}".strip())
     elif intent == "evidence":
         parts.append(f"可回溯证据：指标 {insight.get('metric', '')}，变化 {insight.get('delta', '')}，来源 {insight.get('source', '')}。")
+    elif intent == "consequence":
+        # 两段前缀固定（前端按前缀归位到判断列段①/段③）；文本只由引擎字段组装（数字锁）
+        sev = insight.get("severity") or {}
+        cq = insight.get("consequence") or {}
+        if sev:
+            drivers = "、".join(f"{d.get('name', '')} {d.get('value', '')}".strip() for d in sev.get("drivers", []))
+            parts.append(f"严重等级：{SEVERITY_TEXT.get(sev.get('level'), '')} {sev.get('score', '')} 分 · {drivers}")
+        if cq:
+            parts.append(f"可能后果：{cq.get('summary', '')}（{cq.get('condition', '')}；观察窗口 {cq.get('horizon', '')}）")
     elif intent == "opportunity":
         parts.append(f"这是 {insight.get('type', '')} 类洞察：{insight.get('desc', '')}")
     elif intent == "delegate":

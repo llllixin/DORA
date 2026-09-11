@@ -113,8 +113,24 @@ def section4_chat(repo: Repository) -> None:
     allowed = set(re.findall(r"\d+(?:\.\d+)?", json.dumps(ins, ensure_ascii=False)))
     used = set(re.findall(r"\d+(?:\.\d+)?", answer["text"]))
     assert used <= allowed, f"answer numbers not from engine: {used - allowed}"
+    # insight-judgment-structure：既有意图不回归（why / evidence）
+    assert next(d for e, d in events if e == "thought_step")["intent"] == "why", events[0]
+    ev_events = _sse("/dora/chat", {"question": "证据是什么？", "page": "insight", "insight_id": "p1"})
+    assert next(d for e, d in ev_events if e == "thought_step")["intent"] == "evidence", ev_events[0]
+    ev_answer = next(d for e, d in ev_events if e == "answer")
+    assert "可回溯证据：" in ev_answer["text"], ev_answer["text"]
+    # 后果意图：两段固定前缀（严重等级 / 可能后果）文本取自引擎字段 + 数字锁
+    cq_events = _sse("/dora/chat", {"question": "这条洞察不处理会怎样？", "page": "insight", "insight_id": "p1"})
+    assert next(d for e, d in cq_events if e == "thought_step")["intent"] == "consequence", cq_events[0]
+    cq = next(d for e, d in cq_events if e == "answer")
+    assert "严重等级：" in cq["text"] and "可能后果：" in cq["text"], cq["text"]
+    assert ins["consequence"]["summary"] in cq["text"], cq["text"]
+    assert ins["consequence"]["condition"] in cq["text"], cq["text"]
+    assert ins["severity"]["drivers"][0]["value"] in cq["text"], cq["text"]
+    cq_used = set(re.findall(r"\d+(?:\.\d+)?", cq["text"]))
+    assert cq_used <= allowed, f"consequence answer numbers not from engine: {cq_used - allowed}"
     repo.delete_all_agent_runs()
-    print("[4] dora/chat OK（5 类事件 + run 落库 + 数字锁）")
+    print("[4] dora/chat OK（5 类事件 + run 落库 + 数字锁 + 后果意图两段）")
 
 
 def main() -> int:
