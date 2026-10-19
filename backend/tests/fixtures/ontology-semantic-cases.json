@@ -1,0 +1,518 @@
+{
+  "caseSetVersion": "a01-sem-v1-candidate",
+  "reviewStatus": "candidate_for_review",
+  "count": 40,
+  "minimumAccuracy": 0.95,
+  "criticalGroupsRequireAll": true,
+  "cases": [
+    {
+      "id": "sem-01",
+      "query": "利润占比如何定义",
+      "purpose": "knowledge",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.margin"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-02",
+      "query": "AOV 如何定义",
+      "purpose": "knowledge",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.aov"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-03",
+      "query": "aov 的口径",
+      "purpose": "knowledge",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.aov"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-04",
+      "query": "AOVERY 是什么意思",
+      "purpose": "knowledge",
+      "expectedStatus": "no_match",
+      "expectedConceptIds": [],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-05",
+      "query": "平均订单金额",
+      "purpose": "knowledge",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.aov"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-06",
+      "query": "利润率",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.margin"
+      ],
+      "expectedMetricKey": "margin",
+      "expectedDimension": "全国",
+      "reason": null
+    },
+    {
+      "id": "sem-07",
+      "query": "今天全国利润率是多少",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.margin"
+      ],
+      "expectedMetricKey": "margin",
+      "expectedDimension": "全国",
+      "reason": null
+    },
+    {
+      "id": "sem-08",
+      "query": "今天毛利率是多少",
+      "purpose": "metric",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.gross_margin"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "unbound_metric"
+    },
+    {
+      "id": "sem-09",
+      "query": "净利率如何查询",
+      "purpose": "metric",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.net_margin"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "unbound_metric"
+    },
+    {
+      "id": "sem-10",
+      "query": "利润率是毛利率还是净利率",
+      "purpose": "knowledge",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.margin",
+        "metric.gross_margin",
+        "metric.net_margin"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "profit_basis_unconfirmed"
+    },
+    {
+      "id": "sem-11",
+      "query": "关注毛利跌破18%",
+      "purpose": "watch",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "amount_rate_and_project_basis_unconfirmed"
+    },
+    {
+      "id": "sem-12",
+      "query": "退货占比",
+      "purpose": "knowledge",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.returns"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-13",
+      "query": "当前退货率",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.returns"
+      ],
+      "expectedMetricKey": "returns",
+      "expectedDimension": null,
+      "reason": "all_rows_only_no_aggregate"
+    },
+    {
+      "id": "sem-14",
+      "query": "当前门店08退货率",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.returns"
+      ],
+      "expectedMetricKey": "returns",
+      "expectedDimension": "门店08",
+      "reason": null
+    },
+    {
+      "id": "sem-15",
+      "query": "当前全国退货率",
+      "purpose": "metric",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.returns"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "national_aggregate_not_defined"
+    },
+    {
+      "id": "sem-16",
+      "query": "退款率是多少",
+      "purpose": "metric",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.refund_rate"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "unbound_metric"
+    },
+    {
+      "id": "sem-17",
+      "query": "退货率与退款率是否相同",
+      "purpose": "knowledge",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.returns",
+        "metric.refund_rate"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "different_metric_no_sameAs"
+    },
+    {
+      "id": "sem-18",
+      "query": "今天全国订单量",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.orders"
+      ],
+      "expectedMetricKey": "orders",
+      "expectedDimension": "全国",
+      "reason": null
+    },
+    {
+      "id": "sem-19",
+      "query": "最新华东订单量",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.east_orders"
+      ],
+      "expectedMetricKey": "east_orders",
+      "expectedDimension": "华东",
+      "reason": null
+    },
+    {
+      "id": "sem-20",
+      "query": "华东订单",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.east_orders"
+      ],
+      "expectedMetricKey": "east_orders",
+      "expectedDimension": "华东",
+      "reason": null
+    },
+    {
+      "id": "sem-21",
+      "query": "华东的订单量",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.east_orders"
+      ],
+      "expectedMetricKey": "east_orders",
+      "expectedDimension": "华东",
+      "reason": null
+    },
+    {
+      "id": "sem-22",
+      "query": "华南订单量",
+      "purpose": "metric",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.orders"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "unsupported_dimension"
+    },
+    {
+      "id": "sem-23",
+      "query": "比较全国订单量和华东订单量",
+      "purpose": "metric",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.orders",
+        "metric.east_orders"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "multiple_metric_targets"
+    },
+    {
+      "id": "sem-24",
+      "query": "华东销售额连续三天下降",
+      "purpose": "watch",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.revenue"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "unsupported_dimension"
+    },
+    {
+      "id": "sem-25",
+      "query": "关注华东订单量，连续三天下降",
+      "purpose": "watch",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.east_orders"
+      ],
+      "expectedMetricKey": "east_orders",
+      "expectedDimension": "华东",
+      "reason": null
+    },
+    {
+      "id": "sem-26",
+      "query": "营收",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.revenue"
+      ],
+      "expectedMetricKey": "revenue",
+      "expectedDimension": "全国",
+      "reason": null
+    },
+    {
+      "id": "sem-27",
+      "query": "采购价格",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.supplier_price"
+      ],
+      "expectedMetricKey": "supplier_price",
+      "expectedDimension": null,
+      "reason": "all_rows_only_no_single_supplier"
+    },
+    {
+      "id": "sem-28",
+      "query": "当前供应商B价格",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.supplier_price"
+      ],
+      "expectedMetricKey": "supplier_price",
+      "expectedDimension": "供应商B",
+      "reason": null
+    },
+    {
+      "id": "sem-29",
+      "query": "新品销量",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.new_sku"
+      ],
+      "expectedMetricKey": "new_sku",
+      "expectedDimension": "全区域",
+      "reason": null
+    },
+    {
+      "id": "sem-30",
+      "query": "新品SKU数量",
+      "purpose": "metric",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.new_sku_count"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "unbound_metric"
+    },
+    {
+      "id": "sem-31",
+      "query": "新品增长",
+      "purpose": "watch",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "sales_count_window_unconfirmed"
+    },
+    {
+      "id": "sem-32",
+      "query": "高客单门店占比",
+      "purpose": "metric",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "metric.high_value"
+      ],
+      "expectedMetricKey": "high_value",
+      "expectedDimension": "全国",
+      "reason": null
+    },
+    {
+      "id": "sem-33",
+      "query": "高客单门店",
+      "purpose": "knowledge",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "collection.high_aov_stores"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-34",
+      "query": "大额订单占比",
+      "purpose": "metric",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [
+        "metric.high_amount_order_share"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "unbound_metric"
+    },
+    {
+      "id": "sem-35",
+      "query": "高价值门店的结果为什么不是因果结论",
+      "purpose": "knowledge",
+      "expectedStatus": "clarification_required",
+      "expectedConceptIds": [],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "store_collection_vs_order_share"
+    },
+    {
+      "id": "sem-36",
+      "query": "行动档案",
+      "purpose": "knowledge",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "procedure.action"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-37",
+      "query": "证据链",
+      "purpose": "knowledge",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "procedure.evidence"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-38",
+      "query": "盯盘",
+      "purpose": "knowledge",
+      "expectedStatus": "resolved",
+      "expectedConceptIds": [
+        "procedure.watch"
+      ],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    },
+    {
+      "id": "sem-39",
+      "query": "p1 第一次触发的快照",
+      "purpose": "knowledge",
+      "expectedStatus": "no_match",
+      "expectedConceptIds": [],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": "A01_not_instance_lookup"
+    },
+    {
+      "id": "sem-40",
+      "query": "库存周转",
+      "purpose": "metric",
+      "expectedStatus": "no_match",
+      "expectedConceptIds": [],
+      "expectedMetricKey": null,
+      "expectedDimension": null,
+      "reason": null
+    }
+  ],
+  "expectedConceptIdsNote": "主要指标/流程/集合目标，不含区域与维度辅助上下文；不是扩展后全部概念列表。",
+  "criticalGroups": {
+    "financial": [
+      "sem-08",
+      "sem-09",
+      "sem-10",
+      "sem-11",
+      "sem-16",
+      "sem-17"
+    ],
+    "regional_reading": [
+      "sem-18",
+      "sem-19",
+      "sem-20",
+      "sem-21",
+      "sem-22",
+      "sem-23",
+      "sem-24",
+      "sem-25"
+    ],
+    "ascii_boundaries": [
+      "sem-02",
+      "sem-03",
+      "sem-04"
+    ],
+    "not_instances": [
+      "sem-39"
+    ],
+    "quantity_vs_collection": [
+      "sem-29",
+      "sem-30",
+      "sem-32",
+      "sem-33",
+      "sem-34",
+      "sem-35"
+    ]
+  }
+}

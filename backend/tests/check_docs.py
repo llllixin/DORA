@@ -1,121 +1,162 @@
-# -*- coding: utf-8 -*-
-"""docs 文档一致性自检（仅标准库，纯读文件，无 DB / 网络）。
-
-用法：cd backend && python3 -m tests.check_docs
-覆盖：
-  1) 活文档（L0/L1）不得含未勾选待办 `- [ ]`（唯一允许 = docs/持续优化路线.md）；
-  2) docs/开发过程记录.md 迭代编号从 1 起连续；
-  3) docs/开发问题与经验.md 的 P/D 编号无重复；
-  4) openspec/changes/archive/ 目录命名合规（yyyy-mm-dd-kebab）且非空；
-  5) docs/持续优化路线.md 中 ✅ 行可回溯到归档目录或迭代号；
-  6) 导航文档（AGENT.md / 版本路线图 / 文档地图 / openspec README）内反引号 .md 引用目标存在（死链）。
+"""纯文件检查：文档入口、P/D 与迭代编号、OpenSpec 索引及历史原文完整性。
+运行：cd backend && python -m tests.check_docs；不访问数据库或网络。
 """
+import hashlib
+import json
 import re
 import sys
+import zipfile
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
-DOCS = ROOT / "docs"
-CHANGES = ROOT / "openspec"
+DOCS = ROOT / 'docs'
 problems = []
+learning_archives = [DOCS / 'archive/2026-09-20/历史/README.md']
 
 
-def report(name: str, ok: bool, extra: str = "") -> None:
-    if ok:
-        print(f"  ✓ {name}")
-    else:
-        problems.append(f"{name} {extra}".rstrip())
-        print(f"  ✗ {name} {extra}".rstrip())
+def read(path):
+    return path.read_text(encoding='utf-8')
 
 
-def read(p: Path) -> str:
-    return p.read_text(encoding="utf-8", errors="replace")
+def report(name, ok, details=''):
+    print(f"  {'✓' if ok else '✗'} {name}" + (f' — {details}' if details else ''))
+    if not ok:
+        problems.append(name)
 
 
-print("[1] 活文档无未勾选待办（唯一允许 = 持续优化路线.md）")
-todo_re = re.compile(r"- \[ \]")
-no_todo = [
-    ROOT / "AGENT.md",
-    DOCS / "版本路线图.md",
-    DOCS / "历史版本路线.md",
-    DOCS / "优化方向.md",
-    DOCS / "文档地图.md",
-    DOCS / "开发过程记录.md",
-    DOCS / "开发问题与经验.md",
-    CHANGES / "README.md",
-]
-for v in (2, 3, 4, 5):
-    no_todo.append(ROOT / f"RELEASE_NOTES_V{v}.md")
-    if v >= 3:
-        no_todo.append(DOCS / f"V{v}_ACCEPTANCE_CHECKLIST.md")
-for f in no_todo:
-    if not f.exists():
-        report(f.name, False, "(文件缺失)")
+def anchors(text):
+    result = set(re.findall(r'<a\s+id="([^"]+)"', text))
+    duplicates = {}
+    for heading in re.findall(r'^#{1,6}\s+(.+)$', text, re.M):
+        slug = re.sub(r'[^\w\- ]', '', heading.lower()).replace(' ', '-')
+        count = duplicates.get(slug, 0)
+        duplicates[slug] = count + 1
+        result.add(slug if count == 0 else f'{slug}-{count}')
+    return result
+
+
+print('[1] 当前入口与待办边界')
+required = [ROOT / p for p in ('README.md', 'AGENT.md', 'docs/fullstack/README.md',
+    'docs/agent/README.md', 'docs/agent/问题与经验.md', 'docs/持续优化路线.md', 'docs/开发问题与经验.md',
+    'docs/开发过程记录.md', 'docs/面试项目技术说明.md', 'docs/archive/README.md')]
+required += learning_archives
+missing = [str(p.relative_to(ROOT)) for p in required if not p.is_file()]
+report('入口存在', not missing, str(missing) if missing else '')
+live = [p for p in DOCS.rglob('*.md') if 'archive' not in p.relative_to(DOCS).parts]
+live += [ROOT / p for p in ('README.md', 'AGENT.md', 'backend/README.md',
+    '.clinerules/project-conventions.md', 'openspec/README.md')]
+live += learning_archives
+wrong = [str(p.relative_to(ROOT)) for p in live if p.is_file() and p.name != '持续优化路线.md'
+         and re.search(r'^- \[ \]', read(p), re.M)]
+report('当前说明的未完成任务只在路线', not wrong, str(wrong) if wrong else '')
+
+print('[2] 迭代与问题编号')
+log = DOCS / '开发过程记录.md'
+nums = [int(x) for x in re.findall(r'^## 迭代 (\d+)', read(log), re.M)] if log.exists() else []
+report('迭代 1..N 连续', bool(nums) and nums == list(range(1, len(nums) + 1)))
+pd = DOCS / '开发问题与经验.md'
+ids = re.findall(r'^#{2,4}\s+([PD]\d{3})', read(pd), re.M) if pd.exists() else []
+report('P/D 无重复且两类均存在', len(ids) == len(set(ids)) and
+       any(x.startswith('P') for x in ids) and any(x.startswith('D') for x in ids))
+
+print('[3] 冻结原文与迁移清单')
+try:
+    manifest = json.loads(read(DOCS / 'archive/manifest.json'))
+except (OSError, ValueError) as exc:
+    manifest = []
+    report('迁移清单可读取', False, str(exc))
+errors, originals, bundles = [], set(), {}
+for item in manifest:
+    old, new = item['original'], item['archived']
+    path = ROOT / new
+    if old in originals:
+        errors.append(f'重复原路径 {old}')
+    originals.add(old)
+    try:
+        if item.get('bundle'):
+            bundle, member = item['bundle'], item['member']
+            members = bundles.setdefault(bundle, set())
+            if member in members:
+                errors.append(f'重复压缩包成员 {bundle}: {member}')
+            members.add(member)
+            with zipfile.ZipFile(ROOT / bundle) as archive:
+                content = archive.read(member)
+            if path.exists():
+                errors.append(f'已打包的独立入口再次出现 {new}')
+        else:
+            content = path.read_bytes()
+        if hashlib.sha256(content).hexdigest() != item['sha256']:
+            errors.append(f'原文内容改变 {new}')
+    except (OSError, KeyError, zipfile.BadZipFile, RuntimeError) as exc:
+        errors.append(f'原文无法读取 {new}: {exc}')
+    if item['mode'] == 'moved' and (ROOT / old).exists():
+        errors.append(f'迁移前入口再次出现 {old}')
+    if item['mode'] == 'snapshot' and not (ROOT / old).is_file():
+        errors.append(f'当前版本缺失 {old}')
+for bundle, members in bundles.items():
+    try:
+        with zipfile.ZipFile(ROOT / bundle) as archive:
+            names = archive.namelist()
+            if set(names) != members or len(names) != len(members):
+                errors.append(f'压缩包成员与清单不一致 {bundle}')
+    except (OSError, zipfile.BadZipFile) as exc:
+        errors.append(f'压缩包无法读取 {bundle}: {exc}')
+report('原文完整且无重复入口', bool(manifest) and not errors, '; '.join(errors))
+
+print('[4] OpenSpec 索引')
+dirs = {p.name for p in (ROOT / 'openspec/changes/archive').iterdir() if p.is_dir()}
+report('归档命名且非空', bool(dirs) and all(re.fullmatch(r'\d{4}-\d{2}-\d{2}-[a-z0-9-]+', n) for n in dirs))
+index = read(ROOT / 'openspec/README.md')
+linked = re.findall(r'\]\(changes/archive/([^/]+)/tasks\.md\)', index)
+report('每个归档恰有一个索引', set(linked) == dirs and len(linked) == len(dirs))
+caps = {p.parent.name for p in (ROOT / 'openspec/specs').glob('*/spec.md')}
+linked_caps = re.findall(r'\]\(specs/([^/]+)/spec\.md\)', index)
+report('每个能力恰有一个入口', set(linked_caps) == caps and len(linked_caps) == len(caps))
+opened = {p.name for p in (ROOT / 'openspec/changes').iterdir() if p.is_dir() and p.name != 'archive'}
+linked_open = re.findall(r'\]\(changes/([^/]+)/proposal\.md\)', index)
+report('未归档变更索引准确', set(linked_open) == opened and len(linked_open) == len(opened))
+
+print('[5] 当前 Markdown 链接与锚点')
+errors, count = [], 0
+for path in [*live, DOCS / 'archive/README.md', *(ROOT / 'openspec/specs').glob('*/spec.md')]:
+    if not path.is_file():
         continue
-    n = len(todo_re.findall(read(f)))
-    report(f.name, n == 0, f"(found {n})" if n else "")
-
-print("[2] dev-log 迭代编号连续")
-dl = read(DOCS / "开发过程记录.md")
-nums = [int(x) for x in re.findall(r"^## 迭代 (\d+)", dl, re.M)]
-report("迭代 1..N 连续", bool(nums) and nums == list(range(1, len(nums) + 1)),
-       f"(first={nums[0] if nums else '-'}, last={nums[-1] if nums else '-'}, count={len(nums)})")
-
-print("[3] P/D 编号唯一")
-pd = read(DOCS / "开发问题与经验.md")
-ids = re.findall(r"^#{2,4}\s+(P|D)(\d{3})", pd, re.M)
-seen = set()
-dup = []
-for kind, num in ids:
-    key = kind + num
-    if key in seen:
-        dup.append(key)
-    seen.add(key)
-report("P/D 无重复", not dup, f"(dup={dup})" if dup else "")
-report("同时含 P 与 D", any(k == "P" for k, _ in ids) and any(k == "D" for k, _ in ids))
-
-print("[4] archive 目录命名合规")
-arch = ROOT / "openspec" / "changes" / "archive"
-dirs = sorted(p.name for p in arch.iterdir() if p.is_dir())
-pat = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$")
-bad = [d for d in dirs if not pat.match(d)]
-report("命名 yyyy-mm-dd-kebab", not bad, f"(bad={bad})" if bad else "")
-report("非空", len(dirs) > 0, f"(count={len(dirs)})")
-
-print("[5] 持续优化路线 ✅ 行可回溯")
-cont = read(DOCS / "持续优化路线.md")
-trace = re.compile(r"2026-\d{2}-\d{2}-[a-z0-9-]+|迭代 \d+|docs 拆分|治理提交")
-bad_rows = []
-for line in cont.splitlines():
-    if "✅" in line and line.lstrip().startswith(("-", "|")):
-        if not trace.search(line):
-            bad_rows.append(line.strip()[:90])
-report("✅ 含归档目录或迭代号", not bad_rows, f"(bad={bad_rows})" if bad_rows else "")
-
-print("[6] 导航文档死链（反引号 .md 引用）")
-nav = [ROOT / "AGENT.md", DOCS / "版本路线图.md", DOCS / "文档地图.md", CHANGES / "README.md"]
-ref_re = re.compile(r"`([^`]*\.md)`")
-missing = []
-for f in nav:
-    if not f.exists():
-        missing.append(f"{f.name} (文件缺失)")
-        continue
-    for ref in ref_re.findall(read(f)):
-        if ref.startswith(("http", "../")) or "<" in ref or ".." in ref:
+    for raw in re.findall(r'\[[^\]\n]*\]\(([^)\n]+)\)', read(path)):
+        parsed = urlsplit(raw.strip().strip('<>'))
+        if parsed.scheme or parsed.netloc:
             continue
-        rel = ref[2:] if ref.startswith("./") else ref
-        candidates = {(ROOT / rel).resolve()}
-        # 允许裸文件名（如 `历史版本路线.md`）默认落在 docs/ 下
-        if not ref.startswith(("openspec/", "docs/", ".clinerules/", "RELEASE", "backend/")):
-            candidates.add((DOCS / rel).resolve())
-        if not any(c.exists() for c in candidates):
-            missing.append(f"{f.name}: `{ref}`")
-report("引用文件存在", not missing, f"(missing={missing})" if missing else "")
+        count += 1
+        target = (path.parent / unquote(parsed.path)).resolve() if parsed.path else path
+        if not target.exists() and path.name in {'开发过程记录.md', '开发问题与经验.md'}:
+            for item in manifest:
+                if target == (ROOT / item['original']).resolve():
+                    target = ROOT / item.get('bundle', item['archived'])
+                    break
+        if not target.exists():
+            errors.append(f'{path.relative_to(ROOT)}: {raw}')
+        elif parsed.fragment and target.suffix == '.md' and ('archive' not in target.parts or target in learning_archives):
+            if unquote(parsed.fragment) not in anchors(read(target)):
+                errors.append(f'{path.relative_to(ROOT)}: 锚点 {raw}')
+report('本地链接与当前锚点有效', not errors, '; '.join(errors) if errors else f'{count} links')
 
-print()
-if problems:
-    print("check_docs: FAILED")
-    for p in problems:
-        print(" -", p)
-    sys.exit(1)
-print("check_docs: ALL GREEN")
+print('[6] 导航不再指向旧路径')
+nav = [ROOT / p for p in ('README.md', 'AGENT.md', 'docs/fullstack/README.md',
+    'docs/agent/README.md', 'openspec/config.yaml', '.clinerules/project-conventions.md')]
+errors = []
+for path in nav:
+    if not path.exists():
+        continue
+    for item in manifest:
+        if item['mode'] == 'moved' and item['original'] in read(path):
+            errors.append(f"{path.relative_to(ROOT)}: {item['original']}")
+report('使用新导航', not errors, '; '.join(errors))
+print('[7] 路线中的完成记录可回溯')
+trace = re.compile(r'2026-\d{2}-\d{2}-[a-z0-9-]+|迭代 \d+|docs 拆分|治理提交')
+roadmap = DOCS / '持续优化路线.md'
+errors = [line[:100] for line in read(roadmap).splitlines()
+          if '✅' in line and line.lstrip().startswith(('-', '|')) and not trace.search(line)]
+report('完成项有归档或迭代依据', not errors, '; '.join(errors))
+
+print('\ncheck_docs:', 'FAILED' if problems else 'ALL GREEN')
+sys.exit(1 if problems else 0)

@@ -37,6 +37,7 @@ export interface Insight {
   delta: string;
   source: string;
   question: string;
+  chart?: EngineChart | null;
   semantics?: InsightSemantics;
   reasonSource?: 'template' | 'llm';
   generatedAt?: string;
@@ -103,15 +104,41 @@ export interface WatchEventCard {
   triggeredAt: string;
 }
 
+/** watch-goal-workbench：走向摘要（后端 `trend`，与引擎/评估器同一时间线口径；前端只表达不重算） */
+export interface WatchTrendPoint {
+  label: string;
+  value: number;
+}
+
+export interface WatchTrend {
+  metricKey: string;
+  dimension: string;
+  unit: string;
+  points: WatchTrendPoint[];
+  direction: 'up' | 'down' | 'flat';
+  runDays: number;
+  changePct: number | null;
+  basis: string;
+}
+
 /** V4-T4：真实委托卡片（后端 /api/watch 返回，WatchItem 超集） */
 export interface WatchTargetCard extends WatchItem {
-  status?: 'watching' | 'paused';
+  /**
+   * watch-escalate-handoff：三态为**呈现唯一事实源**（不再由前端按事件二次推断）。
+   * `watching` = 在手观察中；`paused` = 已暂停（仍在手）；`escalated` = 升级即移交**终态**
+   * （退出评估与在手计数，可在「已升级 · 已移交」区查看/恢复）。
+   */
+  status?: 'watching' | 'paused' | 'escalated';
   frequency?: string;
   lastEventAt?: string;
   /** watch-delegate-flow：委托生命周期回显（全部可选，缺字段按「无委托 / 未命中」渲染） */
   intent?: WatchParseIntent;
   lastCheckedAt?: string;
   lastEvent?: WatchEventCard | null;
+  /** watch-goal-workbench：引擎同源走向摘要（无序列 / 旧后端 → `undefined`/`null`，按「暂无序列」渲染） */
+  trend?: WatchTrend | null;
+  /** watch-goal-workbench：最近 `escalate` 事件引用的引擎洞察 id（`change` / 无命中 → `null`） */
+  engineInsightId?: string | null;
 }
 
 export interface WatchCondition {
@@ -179,6 +206,8 @@ export interface ActionCaseDetail {
   code: string;
   source: string;
   status: 'open' | 'running' | 'waiting_verify' | 'resolved';
+  /** action-demo-separation：来源标记 demo=静态演示集随种子建立 / engine=引擎建档或用户认领 */
+  origin: 'demo' | 'engine';
   orchestration: { experts: string[]; data: string[]; expertDesc: string };
   archive: string;
   steps: CaseStep[];
@@ -194,6 +223,8 @@ export interface ActionCaseCard {
   code: string;
   source: string;
   status: 'open' | 'running' | 'waiting_verify' | 'resolved';
+  /** action-demo-separation：来源标记（卡片/详情同口径下发） */
+  origin: 'demo' | 'engine';
   orchestration: { experts: string[]; data: string[]; expertDesc: string };
   archive: string;
   created_at: string;
@@ -227,4 +258,14 @@ export interface KnowledgeStats {
   opportunity: number;
   change: number;
   lesson: number;
+}
+
+
+/** 后端同源图表；null 是缺测点，不能绘制成零。 */
+export interface EngineChart {
+  kind: 'line' | 'bar';
+  unit: string;
+  labels: string[];
+  series: { name: string; values: (number | null)[]; color: string }[];
+  threshold?: { value: number; label: string; color: string };
 }

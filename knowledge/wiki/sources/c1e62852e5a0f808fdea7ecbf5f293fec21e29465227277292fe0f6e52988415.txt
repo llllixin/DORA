@@ -1,0 +1,112 @@
+"""完整 RAG 编排：索引、检索、实时分流、回答、引用与运行记录。"""
+from __future__ import annotations
+
+from typing import Any
+
+from app.rag.answer import RagAnswerProvider, resolve_answer_provider, validate_citations
+from app.rag.embeddings import EmbeddingProvider, resolve_embedding_provider
+from app.rag.indexer import RagIndexer
+from app.rag.ontology import Ontology
+from app.rag.repository import RagRepository
+from app.rag.retrieval import HybridRetriever
+from app.repository import Repository
+
+REALTIME_TERMS = ("今天", "现在", "当前", "最新", "刚刚", "实时", "此刻")
+SENSITIVE_TERMS = ("密码", "口令", "身份证", "密钥", "secret", "token")
+
+
+class RagService:
+    def __init__(self, rag_repository: RagRepository | None = None, run_repository: Repository | None = None,
+                 embedding_provider: EmbeddingProvider | None = None, answer_provider: RagAnswerProvider | None = None,
+                 ontology: Ontology | None = None):
+        self.rag_repository = rag_repository or RagRepository()
+        self.run_repository = run_repository or Repository()
+        self.embedding_provider = embedding_provider or resolve_embedding_provider()
+        self.answer_provider = answer_provider or resolve_answer_provider()
+        self.ontology = ontology or Ontology.load()
+        self.indexer = RagIndexer(self.rag_repository, self.embedding_provider)
+        self.retriever = HybridRetriever(self.rag_repository, self.embedding_provider, self.ontology)
+
+    def rebuild_index(self, documents: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        return self.indexer.rebuild(documents)
+
+    def search(self, query: str, top_k: int = 5, knowledge_types: list[str] | None = None) -> dict[str, Any]:
+        return self.retriever.search(query, top_k, knowledge_types)
+
+    def answer(self, question: str, top_k: int = 5, knowledge_types: list[str] | None = None) -> dict[str, Any]:
+        question = (question or "").strip()
+        if not question:
+            raise ValueError("question 不能为空")
+        run = self.run_repository.create_agent_run(
+            trigger="rag", input_data={"question": question, "top_k": top_k, "knowledge_types": knowledge_types or []},
+            events=[], output={}, status="running",
+        )
+        run_id = run["id"]
+        if any(term.lower() in question.lower() for term in SENSITIVE_TERMS):
+            output = {"status": "abstained", "answer": "知识库不提供凭据或个人敏感信息。", "citations": [], "retrieval": {"query": question, "empty": True, "hits": []}}
+            self.run_repository.append_agent_run_event(run_id, {"type": "policy", "data": {"reason": "sensitive_information"}})
+            self.run_repository.finish_agent_run(run_id, "done", output)
+            return {"run_id": run_id, **output}
+        realtime = any(term in question for term in REALTIME_TERMS)
+        semantics = self.ontology.resolve(question, "metric" if realtime else "knowledge")
+        if semantics["semanticStatus"] == "clarification_required":
+            output = {
+                "status": "clarification_required",
+                "answer": " ".join(dict.fromkeys(item["question"] for item in semantics["ambiguities"])),
+                "citations": [], "semantics": semantics,
+                "retrieval": {"query": question, "empty": True, "hits": []},
+            }
+            self.run_repository.append_agent_run_event(run_id, {"type": "clarification", "data": semantics})
+            self.run_repository.finish_agent_run(run_id, "done", output)
+            return {"run_id": run_id, **output}
+        route = self._realtime_route(question)
+        if route:
+            event = {"type": "route", "data": route}
+            self.run_repository.append_agent_run_event(run_id, event)
+            output = {"status": "tool_required", "answer": "该问题需要读取当前业务数据，不能由知识库作答。", **route, "citations": [], "semantics": semantics}
+            if output["status"] == "abstained":
+                output["answer"] = "当前知识查询尚未注册此业务读取工具。"
+            self.run_repository.finish_agent_run(run_id, "done", output)
+            return {"run_id": run_id, **output}
+        try:
+            retrieval = self.search(question, top_k, knowledge_types)
+            summary = [{"chunk_id": h["chunk_id"], "document_id": h["document_id"], "score": h["score"]} for h in retrieval["hits"]]
+            self.run_repository.append_agent_run_event(run_id, {"type": "retrieval", "data": {"hits": summary}})
+            if retrieval["empty"]:
+                output = {"status": "abstained", "answer": "知识库暂无足够依据。", "citations": [], "retrieval": retrieval}
+                self.run_repository.finish_agent_run(run_id, "done", output)
+                return {"run_id": run_id, **output}
+            result = self.answer_provider.answer(question, retrieval["hits"])
+            citations = validate_citations(result, retrieval["hits"])
+            output = {
+                "status": "answered", "answer": result["answer"], "citations": citations,
+                "retrieval": retrieval, "provider": self.answer_provider.kind, "model": self.answer_provider.model,
+            }
+            self.run_repository.append_agent_run_event(run_id, {"type": "answer", "data": {"citations": [c["chunk_id"] for c in citations]}})
+            self.run_repository.finish_agent_run(run_id, "done", output)
+            return {"run_id": run_id, **output}
+        except Exception as exc:
+            output = {"status": "failed", "answer": "", "citations": [], "error": str(exc)}
+            self.run_repository.append_agent_run_event(run_id, {"type": "error", "data": {"message": str(exc)}})
+            self.run_repository.finish_agent_run(run_id, "failed", output)
+            return {"run_id": run_id, **output}
+
+    def get_document(self, document_id: str, version: int | None = None) -> dict[str, Any] | None:
+        return self.rag_repository.get_document(document_id, version)
+
+    def _realtime_route(self, question: str) -> dict[str, Any] | None:
+        if not any(term in question for term in REALTIME_TERMS):
+            return None
+        semantics = self.ontology.resolve(question, "metric")
+        if semantics["semanticStatus"] == "clarification_required":
+            return None
+        binding = semantics["metricBinding"]
+        if binding:
+            return {"tool": "query_metric", "tool_args": {"metric_key": binding["metricKey"], "dimension": binding["dimension"] or ""}}
+        if any(self.ontology.concepts[cid]["type"] == "Collection" for cid in semantics["conceptIds"]):
+            return {"status": "abstained", "reasonCode": "tool_unavailable", "requestedTool": "read_collection"}
+        if "Watch" in question or "关注" in question:
+            return {"status": "abstained", "reasonCode": "tool_unavailable", "requestedTool": "list_watch"}
+        if "行动" in question or "档案" in question:
+            return {"status": "abstained", "reasonCode": "tool_unavailable", "requestedTool": "list_action_cases"}
+        return None

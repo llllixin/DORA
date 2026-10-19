@@ -1,0 +1,225 @@
+[
+  {
+    "id": "metric-margin",
+    "title": "利润率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "利润率用于描述利润相对收入的占比，必须同时说明时间范围、主体、单位和所用口径。Dora 的当前利润率数值只能由 query_metric 或规则引擎读取，Wiki 只解释定义，不能充当实时数据源。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "利润占比",
+      "毛利率"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-returns",
+    "title": "退货率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "退货率表示退货量相对相关订单量的比例。比较退货率时必须使用同一时间窗口和同一业务范围，并区分退货率上升与退货绝对数量上升。实时值由指标工具读取。",
+    "metric_keys": [
+      "returns"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.returns"
+    ],
+    "aliases": [
+      "退款率",
+      "退货占比"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-east-orders",
+    "title": "华东订单维度",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "华东订单是订单量在华东区域维度的切片。查询时应使用 orders 指标和华东维度，不能把全国订单或其它区域数值当作华东事实。",
+    "metric_keys": [
+      "orders",
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "东区订单"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-new-sku",
+    "title": "新品 SKU 指标",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "新品 SKU 指标描述新商品在指定观察期的表现或变化。必须说明新品判定窗口与对比基线，不能从名称直接推断成功或失败。",
+    "metric_keys": [
+      "new_sku"
+    ],
+    "dimensions": [
+      "新品"
+    ],
+    "concept_ids": [
+      "metric.new_sku"
+    ],
+    "aliases": [
+      "新商品"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-high-value",
+    "title": "高客单门店指标",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "高客单门店是按客单价等既定条件识别的门店集合。集合结果必须来自门店数据与引擎计算，RAG 只解释概念和使用边界。",
+    "metric_keys": [
+      "high_value"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.high_value"
+    ],
+    "aliases": [
+      "高价值门店"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-store-cluster",
+    "title": "门店集群口径",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "门店集群把门店按区域和客单等特征组织为可比较集合。集群不是因果结论；异常仍需回到具体门店、周期和证据核对。",
+    "metric_keys": [
+      "store_cluster"
+    ],
+    "dimensions": [
+      "门店",
+      "区域"
+    ],
+    "concept_ids": [
+      "metric.store_cluster"
+    ],
+    "aliases": [
+      "门店聚类"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-east-threshold",
+    "title": "华东订单阈值规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "华东订单阈值规则只对华东维度的订单序列应用配置阈值。缺少华东维度时必须无结果，不能退回全国数据或固定演示值。",
+    "metric_keys": [
+      "orders",
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "东区阈值"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-high-value-cluster",
+    "title": "高客单门店集群规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "高客单门店集群规则从门店行聚合满足条件的门店，用于发现可复制机会。结果是描述性分组，不能单独证明某项行动造成高客单。",
+    "metric_keys": [
+      "high_value",
+      "store_cluster"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.high_value",
+      "metric.store_cluster"
+    ],
+    "aliases": [
+      "高价值门店集群"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  }
+]

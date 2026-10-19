@@ -3,8 +3,9 @@ import type { InsightType, Page } from '../../types';
 import { insights, watchItems, capabilities, autoExpertNotes } from '../../data';
 import { Tag } from '../../components/ui/Tag';
 import { AskBar } from '../../components/dora/AskBar';
-import { createWatch, deleteWatch, detectApi, syncRemoteData } from '../../services/doraApi';
-import { followTargetFor, followedTargetOf, heroFor, monitorsFrom, signalsFrom } from './pulseView';
+import { syncRemoteData } from '../../services/doraApi';
+import { followedTargetOf, heroFor, monitorsFrom, signalsFrom } from './pulseView';
+import { watchCounts } from '../watch/trendView';
 
 export function PulsePage({
   onPage,
@@ -20,7 +21,6 @@ export function PulsePage({
   dataLabel?: string;
 }) {
   const [problem, setProblem] = useState<string>('');
-  const [followBusy, setFollowBusy] = useState(false);
   const [online, setOnline] = useState<boolean | null>(null);
   const [tick, setTick] = useState(0);
   const expertEntries = capabilities['专家团'] ?? [];
@@ -50,60 +50,10 @@ export function PulsePage({
   const cur = list.find((x) => x.id === problem) ?? list[0];
   const hero = heroFor(cur);
   const signalRows = signalsFrom(insights.opportunity, insights.change);
-  const monitorRows = monitorsFrom(watchItems, list);
-  const followText = cur ? followTargetFor(cur) : null;
+  const monitorRows = monitorsFrom(watchItems);
+  // watch-escalate-handoff：在手 / 已移交计数（与 Watch 页共用 trendView.watchCounts，避免口径分叉）
+  const counts = watchCounts(watchItems);
   const followed = cur ? followedTargetOf(cur, watchItems) : null;
-  const followHint = !cur
-    ? ''
-    : online === false
-      ? '后端离线：无法真实建档（演示模式）'
-      : !followText
-        ? '该洞察暂不支持一键委托，可到持续关注页输入委托'
-        : '';
-
-  const doFollow = async () => {
-    if (!cur || !followText) return;
-    setFollowBusy(true);
-    try {
-      const up = await detectApi();
-      if (!up) {
-        onNotice('✗ 后端离线：无法真实建档「持续关注」，请先启动后端');
-        return;
-      }
-      const r = await createWatch(followText);
-      if (!r.target) {
-        onNotice('✗ 未能真实建档（离线/演示模式不落库）');
-        return;
-      }
-      onNotice(`✓ 已创建持续关注「${r.target.name}」，可到持续关注页管理`);
-      await refresh();
-    } catch (err) {
-      onNotice(`✗ 建档失败：${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setFollowBusy(false);
-    }
-  };
-
-  const cancelFollow = async () => {
-    if (!cur) return;
-    const t = followedTargetOf(cur, watchItems);
-    if (!t) return;
-    setFollowBusy(true);
-    try {
-      const up = await detectApi();
-      if (!up) {
-        onNotice('✗ 后端离线：无法取消委托（演示模式不落库）');
-        return;
-      }
-      await deleteWatch(t.id);
-      onNotice(`✓ 已取消持续关注「${t.name}」`);
-      await refresh();
-    } catch (err) {
-      onNotice(`✗ 取消失败：${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setFollowBusy(false);
-    }
-  };
 
   return (
     <section className="page active">
@@ -123,7 +73,7 @@ export function PulsePage({
         <Summary label="需要处理" num={String(insights.problem.length)} cls="problem" desc="高影响问题 · 优先进入问题洞察" onClick={() => onInsight('problem')} />
         <Summary label="增长机会" num={String(insights.opportunity.length)} cls="opportunity" desc="可放大机会 · 看增长来源" onClick={() => onInsight('opportunity')} />
         <Summary label="重要变化" num={String(insights.change.length)} cls="change" desc="正在观察 · 看是否升级" onClick={() => onInsight('change')} />
-        <Summary label="持续关注" num={String(watchItems.length)} cls="watch" desc="Dora 正在替你持续检查" onClick={() => onPage('watch')} />
+        <Summary label="持续关注" num={String(counts.inHand)} cls="watch" onClick={() => onPage('watch')} />
       </div>
       <div className="cockpit-kicker">
         <span>今日经营主线</span>
@@ -162,31 +112,29 @@ export function PulsePage({
               <div className="main-buttons">
                 <button className="btn primary" onClick={() => onInsight('problem', list.findIndex((i) => i.id === cur.id))}>进入当前问题洞察 →</button>
                 {followed ? (
-                  <>
-                    <button className="btn soft" disabled>已加入跟进 ✓</button>
-                    <button className="btn" disabled={followBusy} onClick={() => void cancelFollow()}>取消委托</button>
-                  </>
-                ) : (
-                  <button
-                    className="btn soft"
-                    disabled={!followText || online !== true || followBusy}
-                    title={followHint}
-                    onClick={followText && online === true ? () => void doFollow() : undefined}
-                  >
-                    {followBusy ? '处理中…' : '让 Dora 帮我跟进'}
-                  </button>
-                )}
+                  followed.status === 'escalated' ? (
+                    <>
+                      {/* 已移交：它不再是「被检查对象」，不提供「取消委托」（watch-escalate-handoff） */}
+                      <button className="btn soft" disabled>已升级移交 ✓</button>
+                      <button className="btn" onClick={() => onPage('watch')}>查看委托记录 →</button>
+                    </>
+                  ) : null
+                ) : null}
                 <button className="btn" onClick={() => onTrace(cur.id)}>查看当前问题证据链</button>
               </div>
-              {followed && (
-                <div className="followup-mini">
+              {followed?.status === 'escalated' && (
+                <div className="followup-mini handed-off">
                   <div className="ask-avatar">D</div>
+                  {/* watch-escalate-handoff：移交后 SHALL NOT 再声称「正在替你持续检查」 */}
                   <div className="followup-content">
-                    <div className="hint">Dora 正在替你持续检查（真实委托）</div>
-                    <p>{followed.name} · {followed.logic || '关注中'}</p>
+                    <div className="hint">该问题来自你托管的持续关注（已升级移交）</div>
+                    <p>
+                      {followed.name} · 委托已完成移交，不再持续检查
+                      {followed.engineInsightId ? ` · 移交去向 ${followed.engineInsightId}` : ''}
+                    </p>
                   </div>
-                  <Tag tone="ai">自动监控</Tag>
-                  <button className="btn" style={{ marginLeft: 8 }} onClick={() => onPage('watch')}>管理 →</button>
+                  <Tag tone="red">已移交</Tag>
+                  <button className="btn" onClick={() => onPage('watch')}>查看委托记录 →</button>
                 </div>
               )}
               <div className="problem-stack">
@@ -217,16 +165,21 @@ export function PulsePage({
           <div className="card monitor-card">
             <div className="monitor-head">
               <h3>Dora 监控状态</h3>
-              <span className="monitor-count">{watchItems.length} 个目标运行中</span>
+              <span className="monitor-count">{counts.running} 个目标运行中</span>
             </div>
             <div className="monitor-stat">
-              <div><b>{monitorRows.length}</b><span>持续关注目标</span></div>
+              <div><b>{counts.inHand}</b><span>持续关注目标</span></div>
               <div><b>{list.length}</b><span>引擎判定问题</span></div>
             </div>
             <div className="monitor-list">
               {monitorRows.map((m) => <Monitor key={m.name} name={m.name} sub={m.sub} status={m.status} />)}
-              {!monitorRows.length && <div style={{ padding: '8px 0', fontSize: 12, opacity: 0.7 }}>暂无持续关注委托；可在下方「让 Dora 帮我跟进」或持续关注页建立。</div>}
+              {!monitorRows.length && <div style={{ padding: '8px 0', fontSize: 12, opacity: 0.7 }}>暂无在手持续关注委托；可到持续关注页建立。</div>}
             </div>
+            {counts.handedOff > 0 && (
+              <button className="monitor-handoff" onClick={() => onPage('watch')}>
+                另有 {counts.handedOff} 个已升级移交（不在运行中）→ 去持续关注页查看
+              </button>
+            )}
             <button className="btn full" onClick={() => onPage('watch')}>查看全部关注目标 →</button>
           </div>
           <div className="card monitor-card">
@@ -280,12 +233,13 @@ export function PulsePage({
   );
 }
 
-function Summary({ label, num, cls, desc, onClick }: { label: string; num: string; cls: string; desc: string; onClick: () => void }) {
+/** 摘要卡：`desc` 可选 —— 不传则不渲染描述行（不留空元素撑间距）。 */
+function Summary({ label, num, cls, desc, onClick }: { label: string; num: string; cls: string; desc?: string; onClick: () => void }) {
   return (
     <button className={`card summary-card ${cls}`} onClick={onClick}>
       <div className="label">{label}</div>
       <div className="num">{num}</div>
-      <div className="desc">{desc}</div>
+      {desc && <div className="desc">{desc}</div>}
     </button>
   );
 }

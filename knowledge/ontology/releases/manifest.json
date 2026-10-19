@@ -1,0 +1,14 @@
+{
+  "dora-ontology-v1": {
+    "file": "dora-ontology-v1.json",
+    "contentHash": "ee42f0055efd8479c133e7f6a548ddc58771d601a37fec7cd6dbc2245a2d6cbf",
+    "status": "legacy_source_only",
+    "reviewEvidence": "original pre-A01 source"
+  },
+  "dora-ontology-v2": {
+    "file": "dora-ontology-v2.json",
+    "contentHash": "a4bc8e504dd49e04b59b38ea7abe93095e2afe0940f396e9a5901b1c5b46968f",
+    "status": "reviewed",
+    "reviewEvidence": "2026-10-14 user reply 开始 after specific A01 proposal"
+  }
+}

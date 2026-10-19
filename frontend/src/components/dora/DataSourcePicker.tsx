@@ -54,7 +54,9 @@ export function DataSourcePicker({ onPick }: { onPick: (ds: DataSource) => void 
             rows = (r as { rows?: number }).rows ?? 0;
           }
         } catch (err) {
-          console.warn('[DataSourcePicker] 后端接口失败（离线回退本地）', err);
+          setMapErr(err instanceof Error ? err.message : String(err));
+          setBusy(false);
+          return;
         }
         setBusy(false);
         onPick({ name, kind, at: kind === 'sample' ? '09:32' : nowHHmm(), rows, fields: 36 });
@@ -80,7 +82,8 @@ export function DataSourcePicker({ onPick }: { onPick: (ds: DataSource) => void 
         return;
       }
     } catch (err) {
-      console.warn('[DataSourcePicker] 预览失败，走规范直传', err);
+      setMapErr(err instanceof Error ? err.message : String(err));
+      return;
     }
     void run(f.name, 'upload', f);
   };
@@ -125,14 +128,15 @@ export function DataSourcePicker({ onPick }: { onPick: (ds: DataSource) => void 
         <input
           ref={inputRef}
           type="file"
-          accept=".xlsx,.xls,.csv,.tsv,.xlsm"
+          accept=".xlsx,.csv"
           onChange={(e) => pickFile(e.target.files?.[0])}
         />
         <div className="up-ico">⇪</div>
         <b>点击选择或拖入经营数据文件</b>
-        <span>xlsx / xls / csv · 单个文件</span>
+        <span>xlsx / csv · 单个文件</span>
       </label>
 
+      {mapErr && !pvCols && <div className="map-err" role="alert">{mapErr}</div>}
       {busy ? (
         <div className="up-parse">
           <div className="up-spin" aria-hidden="true" />
@@ -168,7 +172,7 @@ export function DataSourcePicker({ onPick }: { onPick: (ds: DataSource) => void 
                 {pvCols.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </label>
-            <label className="map-field"><span>维度列 dimension（可选）</span>
+            <label className="map-field"><span>维度列（门店/供应商指标必选，其余使用默认范围）</span>
               <select value={mDim} onChange={(e) => setMDim(e.target.value)}>
                 <option value="">（无）</option>
                 {pvCols.map((c) => <option key={c} value={c}>{c}</option>)}

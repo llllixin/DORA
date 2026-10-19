@@ -1,0 +1,3963 @@
+[
+  {
+    "id": "metric-margin",
+    "title": "利润率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "利润率用于描述利润相对收入的占比，必须同时说明时间范围、主体、单位和所用口径。Dora 的当前利润率数值只能由 query_metric 或规则引擎读取，Wiki 只解释定义，不能充当实时数据源。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "利润占比",
+      "毛利率"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-returns",
+    "title": "退货率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "退货率表示退货量相对相关订单量的比例。比较退货率时必须使用同一时间窗口和同一业务范围，并区分退货率上升与退货绝对数量上升。实时值由指标工具读取。",
+    "metric_keys": [
+      "returns"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.returns"
+    ],
+    "aliases": [
+      "退款率",
+      "退货占比"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-orders",
+    "title": "订单量定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "订单量是指定时间和范围内的订单计数。趋势判断依赖有序周期，不能用字符串倒序代替时间顺序。当前订单量和变化应从 query_metric 与引擎证据读取。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "订单数",
+      "销量订单"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/series_order.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-revenue",
+    "title": "营收定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "营收表示指定期间确认的销售收入。分析时要注明含税或未税、币种、门店范围和周期。RAG 不保存当前营收值，只提供项目口径说明。",
+    "metric_keys": [
+      "revenue"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.revenue"
+    ],
+    "aliases": [
+      "销售额",
+      "营业收入"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-aov",
+    "title": "客单价定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "客单价 AOV 通常表示销售金额除以有效订单数。分母为零时不能做除法或虚构为零，应返回无可计算结果。跨区域比较必须保持订单范围与币种一致。",
+    "metric_keys": [
+      "aov"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.aov"
+    ],
+    "aliases": [
+      "平均订单金额",
+      "AOV"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-east-orders",
+    "title": "华东订单维度",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "华东订单是订单量在华东区域维度的切片。查询时应使用 orders 指标和华东维度，不能把全国订单或其它区域数值当作华东事实。",
+    "metric_keys": [
+      "orders",
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "东区订单"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-new-sku",
+    "title": "新品 SKU 指标",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "新品 SKU 指标描述新商品在指定观察期的表现或变化。必须说明新品判定窗口与对比基线，不能从名称直接推断成功或失败。",
+    "metric_keys": [
+      "new_sku"
+    ],
+    "dimensions": [
+      "新品"
+    ],
+    "concept_ids": [
+      "metric.new_sku"
+    ],
+    "aliases": [
+      "新商品"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-high-value",
+    "title": "高客单门店指标",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "高客单门店是按客单价等既定条件识别的门店集合。集合结果必须来自门店数据与引擎计算，RAG 只解释概念和使用边界。",
+    "metric_keys": [
+      "high_value"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.high_value"
+    ],
+    "aliases": [
+      "高价值门店"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-supplier-price",
+    "title": "供应商价格指标",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "供应商价格描述采购来源在指定商品和周期下的报价或成交价。比较时必须保持供应商、商品、规格、币种和时间一致，不能用 Wiki 中的历史数字回答当前价格。",
+    "metric_keys": [
+      "supplier_price"
+    ],
+    "dimensions": [
+      "供应商"
+    ],
+    "concept_ids": [
+      "metric.supplier_price"
+    ],
+    "aliases": [
+      "采购价格"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-store-cluster",
+    "title": "门店集群口径",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "门店集群把门店按区域和客单等特征组织为可比较集合。集群不是因果结论；异常仍需回到具体门店、周期和证据核对。",
+    "metric_keys": [
+      "store_cluster"
+    ],
+    "dimensions": [
+      "门店",
+      "区域"
+    ],
+    "concept_ids": [
+      "metric.store_cluster"
+    ],
+    "aliases": [
+      "门店聚类"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-margin-low",
+    "title": "利润率偏低规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "利润率偏低规则把当前有效利润率与配置阈值比较。阈值来自 rule_config，规则只在分母有效且数据范围明确时判断；低于阈值产生问题候选，不等于已经找到原因。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "低利润率"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-returns-rise",
+    "title": "退货率上升规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "退货率上升规则比较有序周期内的同口径退货率。只有数据点足够且顺序确定时才判断趋势；单点变化不能自动证明质量问题。",
+    "metric_keys": [
+      "returns"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.returns"
+    ],
+    "aliases": [
+      "退货增长"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-orders-decline",
+    "title": "订单量下降规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "订单量下降规则基于按周期排序后的同范围序列识别连续或显著走弱。周期不足时返回无判断；规则命中是需要调查的信号，不直接归因。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "订单下滑"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-aov-growth",
+    "title": "客单价增长规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "客单价增长规则在同口径相邻周期之间比较 AOV。订单分母为零或缺失时不产生增长判断；增长可形成机会候选，但仍需结合订单量和范围解释。",
+    "metric_keys": [
+      "aov"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.aov"
+    ],
+    "aliases": [
+      "客单增长"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-east-threshold",
+    "title": "华东订单阈值规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "华东订单阈值规则只对华东维度的订单序列应用配置阈值。缺少华东维度时必须无结果，不能退回全国数据或固定演示值。",
+    "metric_keys": [
+      "orders",
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "东区阈值"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-new-sku-change",
+    "title": "新品变化规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "新品变化规则比较新品 SKU 在既定窗口的表现，输出变化类洞察。资料不足时不推断新品成败，变化结论必须附带数据范围和证据。",
+    "metric_keys": [
+      "new_sku"
+    ],
+    "dimensions": [
+      "新品"
+    ],
+    "concept_ids": [
+      "metric.new_sku"
+    ],
+    "aliases": [
+      "新品变化"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-high-value-cluster",
+    "title": "高客单门店集群规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "高客单门店集群规则从门店行聚合满足条件的门店，用于发现可复制机会。结果是描述性分组，不能单独证明某项行动造成高客单。",
+    "metric_keys": [
+      "high_value",
+      "store_cluster"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.high_value",
+      "metric.store_cluster"
+    ],
+    "aliases": [
+      "高价值门店集群"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "rule-supplier-price-change",
+    "title": "供应商价格变化规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "供应商价格变化规则比较同供应商同商品规格的有序价格。范围或规格不一致时不得比较；命中后需要查看证据再评估对利润率的影响。",
+    "metric_keys": [
+      "supplier_price"
+    ],
+    "dimensions": [
+      "供应商"
+    ],
+    "concept_ids": [
+      "metric.supplier_price"
+    ],
+    "aliases": [
+      "采购价变化"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "procedure-data-upload",
+    "title": "数据上传流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "数据上传先做文件类型、大小、表头、数值和映射校验，再在数据库中替换受影响指标并追加更新事件。解析失败返回明确错误；成功后失效旧解释并触发 on_update Watch 评估。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "导入数据"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/routers.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "procedure-evidence",
+    "title": "证据链阅读流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "先从洞察打开证据，核对指标、范围、更新时间、命中规则和原始行，再决定是否进入行动。证据与判断应区分：原始事实不自动等于原因或建议。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.evidence"
+    ],
+    "aliases": [
+      "查看依据"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/routers.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "procedure-watch",
+    "title": "持续关注委托流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "Watch 把自然语言委托解析成指标、维度、条件和频率。创建后可在数据更新、手动检查或调度时评估；暂停状态不评估，升级状态表示已移交，可明确恢复。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.watch"
+    ],
+    "aliases": [
+      "盯盘",
+      "提醒流程"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/watch",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "procedure-action",
+    "title": "行动回路流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "行动回路从引擎洞察建档，按顺序开始、完成或阻塞步骤，全部完成后进入验证。验证通过归档为 resolved；验证未通过继续处理。关键状态迁移由后端事务校验。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.action"
+    ],
+    "aliases": [
+      "处理闭环",
+      "行动档案"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/action/flow.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "procedure-lesson",
+    "title": "经验沉淀流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "只有 resolved 行动档案可沉淀经验，并必须填写结论。经验保留来源档案和处理过程；未经验证的模型建议不能自动成为受审核知识。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.action"
+    ],
+    "aliases": [
+      "沉淀经验"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/repository.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "procedure-offline",
+    "title": "离线模式语义",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "Mock 模式用于演示，HTTP 模式必须如实暴露后端失败，auto 模式可以回退并显示离线提示。页面不能把本地演示写入伪装成服务器成功。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "离线演示"
+    ],
+    "source_type": "project",
+    "source_ref": "frontend/src/services/doraApi.ts",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "procedure-rag-tools",
+    "title": "RAG 与业务工具边界",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "RAG 回答稳定定义、规则、流程和审核案例；当前指标、当前 Watch 和当前 Action 必须调用业务工具。包含今天、现在、最新、当前的数值问题应分流，不能从 Wiki 猜测。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "知识与实时数据"
+    ],
+    "source_type": "project",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "procedure-no-data",
+    "title": "无数据与拒答",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "没有足够相关资料时明确回答知识库暂无依据，并给出需要补充的资料类型。不能用最相近但无关的内容凑答案，也不能把模型常识写成项目事实。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "不知道",
+      "拒答"
+    ],
+    "source_type": "project",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "procedure-agent-run",
+    "title": "Agent 运行记录",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "agent_run 保存输入、公开步骤、工具结果摘要、答案和停止原因，用于回放与评价。运行记录不得保存模型隐藏思维链，也不能被宣传为不可篡改审计。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "运行轨迹"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-zero-denominator",
+    "title": "零分母计算案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：计算客单价或比例时分母为零，旧逻辑可能抛错或制造无穷值。处理方式是先检查分母，返回不可计算并保留原始证据；不得把结果填成零。",
+    "metric_keys": [
+      "aov",
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.aov",
+      "metric.margin"
+    ],
+    "aliases": [
+      "除零"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/boundary_check.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-period-order",
+    "title": "周期排序案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：月份、季度和日期字符串混在一起时，普通字典序会颠倒趋势。处理方式是集中解析周期并稳定排序，无法识别的标签保持输入相对顺序。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "时间乱序"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/series_order.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-dimension-mismatch",
+    "title": "维度不匹配案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：上传数据提供新区域，但引擎仍使用固定区域，可能产生错误洞察。处理方式是从真实行读取可用维度；缺少所需维度时返回无结果。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "区域"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "区域不一致"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/boundary_check.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-event-identity",
+    "title": "更新事件身份案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：用展示时间作为更新事件唯一键，会让同一时刻的两个合法上传相互覆盖。处理方式是使用独立事件 ID，时间只负责展示与排序。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "事件覆盖"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-action-concurrency",
+    "title": "行动并发案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：两个请求同时推进同一行动步骤会产生重复完成或越过状态。处理方式是在数据库事务内锁定档案，重新校验当前步骤后一次性提交。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.action"
+    ],
+    "aliases": [
+      "并发推进"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/action_atomic_check.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-watch-offline",
+    "title": "Watch 离线案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：HTTP 后端离线时界面若仍提示创建成功，会误导用户。处理方式是 HTTP 模式报告失败，auto 回退时展示离线状态，Mock 只作为演示。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.watch"
+    ],
+    "aliases": [
+      "离线关注"
+    ],
+    "source_type": "simulated",
+    "source_ref": "tools/cdp/join_http_offline_check.mjs",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-watch-escalation",
+    "title": "Watch 升级终态案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：Watch 触发升级后若仍标为 watching，会被重复评估。处理方式是升级时把状态设为 escalated，并要求用户明确恢复后才重新评估。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.watch"
+    ],
+    "aliases": [
+      "重复升级"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/repository.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-chart-source",
+    "title": "图表事实同源案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：前端图表使用静态数组，而文字洞察来自后端，会展示互相冲突的事实。处理方式是图表与文字共同消费引擎返回的同一证据数据。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.evidence"
+    ],
+    "aliases": [
+      "图文不一致"
+    ],
+    "source_type": "simulated",
+    "source_ref": "frontend/src/components/charts/EngineChart.tsx",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-unknown-tool",
+    "title": "未知工具拒绝案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：模型请求注册表之外的工具。执行器必须在调用前拒绝，运行以 failed 结束并记录原因，不能通过动态属性或任意函数名执行。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "工具白名单"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/agent_loop_check.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-agent-budget",
+    "title": "Agent 预算停止案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：provider 持续请求合法工具。循环达到最大轮数或工具调用数后必须停止为 limited，保留已发生事件且不再执行额外调用。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "循环上限"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/agent/loop.py",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-prompt-injection",
+    "title": "知识提示注入案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：知识正文出现忽略系统要求、调用写工具等句子。检索资料只作为不可信证据，不能改变工具权限、回答边界或引用规则。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "提示注入"
+    ],
+    "source_type": "simulated",
+    "source_ref": "docs/agent/README.md",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-invalid-citation",
+    "title": "非法引用案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：回答 provider 引用本次检索上下文之外的 chunk。后处理必须拒绝发布答案并记录 citation_not_in_context，不能仅检查引用格式。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.evidence"
+    ],
+    "aliases": [
+      "伪造引用"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-empty-retrieval",
+    "title": "空检索拒答案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：问题与项目知识无关但向量仍返回最近邻。检索器应用最低相关性门槛，回答层在无足够证据时返回 abstained，不拼接无关答案。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "无命中"
+    ],
+    "source_type": "simulated",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-idempotent-index",
+    "title": "索引幂等案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：相同知识源重复导入导致文档和 chunk 数不断增长。处理方式是以文档 ID、版本、chunk 序号和内容哈希建立稳定身份，相同内容返回 unchanged。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "重复索引"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-version-retention",
+    "title": "知识版本保留案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：新口径覆盖旧文档会失去历史追溯。导入新版本时保留旧版本并把当前检索指向最新有效版本；按版本读取仍可检查旧内容。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "历史版本"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-transaction-import",
+    "title": "导入事务案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：一批知识中最后一篇无效，前面的文档已部分写入。正确做法是在写入前验证全批次，并在单一事务中更新文档与 chunk，失败后零写入。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "半批写入"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "case-realtime-route",
+    "title": "实时问题分流案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "模拟案例：用户询问今天利润率，系统错误引用定义文档作答。正确行为是返回 tool_required 和 query_metric，让业务工具读取当前事实。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "今天利润率"
+    ],
+    "source_type": "simulated",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 1,
+    "valid_from": "2026-09-21",
+    "valid_to": null,
+    "reviewed_by": "project-owner",
+    "updated_at": "2026-09-23T00:00:00+08:00"
+  },
+  {
+    "id": "metric-margin",
+    "title": "利润率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "利润率用于描述利润相对收入的占比，必须同时说明时间范围、主体、单位和所用口径。Dora 的当前利润率数值只能由 query_metric 或规则引擎读取，Wiki 只解释定义，不能充当实时数据源。 项目尚未声明毛利或净利分子分母，不把毛利率、净利率作为同义词。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "利润占比"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A01-review-2026-10-14",
+    "updated_at": "2026-10-14T00:00:00+08:00"
+  },
+  {
+    "id": "metric-returns",
+    "title": "退货率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "退货率表示退货量相对相关订单量的比例。比较退货率时必须使用同一时间窗口和同一业务范围，并区分退货率上升与退货绝对数量上升。实时值由指标工具读取。 当前 returns 存储是门店维度；退款率是不同概念，未实现全国聚合口径。",
+    "metric_keys": [
+      "returns"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.returns"
+    ],
+    "aliases": [
+      "退货占比"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A01-review-2026-10-14",
+    "updated_at": "2026-10-14T00:00:00+08:00"
+  },
+  {
+    "id": "metric-east-orders",
+    "title": "华东订单维度",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "华东订单是订单量在华东区域的业务切片。当前项目的存储与引擎使用 east_orders 指标和华东维度，query_metric 参数应与该物理键一致；不能回退全国 orders 或猜测 orders+华东存在等价数据。",
+    "metric_keys": [
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "华东订单量",
+      "东区订单"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A01-review-2026-10-14",
+    "updated_at": "2026-10-14T00:00:00+08:00"
+  },
+  {
+    "id": "rule-east-threshold",
+    "title": "华东订单阈值规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "华东订单阈值规则只对华东维度的订单序列应用配置阈值。缺少华东维度时必须无结果，不能退回全国数据或固定演示值。",
+    "metric_keys": [
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "东区阈值"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A01-review-2026-10-14",
+    "updated_at": "2026-10-14T00:00:00+08:00"
+  },
+  {
+    "id": "metric-new-sku",
+    "title": "新品销量与新品 SKU 种数边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "当前项目物理 key new_sku 保留兼容命名，种子序列与引擎描述的是新品销量，并非 SKU 种数。新品判定窗口、实际销量单位和对比基线需要业务确认；未提供这些口径时不能推断新品成败，也不能映射新品 SKU 数量。",
+    "metric_keys": [
+      "new_sku"
+    ],
+    "dimensions": [
+      "全区域"
+    ],
+    "concept_ids": [
+      "metric.new_sku"
+    ],
+    "aliases": [
+      "新品销量",
+      "新品销售量"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A01-review-2026-10-14",
+    "updated_at": "2026-10-14T00:00:00+08:00"
+  },
+  {
+    "id": "metric-high-value",
+    "title": "高客单门店占比与集合边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "当前项目 high_value 是全国高客单门店占比百分比序列，不是门店集合、大额订单量或高价值订单占比。识别阈值及分子分母待业务确认；集合需读取门店行，当前占比需读取指标工具。描述性占比和集合都不能单独证明某项行动造成改善。",
+    "metric_keys": [
+      "high_value"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.high_value"
+    ],
+    "aliases": [
+      "高客单门店占比",
+      "高客单门店比例"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A01-review-2026-10-14",
+    "updated_at": "2026-10-14T00:00:00+08:00"
+  },
+  {
+    "id": "rule-high-value-cluster",
+    "title": "高客单门店集群规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "高客单门店集群规则从门店行聚合满足条件的门店，用于发现可复制机会。结果是描述性分组，不能单独证明某项行动造成高客单。",
+    "metric_keys": [
+      "store_cluster"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.store_cluster",
+      "collection.high_aov_stores"
+    ],
+    "aliases": [
+      "高客单门店集群"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A01-review-2026-10-14",
+    "updated_at": "2026-10-14T00:00:00+08:00"
+  },
+  {
+    "id": "metric-store-cluster",
+    "title": "门店集群口径",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "门店集群把门店按区域和客单等特征组织为可比较集合。集群不是因果结论；异常仍需回到具体门店、周期和证据核对。",
+    "metric_keys": [],
+    "dimensions": [
+      "门店",
+      "区域"
+    ],
+    "concept_ids": [
+      "metric.store_cluster",
+      "collection.high_aov_stores"
+    ],
+    "aliases": [
+      "门店聚类"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A01-review-2026-10-14",
+    "updated_at": "2026-10-14T00:00:00+08:00"
+  },
+  {
+    "id": "metric-margin",
+    "title": "利润率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：项目利润率是 margin 输入序列；项目未声明企业财务分子与分母，不等同已确认毛利率或净利率。\n\nphysical_binding：metric.margin → query_metric 的 margin/全国，原单位为%。当前RAG只返回工具提示，不执行读取。\n\ncalculation_boundary：compute_snapshot读取全国序列末值，不从营收重新计算利润率；不得自行补算企业财务公式。\n\ncomparison_scope：同主体、时间范围、单位和已确认口径方可比较；全国范围不替代其他区域。\n\nusage：用于解释利润率规则输入和指向业务读取入口；实时数值由业务读取，不写入本卡。\n\nlimitations：毛利率/净利率先澄清；企业公式、收入确认与采集方法未提供。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "利润占比"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目利润率是 margin 输入序列；项目未声明企业财务分子与分母，不等同已确认毛利率或净利率。",
+        "physical_binding": "metric.margin → query_metric 的 margin/全国，原单位为%。当前RAG只返回工具提示，不执行读取。",
+        "calculation_boundary": "compute_snapshot读取全国序列末值，不从营收重新计算利润率；不得自行补算企业财务公式。",
+        "comparison_scope": "同主体、时间范围、单位和已确认口径方可比较；全国范围不替代其他区域。",
+        "usage": "用于解释利润率规则输入和指向业务读取入口；实时数值由业务读取，不写入本卡。",
+        "limitations": "毛利率/净利率先澄清；企业公式、收入确认与采集方法未提供。"
+      },
+      "concept_note": "按A01已发布概念引用；无新增概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "当前DORA项目代码/演示数据；企业应用须核对实际定义。",
+      "unknowns": [
+        "企业分子分母",
+        "输入采集方法"
+      ],
+      "source_refs": [
+        "knowledge/ontology/releases/dora-ontology-v2.json",
+        "backend/app/engine/engine.py",
+        "backend/app/rag/service.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 2,
+        "payload_hash": "95e25d5ccc1f1694d5a7fa8f51d1fa939547e1319871e18c30bd5b480fa143ea"
+      },
+      "source_hashes": {
+        "knowledge/ontology/releases/dora-ontology-v2.json": "5078cc4aae89b8b81d389a3e73341a50f6872c4089c7282b89cc7496f78ca980",
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341",
+        "backend/app/rag/service.py": "c1e62852e5a0f808fdea7ecbf5f293fec21e29465227277292fe0f6e52988415"
+      }
+    }
+  },
+  {
+    "id": "metric-returns",
+    "title": "退货率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：项目returns是门店维度退货率输入，单位%；不等同退款率，也未实现全国聚合。\n\nphysical_binding：metricKey=returns；默认dimension=None；dimensionPolicy=store_or_all_rows；sourceUnit=% 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "returns"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.returns"
+    ],
+    "aliases": [
+      "退货占比"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目returns是门店维度退货率输入，单位%；不等同退款率，也未实现全国聚合。",
+        "physical_binding": "metricKey=returns；默认dimension=None；dimensionPolicy=store_or_all_rows；sourceUnit=% 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 2,
+        "payload_hash": "0a54c510a14b25a5ce9666ce71ba249e344d682eee2f412f9eeacacb1c886b3d"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "metric-orders",
+    "title": "订单量定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：项目orders表示全国订单量输入，按周期排序后读取；不以华东切片替代全国。\n\nphysical_binding：metricKey=orders；默认dimension=全国；dimensionPolicy=fixed_with_east_view；sourceUnit=None 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "订单数",
+      "销量订单"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/series_order.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目orders表示全国订单量输入，按周期排序后读取；不以华东切片替代全国。",
+        "physical_binding": "metricKey=orders；默认dimension=全国；dimensionPolicy=fixed_with_east_view；sourceUnit=None 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/series_order.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "b79077e9c23bd240fd65949c52a50092e0879c96d049509e1898cfb47e977ef1"
+      },
+      "source_hashes": {
+        "backend/app/series_order.py": "f91e02871d8d788799a2804bce31157c12c058f87424d6d7c865be2639917e31"
+      }
+    }
+  },
+  {
+    "id": "metric-revenue",
+    "title": "营收定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：项目revenue是全国营收输入，源单位千元；系统没有在本卡核实企业收入确认、含税/未税或会计口径。\n\nphysical_binding：metricKey=revenue；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=千元 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "revenue"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.revenue"
+    ],
+    "aliases": [
+      "销售额",
+      "营业收入"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目revenue是全国营收输入，源单位千元；系统没有在本卡核实企业收入确认、含税/未税或会计口径。",
+        "physical_binding": "metricKey=revenue；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=千元 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "d513500fca4165a1fbd9c71cb5427faaebf3565119a3e4c1129b07ab3d8da1ce"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "metric-aov",
+    "title": "客单价定义与边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：客单价AOV常用销售金额/有效订单数说明；项目直接读取全国aov序列，源单位元，未从当前orders/revenue重算企业口径。\n\nphysical_binding：metricKey=aov；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=元 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "aov"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.aov"
+    ],
+    "aliases": [
+      "平均订单金额",
+      "AOV"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "客单价AOV常用销售金额/有效订单数说明；项目直接读取全国aov序列，源单位元，未从当前orders/revenue重算企业口径。",
+        "physical_binding": "metricKey=aov；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=元 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "a61bb09379c666d7336c6b456b6d55be640c5e373d43698fade17db8fa5eeef5"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "metric-east-orders",
+    "title": "华东订单维度",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：项目east_orders是华东订单量输入；不是华东销售额，也不是全国订单量。\n\nphysical_binding：metricKey=east_orders；默认dimension=华东；dimensionPolicy=fixed；sourceUnit=None 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "华东订单量",
+      "东区订单"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目east_orders是华东订单量输入；不是华东销售额，也不是全国订单量。",
+        "physical_binding": "metricKey=east_orders；默认dimension=华东；dimensionPolicy=fixed；sourceUnit=None 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 2,
+        "payload_hash": "44036b2a68ac4c2ee52607e2492ebb5fff172d8c307745c12fc9c0510fe59442"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "metric-new-sku",
+    "title": "新品销量与新品 SKU 种数边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：项目new_sku表示全区域新品销量；兼容物理key保留，不表示新品SKU种数，不从名字推断企业新品窗口。\n\nphysical_binding：metricKey=new_sku；默认dimension=全区域；dimensionPolicy=fixed；sourceUnit=None 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "new_sku"
+    ],
+    "dimensions": [
+      "全区域"
+    ],
+    "concept_ids": [
+      "metric.new_sku"
+    ],
+    "aliases": [
+      "新品销量",
+      "新品销售量"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目new_sku表示全区域新品销量；兼容物理key保留，不表示新品SKU种数，不从名字推断企业新品窗口。",
+        "physical_binding": "metricKey=new_sku；默认dimension=全区域；dimensionPolicy=fixed；sourceUnit=None 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 2,
+        "payload_hash": "c88c9438bdfe9667acc0dc2baecc4fb927f4d8c6488489b74ec3d2d44d42e882"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "metric-high-value",
+    "title": "高客单门店占比与集合边界",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：项目high_value表示全国高客单门店占比，单位%；不是大额订单占比，也不是门店集合。\n\nphysical_binding：metricKey=high_value；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=% 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "high_value"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.high_value"
+    ],
+    "aliases": [
+      "高客单门店占比",
+      "高客单门店比例"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目high_value表示全国高客单门店占比，单位%；不是大额订单占比，也不是门店集合。",
+        "physical_binding": "metricKey=high_value；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=% 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/models.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 2,
+        "payload_hash": "76de09507ee9f1f5c11e0e1ccd974bc1202eb578f2d251131074281fd950bf3e"
+      },
+      "source_hashes": {
+        "backend/app/models.py": "34fda82c6839f6201313829ed88381ba9fc98fd8b2d3d91fb50a0dec6ac27142"
+      }
+    }
+  },
+  {
+    "id": "metric-supplier-price",
+    "title": "供应商价格指标",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：项目supplier_price按供应商保存价格输入，单位元；品牌/规格/税务条件需由业务另行确认。\n\nphysical_binding：metricKey=supplier_price；默认dimension=None；dimensionPolicy=supplier_or_all_rows；sourceUnit=元 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "supplier_price"
+    ],
+    "dimensions": [
+      "供应商"
+    ],
+    "concept_ids": [
+      "metric.supplier_price"
+    ],
+    "aliases": [
+      "采购价格"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目supplier_price按供应商保存价格输入，单位元；品牌/规格/税务条件需由业务另行确认。",
+        "physical_binding": "metricKey=supplier_price；默认dimension=None；dimensionPolicy=supplier_or_all_rows；sourceUnit=元 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "c78ddf2adcf098bfaa58a809f591a8a962f928b8bbced3d3af35a5d3e08626ac"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "metric-store-cluster",
+    "title": "门店集群口径",
+    "knowledge_type": "glossary",
+    "status": "reviewed",
+    "content": "definition：项目store_cluster是门店画像集合，由Repository.get_cluster_stores读取，不是query_metric可用的指标序列。\n\nphysical_binding：集合读取或暂无物理单指标工具；不伪造query_metric绑定。 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [],
+    "dimensions": [
+      "门店",
+      "区域"
+    ],
+    "concept_ids": [
+      "metric.store_cluster",
+      "collection.high_aov_stores"
+    ],
+    "aliases": [
+      "门店聚类"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目store_cluster是门店画像集合，由Repository.get_cluster_stores读取，不是query_metric可用的指标序列。",
+        "physical_binding": "集合读取或暂无物理单指标工具；不伪造query_metric绑定。 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/models.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 2,
+        "payload_hash": "c4bc035274a2e13318bd115c1733adb120b8ef519b58e9104ba527f62750a0a1"
+      },
+      "source_hashes": {
+        "backend/app/models.py": "34fda82c6839f6201313829ed88381ba9fc98fd8b2d3d91fb50a0dec6ac27142"
+      }
+    }
+  },
+  {
+    "id": "rule-margin-low",
+    "title": "利润率偏低规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "inputs：全国margin序列；margin.target优先取数据库rule_config。\n\npredicate：末尾连续低于target的点数达到3时形成sig-margin/p1问题信号；代码文案称天，输入是否日周期须核对。\n\nconfiguration：margin.target代码缺省18.5%，数据库配置优先；不是企业已批准阈值。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "低利润率"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "全国margin序列；margin.target优先取数据库rule_config。",
+        "predicate": "末尾连续低于target的点数达到3时形成sig-margin/p1问题信号；代码文案称天，输入是否日周期须核对。",
+        "configuration": "margin.target代码缺省18.5%，数据库配置优先；不是企业已批准阈值。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "2580ba313516a14a6f14e7b9b405de78409f0d8704ade7c0fab699f82d385b9f"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "rule-returns-rise",
+    "title": "退货率上升规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "inputs：按门店分组returns输入与returns.baseline配置。\n\npredicate：入选门店至少4个连续上升比较且末值高于baseline至少1.0pp；聚合后delta_pp>=1.0且rising_weeks>=4生成sig-returns/p2。\n\nconfiguration：returns.baseline缺省3.2%；代码文案称周，原始period是否周需核对。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "returns"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.returns"
+    ],
+    "aliases": [
+      "退货增长"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "按门店分组returns输入与returns.baseline配置。",
+        "predicate": "入选门店至少4个连续上升比较且末值高于baseline至少1.0pp；聚合后delta_pp>=1.0且rising_weeks>=4生成sig-returns/p2。",
+        "configuration": "returns.baseline缺省3.2%；代码文案称周，原始period是否周需核对。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "89ad36904db90b4f24f6485f65cf06a26497eff09a20342b3b4207e84c6b4056"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "rule-orders-decline",
+    "title": "订单量下降规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "inputs：全国orders、revenue序列及aov辅助说明。\n\npredicate：当前独立规则是组合条件：订单delta_pct<-1.5且营收delta_pct>2.0形成sig-order-structure/p3；不表示任意连续订单下降都触发。\n\nconfiguration：delta按各序列末值相对前两个可用点均值计算；-1.5/2.0为当前代码比较值。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "orders",
+      "revenue",
+      "aov"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.orders",
+      "metric.revenue",
+      "metric.aov"
+    ],
+    "aliases": [
+      "订单下滑"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "全国orders、revenue序列及aov辅助说明。",
+        "predicate": "当前独立规则是组合条件：订单delta_pct<-1.5且营收delta_pct>2.0形成sig-order-structure/p3；不表示任意连续订单下降都触发。",
+        "configuration": "delta按各序列末值相对前两个可用点均值计算；-1.5/2.0为当前代码比较值。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "87f045f5d8806ebac2385020912f8b9c449ea157dcc1ff292510f904af61cad0"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "rule-aov-growth",
+    "title": "客单价增长规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "inputs：全国aov输入序列；未从销售额和订单数重新算AOV。\n\npredicate：aov.delta_pct有效且>=4.0时生成sig-aov/o1机会信号；比较基期是前两个可用点均值，不默认相邻周期环比。\n\nconfiguration：4.0%为当前代码比较值；无法计算delta时不进入此分支。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "aov"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.aov"
+    ],
+    "aliases": [
+      "客单增长"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "全国aov输入序列；未从销售额和订单数重新算AOV。",
+        "predicate": "aov.delta_pct有效且>=4.0时生成sig-aov/o1机会信号；比较基期是前两个可用点均值，不默认相邻周期环比。",
+        "configuration": "4.0%为当前代码比较值；无法计算delta时不进入此分支。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "bf42ab93d03dcb261ba81fac5e84eae3a6d3ac89dc538356491213735d986bb6"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "rule-east-threshold",
+    "title": "华东订单阈值规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "inputs：east_orders/华东的按周期排序序列；缺华东数据没有可用delta，不用全国或演示值补齐。\n\npredicate：引擎以末值相对前两个可用值均值计算delta_pct；delta_pct < -1.0时进入下降分支，且delta_pct <= east.threshold时形成问题，否则形成观察变化。\n\nconfiguration：east.threshold优先取rule_config，缺省为代码默认-3.0；这个值是项目默认配置，不是企业统一标准。\n\nresult：达到升级分支产生sig-east-breach/e2问题信号；未达到升级分支产生观察变化。引擎信号不等于某个Watch已完成移交。\n\nhandling：核对来源、期间和阈值配置，依现有Watch/Action接口继续处理；不由Wiki改写判定。\n\nlimitations：变化比较窗口是当前实现，不把它称作环比或同比；阈值和因果需业务确认。",
+    "metric_keys": [
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "东区阈值"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "east_orders/华东的按周期排序序列；缺华东数据没有可用delta，不用全国或演示值补齐。",
+        "predicate": "引擎以末值相对前两个可用值均值计算delta_pct；delta_pct < -1.0时进入下降分支，且delta_pct <= east.threshold时形成问题，否则形成观察变化。",
+        "configuration": "east.threshold优先取rule_config，缺省为代码默认-3.0；这个值是项目默认配置，不是企业统一标准。",
+        "result": "达到升级分支产生sig-east-breach/e2问题信号；未达到升级分支产生观察变化。引擎信号不等于某个Watch已完成移交。",
+        "handling": "核对来源、期间和阈值配置，依现有Watch/Action接口继续处理；不由Wiki改写判定。",
+        "limitations": "变化比较窗口是当前实现，不把它称作环比或同比；阈值和因果需业务确认。"
+      },
+      "concept_note": "按A01已发布概念引用；无新增概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "当前DORA项目代码/演示数据；企业应用须核对实际定义。",
+      "unknowns": [
+        "企业批准阈值",
+        "实际同比/环比基期"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py",
+        "backend/app/series_order.py",
+        "knowledge/ontology/releases/dora-ontology-v2.json"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 2,
+        "payload_hash": "0e270d097522ac6d108873da78ff63b2dd7a4b4cb15f87283e8495aac99fcea8"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341",
+        "backend/app/series_order.py": "f91e02871d8d788799a2804bce31157c12c058f87424d6d7c865be2639917e31",
+        "knowledge/ontology/releases/dora-ontology-v2.json": "5078cc4aae89b8b81d389a3e73341a50f6872c4089c7282b89cc7496f78ca980"
+      }
+    }
+  },
+  {
+    "id": "rule-new-sku-change",
+    "title": "新品销量变化规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "inputs：全区域new_sku新品销量序列，不是新品SKU种数。\n\npredicate：末值相对首个可用点的delta_pct有效且>=30时生成sig-new-sku/c3变化信号；尚未证明增长可复制。\n\nconfiguration：30%为代码比较值；可用序列首末不是已确认企业新品窗口。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "new_sku"
+    ],
+    "dimensions": [
+      "全区域"
+    ],
+    "concept_ids": [
+      "metric.new_sku"
+    ],
+    "aliases": [
+      "新品变化"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "全区域new_sku新品销量序列，不是新品SKU种数。",
+        "predicate": "末值相对首个可用点的delta_pct有效且>=30时生成sig-new-sku/c3变化信号；尚未证明增长可复制。",
+        "configuration": "30%为代码比较值；可用序列首末不是已确认企业新品窗口。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "57c160544fd3ac18e14ed893023308ea6f3e67598dd93c0ac2eb2c8993159f45"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "rule-high-value-cluster",
+    "title": "高客单门店集群规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "inputs：Repository门店画像集合，按region分组；不把high_value指标序列当成门店行。\n\npredicate：选择门店数最多的区域（并列按区域名稳定排序），该区域门店数/全表门店数*100>=store_cluster.ratio时形成sig-cluster/o2机会信号。\n\nconfiguration：store_cluster.ratio缺省60%；其余mix字段也是项目配置，不证明经营因果。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "store_cluster"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.store_cluster",
+      "collection.high_aov_stores"
+    ],
+    "aliases": [
+      "高客单门店集群"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "Repository门店画像集合，按region分组；不把high_value指标序列当成门店行。",
+        "predicate": "选择门店数最多的区域（并列按区域名稳定排序），该区域门店数/全表门店数*100>=store_cluster.ratio时形成sig-cluster/o2机会信号。",
+        "configuration": "store_cluster.ratio缺省60%；其余mix字段也是项目配置，不证明经营因果。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 2,
+        "payload_hash": "d5e9e7eae0cfb2fa510262d0b800a16dd0f217d9b0f7383eebdf3a1b6a1fc197"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "rule-supplier-price-change",
+    "title": "供应商价格变化规则",
+    "knowledge_type": "rule",
+    "status": "reviewed",
+    "content": "inputs：supplier_price按供应商分组；当前snapshot明确读取供应商B和C。\n\npredicate：本主题解释供应商价格变化与同行比较因子，当前evaluate_signals未提供独立supplier_price变化信号；不得虚构一个已执行告警规则。\n\nconfiguration：变化因子的窗口与同行选择以compute_snapshot代码为准；商品规格/合同条件未提供。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "supplier_price"
+    ],
+    "dimensions": [
+      "供应商"
+    ],
+    "concept_ids": [
+      "metric.supplier_price"
+    ],
+    "aliases": [
+      "采购价变化"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "supplier_price按供应商分组；当前snapshot明确读取供应商B和C。",
+        "predicate": "本主题解释供应商价格变化与同行比较因子，当前evaluate_signals未提供独立supplier_price变化信号；不得虚构一个已执行告警规则。",
+        "configuration": "变化因子的窗口与同行选择以compute_snapshot代码为准；商品规格/合同条件未提供。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "a30ea9172f8df2b4990199d2ddc6863bd4884631a2ea133f4627a8ee22f1f227"
+      },
+      "source_hashes": {
+        "backend/app/engine/engine.py": "24fa150e64574868365bbd7ca33bf8e18ee410ff8a05f6d9fa443ea22f2b8341"
+      }
+    }
+  },
+  {
+    "id": "procedure-data-upload",
+    "title": "数据上传流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：选文件与必要映射→校验格式/表头/数值→写入受影响指标及更新事件→失效旧解释→触发相关Watch检查→返回实际成功/失败。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "导入数据"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/routers.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "选文件与必要映射→校验格式/表头/数值→写入受影响指标及更新事件→失效旧解释→触发相关Watch检查→返回实际成功/失败。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/routers.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "4d7f97558346681e0901709920cbe1591a15ddc6ffd4c4c710b7b60225f1a7e3"
+      },
+      "source_hashes": {
+        "backend/app/routers.py": "fe3225912b7645c78950dc7c846e83fdeae503eb84edec8afeafe84066c2bd6f"
+      }
+    }
+  },
+  {
+    "id": "procedure-evidence",
+    "title": "证据链阅读流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：从具体洞察打开证据→读取引擎及Repository同源数据→显示主体/单位/范围→核对引用→缺历史版本时说明当前证据边界。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.evidence"
+    ],
+    "aliases": [
+      "查看依据"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/routers.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "从具体洞察打开证据→读取引擎及Repository同源数据→显示主体/单位/范围→核对引用→缺历史版本时说明当前证据边界。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/routers.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "f6219def35cceb18de8284bc32b92a03437e53e55af11694ae27d7359583a779"
+      },
+      "source_hashes": {
+        "backend/app/routers.py": "fe3225912b7645c78950dc7c846e83fdeae503eb84edec8afeafe84066c2bd6f"
+      }
+    }
+  },
+  {
+    "id": "procedure-watch",
+    "title": "持续关注委托流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：解析合法目标与条件→确认创建→进入watching→按条件手动/调度检查→记录触发与升级→明确恢复后再检查。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.watch"
+    ],
+    "aliases": [
+      "盯盘",
+      "提醒流程"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/watch/parser.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "解析合法目标与条件→确认创建→进入watching→按条件手动/调度检查→记录触发与升级→明确恢复后再检查。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/watch/parser.py",
+        "backend/app/watch/evaluator.py",
+        "backend/app/watch/scheduler.py",
+        "backend/app/repository.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "2ca788098ef42b9d237131f6fe7f31a5a466f6c9c7d60e83cc911bcd512ce09a"
+      },
+      "source_hashes": {
+        "backend/app/watch/parser.py": "8c7332db954f6b24797e587b940f75ca41c99aa64069ec08b1d70072d682948c",
+        "backend/app/watch/evaluator.py": "3d5ecdcfc4d67fec9efa182fd912c46c927b28af36ae35b80774f697937fda0e",
+        "backend/app/watch/scheduler.py": "2ddb690bb63759b18fe6ab9978e1c6c86e8056e94b0354985a83baf42e86c5da",
+        "backend/app/repository.py": "5c78460d47bf294c055f372e4dcf7d89bab76d13c076150c81cfc4f023144fe4"
+      }
+    }
+  },
+  {
+    "id": "procedure-action",
+    "title": "行动回路流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：从引擎认可洞察建档→逐步开始/完成/阻塞→全部完成进入waiting_verify→带结论验证→resolved或continue→需要时沉淀经验。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.action"
+    ],
+    "aliases": [
+      "处理闭环",
+      "行动档案"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/action/flow.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "从引擎认可洞察建档→逐步开始/完成/阻塞→全部完成进入waiting_verify→带结论验证→resolved或continue→需要时沉淀经验。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/action/flow.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "71a5522a4678f763d254231c0fc8e68be80494318d4056efff0c7798445c89c5"
+      },
+      "source_hashes": {
+        "backend/app/action/flow.py": "a34d869e997db4a3abb945bd436f36c3bb3851ab61745f03495530eb508c6cea"
+      }
+    }
+  },
+  {
+    "id": "procedure-lesson",
+    "title": "经验沉淀流程",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "preconditions：来源行动档案为resolved；archive-as-lesson请求提供非空note；resolved仅表示流程结束。\n\nsteps：读取已归档档案→创建case_lesson→在同事务写lesson知识归档→治理适配生成draft候选→人工检查来源、适用范围及正文→审核后显式发布新版本。\n\nresult：原知识库保留处理记录展示；正式Wiki案例另经审核与版本发布。重复沉淀和重复候选生成均按来源身份幂等。\n\nfailure_handling：档案未resolved或结论为空按现有接口拒绝；候选写入失败需同事务回滚。正文变化后重新审核；来源失效不能继续发布。\n\nlimitations：候选/审核/发布由A02治理模块提供，本机CLI显式执行；无企业历史快照时仅可发布标明reported的处理记录，不升级verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.lesson",
+      "procedure.action"
+    ],
+    "aliases": [
+      "沉淀经验"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/repository.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "来源行动档案为resolved；archive-as-lesson请求提供非空note；resolved仅表示流程结束。",
+        "steps": "读取已归档档案→创建case_lesson→在同事务写lesson知识归档→治理适配生成draft候选→人工检查来源、适用范围及正文→审核后显式发布新版本。",
+        "result": "原知识库保留处理记录展示；正式Wiki案例另经审核与版本发布。重复沉淀和重复候选生成均按来源身份幂等。",
+        "failure_handling": "档案未resolved或结论为空按现有接口拒绝；候选写入失败需同事务回滚。正文变化后重新审核；来源失效不能继续发布。",
+        "limitations": "候选/审核/发布由A02治理模块提供，本机CLI显式执行；无企业历史快照时仅可发布标明reported的处理记录，不升级verified_case。"
+      },
+      "concept_note": "按A01已发布概念引用；无新增概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "当前DORA项目代码/演示数据；企业应用须核对实际定义。",
+      "unknowns": [
+        "真实经营结果验证",
+        "不可变历史数据快照"
+      ],
+      "source_refs": [
+        "backend/app/routers.py",
+        "backend/app/repository.py",
+        "openspec/specs/business-action/spec.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "a53145dd812d8d7e309356e76480669d0c4bdf2d3b9ad22c278650031d772942"
+      },
+      "source_hashes": {
+        "backend/app/routers.py": "fe3225912b7645c78950dc7c846e83fdeae503eb84edec8afeafe84066c2bd6f",
+        "backend/app/repository.py": "5c78460d47bf294c055f372e4dcf7d89bab76d13c076150c81cfc4f023144fe4",
+        "openspec/specs/business-action/spec.md": "6689a65a16c4640f8c347d5a404bfa819e6a2aa4f0a49a7138be539f1803e0b4"
+      }
+    }
+  },
+  {
+    "id": "procedure-offline",
+    "title": "离线模式语义",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：确定API模式→请求后端→判断实际响应或连接失败→按操作契约报告HTTP错误/离线未确认→仅在允许的只读演示使用Mock，写入不假报成功。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "离线演示"
+    ],
+    "source_type": "project",
+    "source_ref": "frontend/src/services/doraApi.ts",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "确定API模式→请求后端→判断实际响应或连接失败→按操作契约报告HTTP错误/离线未确认→仅在允许的只读演示使用Mock，写入不假报成功。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "frontend/src/services/doraApi.ts"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "b86e9a5a3e2d56df5c556bae40e5aa3f17ed9aa01c39488b5962069dce2c319a"
+      },
+      "source_hashes": {
+        "frontend/src/services/doraApi.ts": "fe0ac8d265a3dee12e426b4a3412e7d7096fc90633783ca70e6ad1cf5d83abd8"
+      }
+    }
+  },
+  {
+    "id": "procedure-rag-tools",
+    "title": "RAG 与业务工具边界",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：解析语义→歧义先澄清→定义问题检索受审核知识→当前指标返回tool_required参数→未注册读取明确能力缺失；实际执行待A07。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "知识与实时数据"
+    ],
+    "source_type": "project",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "解析语义→歧义先澄清→定义问题检索受审核知识→当前指标返回tool_required参数→未注册读取明确能力缺失；实际执行待A07。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "docs/agent/RAG整体搭建计划.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "816638a2db56cd5c2d1b91ce6dd1c95c828007b45623a9a81eaa1429e7262171"
+      },
+      "source_hashes": {
+        "docs/agent/RAG整体搭建计划.md": "d0d960033fec6488afae29f72383b201745ef859eed67ada458532a38954d252"
+      }
+    }
+  },
+  {
+    "id": "procedure-no-data",
+    "title": "无数据与拒答",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：检索与阈值判断→没有足够证据则abstained→说明需补资料→不得以最近邻或模型常识填成项目事实。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "不知道",
+      "拒答"
+    ],
+    "source_type": "project",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "检索与阈值判断→没有足够证据则abstained→说明需补资料→不得以最近邻或模型常识填成项目事实。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "docs/agent/RAG整体搭建计划.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "1433a24116cfde9d52b322821dba543e37e059d5c4e5d620a4e1ce8c39e778bf"
+      },
+      "source_hashes": {
+        "docs/agent/RAG整体搭建计划.md": "d0d960033fec6488afae29f72383b201745ef859eed67ada458532a38954d252"
+      }
+    }
+  },
+  {
+    "id": "procedure-agent-run",
+    "title": "Agent 运行记录",
+    "knowledge_type": "procedure",
+    "status": "reviewed",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：创建运行记录→追加已公开步骤/工具结果/答案/终止原因→按id读取回放→核对运行所用版本和来源，不保存隐藏思维链。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "运行轨迹"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "创建运行记录→追加已公开步骤/工具结果/答案/终止原因→按id读取回放→核对运行所用版本和来源，不保存隐藏思维链。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/models.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "c8ec515449c75a7bfa210e80fe0da385deb5a286c933b08084d9c8bd5081da0e"
+      },
+      "source_hashes": {
+        "backend/app/models.py": "34fda82c6839f6201313829ed88381ba9fc98fd8b2d3d91fb50a0dec6ac27142"
+      }
+    }
+  },
+  {
+    "id": "case-zero-denominator",
+    "title": "零分母计算案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：计算客单价或比例时分母为零，旧逻辑可能抛错或制造无穷值。\n\nhandling：先检查分母，返回不可计算并保留原始证据；不得把结果填成零。\n\nverification：核对来源 backend/tests/boundary_check.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [
+      "aov",
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.aov",
+      "metric.margin"
+    ],
+    "aliases": [
+      "除零"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/boundary_check.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：计算客单价或比例时分母为零，旧逻辑可能抛错或制造无穷值。",
+        "handling": "先检查分母，返回不可计算并保留原始证据；不得把结果填成零。",
+        "verification": "核对来源 backend/tests/boundary_check.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/tests/boundary_check.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "98fa511854a75f0c9681efaced64bc4003bc72e1bb8203b6f18268b017b1a416"
+      },
+      "source_hashes": {
+        "backend/tests/boundary_check.py": "b1527e7475a44eb139ac8a35e3740d3b33e17ccd8b703eef09b61631cd401a1d"
+      }
+    }
+  },
+  {
+    "id": "case-period-order",
+    "title": "周期排序案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：月份、季度和日期字符串混在一起时，普通字典序会颠倒趋势。\n\nhandling：集中解析周期并稳定排序，无法识别的标签保持输入相对顺序。\n\nverification：核对来源 backend/app/series_order.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "时间乱序"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/series_order.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：月份、季度和日期字符串混在一起时，普通字典序会颠倒趋势。",
+        "handling": "集中解析周期并稳定排序，无法识别的标签保持输入相对顺序。",
+        "verification": "核对来源 backend/app/series_order.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/app/series_order.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "03a1a0461ce70a2ca69f45602b070babdd0ad8ba6022a22fde326600a9602070"
+      },
+      "source_hashes": {
+        "backend/app/series_order.py": "f91e02871d8d788799a2804bce31157c12c058f87424d6d7c865be2639917e31"
+      }
+    }
+  },
+  {
+    "id": "case-dimension-mismatch",
+    "title": "维度不匹配案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：上传数据提供新区域，但引擎仍使用固定区域，可能产生错误洞察。\n\nhandling：从真实行读取可用维度；缺少所需维度时返回无结果。\n\nverification：核对来源 backend/tests/boundary_check.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "区域"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "区域不一致"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/boundary_check.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：上传数据提供新区域，但引擎仍使用固定区域，可能产生错误洞察。",
+        "handling": "从真实行读取可用维度；缺少所需维度时返回无结果。",
+        "verification": "核对来源 backend/tests/boundary_check.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/tests/boundary_check.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "e8140183ee2ff6f99cdd7b5efce0ac4756144481b073be62fc84ebe281985990"
+      },
+      "source_hashes": {
+        "backend/tests/boundary_check.py": "b1527e7475a44eb139ac8a35e3740d3b33e17ccd8b703eef09b61631cd401a1d"
+      }
+    }
+  },
+  {
+    "id": "case-event-identity",
+    "title": "更新事件身份案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：用展示时间作为更新事件唯一键，会让同一时刻的两个合法上传相互覆盖。\n\nhandling：使用独立事件 ID，时间只负责展示与排序。\n\nverification：核对来源 backend/app/models.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "事件覆盖"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：用展示时间作为更新事件唯一键，会让同一时刻的两个合法上传相互覆盖。",
+        "handling": "使用独立事件 ID，时间只负责展示与排序。",
+        "verification": "核对来源 backend/app/models.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/app/models.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "9213b8cfa89dea991712d1dd34d28b0af41771801b582ccdc2ba6352a7f13203"
+      },
+      "source_hashes": {
+        "backend/app/models.py": "34fda82c6839f6201313829ed88381ba9fc98fd8b2d3d91fb50a0dec6ac27142"
+      }
+    }
+  },
+  {
+    "id": "case-action-concurrency",
+    "title": "行动并发案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：模拟测试环境下对同一行动档案并发推进，属于工程回归案例。\n\nobserved_problem：并发请求可能重复完成步骤、覆盖状态或产生部分归档，需要在写入前重新检查状态。\n\nhandling：action_transaction按案件锁定，在同事务内检查步骤状态、推进案件并写知识归档；失败回滚。\n\nverification：复核backend/tests/action_atomic_check.py中的独立PostgreSQL并发验收；版本发布回归结果另见A02验收记录，不作为企业经营效果证明。\n\nresult：当前实现提供行锁与原子归档机制；本卡说明工程约束，不宣称某企业行动取得经营收益。\n\nreuse_scope：同一Repository/Action事务边界；其他存储或跨服务需单独验证。\n\nlimitations：source_type保持simulated；不升级verified_case，不据此推断实际经营因果。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.action"
+    ],
+    "aliases": [
+      "并发推进"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/action_atomic_check.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "模拟测试环境下对同一行动档案并发推进，属于工程回归案例。",
+        "observed_problem": "并发请求可能重复完成步骤、覆盖状态或产生部分归档，需要在写入前重新检查状态。",
+        "handling": "action_transaction按案件锁定，在同事务内检查步骤状态、推进案件并写知识归档；失败回滚。",
+        "verification": "复核backend/tests/action_atomic_check.py中的独立PostgreSQL并发验收；版本发布回归结果另见A02验收记录，不作为企业经营效果证明。",
+        "result": "当前实现提供行锁与原子归档机制；本卡说明工程约束，不宣称某企业行动取得经营收益。",
+        "reuse_scope": "同一Repository/Action事务边界；其他存储或跨服务需单独验证。",
+        "limitations": "source_type保持simulated；不升级verified_case，不据此推断实际经营因果。"
+      },
+      "concept_note": "按A01已发布概念引用；无新增概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "当前DORA项目代码/演示数据；企业应用须核对实际定义。",
+      "unknowns": [
+        "企业实际案例及经营效果"
+      ],
+      "source_refs": [
+        "backend/tests/action_atomic_check.py",
+        "backend/app/repository.py",
+        "backend/app/action/flow.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "8f7c9b3aec441d1b50c6406eb77db5eed28bd450eeeba23fc5f340dd6c653774"
+      },
+      "source_hashes": {
+        "backend/tests/action_atomic_check.py": "57108cda954bb1cfc41741436a64ea94cabad3fe714e66faed83dbfd4e461878",
+        "backend/app/repository.py": "5c78460d47bf294c055f372e4dcf7d89bab76d13c076150c81cfc4f023144fe4",
+        "backend/app/action/flow.py": "a34d869e997db4a3abb945bd436f36c3bb3851ab61745f03495530eb508c6cea"
+      }
+    }
+  },
+  {
+    "id": "case-watch-offline",
+    "title": "Watch 离线案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：HTTP 后端离线时界面若仍提示创建成功，会误导用户。\n\nhandling： HTTP 模式报告失败，auto 回退时展示离线状态，Mock 只作为演示。\n\nverification：核对来源 tools/cdp/join_http_offline_check.mjs 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.watch"
+    ],
+    "aliases": [
+      "离线关注"
+    ],
+    "source_type": "simulated",
+    "source_ref": "tools/cdp/join_http_offline_check.mjs",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：HTTP 后端离线时界面若仍提示创建成功，会误导用户。",
+        "handling": " HTTP 模式报告失败，auto 回退时展示离线状态，Mock 只作为演示。",
+        "verification": "核对来源 tools/cdp/join_http_offline_check.mjs 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "tools/cdp/join_http_offline_check.mjs"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "80fc3c6e9082c5ac0d4fbb4aeead00bdf3c039c26253b04a400e1ee83fc4dac4"
+      },
+      "source_hashes": {
+        "tools/cdp/join_http_offline_check.mjs": "86c079843234c36544fb4773874b7177ea7370b94cd4bcf53ca05dce5465224f"
+      }
+    }
+  },
+  {
+    "id": "case-watch-escalation",
+    "title": "Watch 升级终态案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：Watch 触发升级后若仍标为 watching，会被重复评估。\n\nhandling：升级时把状态设为 escalated，并要求用户明确恢复后才重新评估。\n\nverification：核对来源 backend/app/repository.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.watch"
+    ],
+    "aliases": [
+      "重复升级"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/repository.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：Watch 触发升级后若仍标为 watching，会被重复评估。",
+        "handling": "升级时把状态设为 escalated，并要求用户明确恢复后才重新评估。",
+        "verification": "核对来源 backend/app/repository.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/app/repository.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "e598a508545af1e2f1e3ebd2662a4c5dcbacd96c5278ed8cad280515b0e117a8"
+      },
+      "source_hashes": {
+        "backend/app/repository.py": "5c78460d47bf294c055f372e4dcf7d89bab76d13c076150c81cfc4f023144fe4"
+      }
+    }
+  },
+  {
+    "id": "case-chart-source",
+    "title": "图表事实同源案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：前端图表使用静态数组，而文字洞察来自后端，会展示互相冲突的事实。\n\nhandling：图表与文字共同消费引擎返回的同一证据数据。\n\nverification：核对来源 frontend/src/components/charts/EngineChart.tsx 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.evidence"
+    ],
+    "aliases": [
+      "图文不一致"
+    ],
+    "source_type": "simulated",
+    "source_ref": "frontend/src/components/charts/EngineChart.tsx",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：前端图表使用静态数组，而文字洞察来自后端，会展示互相冲突的事实。",
+        "handling": "图表与文字共同消费引擎返回的同一证据数据。",
+        "verification": "核对来源 frontend/src/components/charts/EngineChart.tsx 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "frontend/src/components/charts/EngineChart.tsx"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "3a298dcca3fcef5a0f59f61017262509afe56fa394ab0d504a09379dd9d2e799"
+      },
+      "source_hashes": {
+        "frontend/src/components/charts/EngineChart.tsx": "f036ba1ca3ae078dd7815fc4c5f3f5e0078abd0f4b3ff9b8af8034a2888ffd36"
+      }
+    }
+  },
+  {
+    "id": "case-unknown-tool",
+    "title": "未知工具拒绝案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：模型请求注册表之外的工具。执行器必须在调用前拒绝，运行以 failed 结束并记录原因，不能通过动态属性或任意函数名执行。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：模型请求注册表之外的工具。执行器必须在调用前拒绝，运行以 failed 结束并记录原因，不能通过动态属性或任意函数名执行。\n\nverification：核对来源 backend/tests/agent_loop_check.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "工具白名单"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/agent_loop_check.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：模型请求注册表之外的工具。执行器必须在调用前拒绝，运行以 failed 结束并记录原因，不能通过动态属性或任意函数名执行。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：模型请求注册表之外的工具。执行器必须在调用前拒绝，运行以 failed 结束并记录原因，不能通过动态属性或任意函数名执行。",
+        "verification": "核对来源 backend/tests/agent_loop_check.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/tests/agent_loop_check.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "65a918daf8cf5fdf652a051ffc61814258f8114b70a9d9a99b6e8c377a336111"
+      },
+      "source_hashes": {
+        "backend/tests/agent_loop_check.py": "93f5c9ff0b50b44f5f3642dee4a9d412f457dfc9ed872b465b50663f02ac50d3"
+      }
+    }
+  },
+  {
+    "id": "case-agent-budget",
+    "title": "Agent 预算停止案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：provider 持续请求合法工具。循环达到最大轮数或工具调用数后必须停止为 limited，保留已发生事件且不再执行额外调用。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：provider 持续请求合法工具。循环达到最大轮数或工具调用数后必须停止为 limited，保留已发生事件且不再执行额外调用。\n\nverification：核对来源 backend/app/agent/loop.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "循环上限"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/agent/loop.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：provider 持续请求合法工具。循环达到最大轮数或工具调用数后必须停止为 limited，保留已发生事件且不再执行额外调用。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：provider 持续请求合法工具。循环达到最大轮数或工具调用数后必须停止为 limited，保留已发生事件且不再执行额外调用。",
+        "verification": "核对来源 backend/app/agent/loop.py 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/app/agent/loop.py"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "6618426a84e4ae5c9c5d10f53728bfca8cf70d85df1bb5b498187fc22c64b47f"
+      },
+      "source_hashes": {
+        "backend/app/agent/loop.py": "03d9f24aa8364a8426d8674eb1218a593fb604b217761ae3ec33951720b7eecd"
+      }
+    }
+  },
+  {
+    "id": "case-prompt-injection",
+    "title": "知识提示注入案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：知识正文出现忽略系统要求、调用写工具等句子。检索资料只作为不可信证据，不能改变工具权限、回答边界或引用规则。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：知识正文出现忽略系统要求、调用写工具等句子。检索资料只作为不可信证据，不能改变工具权限、回答边界或引用规则。\n\nverification：核对来源 docs/agent/README.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "提示注入"
+    ],
+    "source_type": "simulated",
+    "source_ref": "docs/agent/README.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：知识正文出现忽略系统要求、调用写工具等句子。检索资料只作为不可信证据，不能改变工具权限、回答边界或引用规则。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：知识正文出现忽略系统要求、调用写工具等句子。检索资料只作为不可信证据，不能改变工具权限、回答边界或引用规则。",
+        "verification": "核对来源 docs/agent/README.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "docs/agent/README.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "9fef7a8bf9ab719b665ae56f49bb4c73f7d1a25f62aa210e84c00ba0cc8e2aa2"
+      },
+      "source_hashes": {
+        "docs/agent/README.md": "8fdbf67e1a0b7a8295c4d36b068f5a1cd425bf17a89484dfe6a52f561ef3db3f"
+      }
+    }
+  },
+  {
+    "id": "case-invalid-citation",
+    "title": "非法引用案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：回答 provider 引用本次检索上下文之外的 chunk。后处理必须拒绝发布答案并记录 citation_not_in_context，不能仅检查引用格式。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：回答 provider 引用本次检索上下文之外的 chunk。后处理必须拒绝发布答案并记录 citation_not_in_context，不能仅检查引用格式。\n\nverification：核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.evidence"
+    ],
+    "aliases": [
+      "伪造引用"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：回答 provider 引用本次检索上下文之外的 chunk。后处理必须拒绝发布答案并记录 citation_not_in_context，不能仅检查引用格式。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：回答 provider 引用本次检索上下文之外的 chunk。后处理必须拒绝发布答案并记录 citation_not_in_context，不能仅检查引用格式。",
+        "verification": "核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "openspec/specs/business-agent/spec.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "7ded4d7e66c9622ca4b0ee61138935290ab50dc5493d37a380856d2b5a2c7c2d"
+      },
+      "source_hashes": {
+        "openspec/specs/business-agent/spec.md": "d5c7c3c4cfd56e1b5e415d91c93f60d1d82d2fc3e0b6e6b2f0ca3ad3fe0c2296"
+      }
+    }
+  },
+  {
+    "id": "case-empty-retrieval",
+    "title": "空检索拒答案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：问题与项目知识无关但向量仍返回最近邻。检索器应用最低相关性门槛，回答层在无足够证据时返回 abstained，不拼接无关答案。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：问题与项目知识无关但向量仍返回最近邻。检索器应用最低相关性门槛，回答层在无足够证据时返回 abstained，不拼接无关答案。\n\nverification：核对来源 docs/agent/RAG整体搭建计划.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "无命中"
+    ],
+    "source_type": "simulated",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：问题与项目知识无关但向量仍返回最近邻。检索器应用最低相关性门槛，回答层在无足够证据时返回 abstained，不拼接无关答案。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：问题与项目知识无关但向量仍返回最近邻。检索器应用最低相关性门槛，回答层在无足够证据时返回 abstained，不拼接无关答案。",
+        "verification": "核对来源 docs/agent/RAG整体搭建计划.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "docs/agent/RAG整体搭建计划.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "3edeffa010954f339c43a96838e9a8f156074f1ec0d3e7818a8deede68f17a0f"
+      },
+      "source_hashes": {
+        "docs/agent/RAG整体搭建计划.md": "d0d960033fec6488afae29f72383b201745ef859eed67ada458532a38954d252"
+      }
+    }
+  },
+  {
+    "id": "case-idempotent-index",
+    "title": "索引幂等案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：相同知识源重复导入导致文档和 chunk 数不断增长。\n\nhandling：以文档 ID、版本、chunk 序号和内容哈希建立稳定身份，相同内容返回 unchanged。\n\nverification：核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "重复索引"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：相同知识源重复导入导致文档和 chunk 数不断增长。",
+        "handling": "以文档 ID、版本、chunk 序号和内容哈希建立稳定身份，相同内容返回 unchanged。",
+        "verification": "核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "openspec/specs/business-agent/spec.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "f476a301713a58ed88dc3c859230e3d79827b20e9f1e47ee37976398bdc2d536"
+      },
+      "source_hashes": {
+        "openspec/specs/business-agent/spec.md": "d5c7c3c4cfd56e1b5e415d91c93f60d1d82d2fc3e0b6e6b2f0ca3ad3fe0c2296"
+      }
+    }
+  },
+  {
+    "id": "case-version-retention",
+    "title": "知识版本保留案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：新口径覆盖旧文档会失去历史追溯。导入新版本时保留旧版本并把当前检索指向最新有效版本；按版本读取仍可检查旧内容。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：新口径覆盖旧文档会失去历史追溯。导入新版本时保留旧版本并把当前检索指向最新有效版本；按版本读取仍可检查旧内容。\n\nverification：核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "历史版本"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：新口径覆盖旧文档会失去历史追溯。导入新版本时保留旧版本并把当前检索指向最新有效版本；按版本读取仍可检查旧内容。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：新口径覆盖旧文档会失去历史追溯。导入新版本时保留旧版本并把当前检索指向最新有效版本；按版本读取仍可检查旧内容。",
+        "verification": "核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "openspec/specs/business-agent/spec.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "3acb14814b0a888722c27089b452b1cc99144aebbe242e34ea5c2225ff7c0178"
+      },
+      "source_hashes": {
+        "openspec/specs/business-agent/spec.md": "d5c7c3c4cfd56e1b5e415d91c93f60d1d82d2fc3e0b6e6b2f0ca3ad3fe0c2296"
+      }
+    }
+  },
+  {
+    "id": "case-transaction-import",
+    "title": "导入事务案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：一批知识中最后一篇无效，前面的文档已部分写入。正确做法是在写入前验证全批次，并在单一事务中更新文档与 chunk，失败后零写入。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：一批知识中最后一篇无效，前面的文档已部分写入。正确做法是在写入前验证全批次，并在单一事务中更新文档与 chunk，失败后零写入。\n\nverification：核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "半批写入"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：一批知识中最后一篇无效，前面的文档已部分写入。正确做法是在写入前验证全批次，并在单一事务中更新文档与 chunk，失败后零写入。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：一批知识中最后一篇无效，前面的文档已部分写入。正确做法是在写入前验证全批次，并在单一事务中更新文档与 chunk，失败后零写入。",
+        "verification": "核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "openspec/specs/business-agent/spec.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "6398d4bd3d47199e730f8174ca68d67f3138778d1aae7405f97b4a0b19f02fec"
+      },
+      "source_hashes": {
+        "openspec/specs/business-agent/spec.md": "d5c7c3c4cfd56e1b5e415d91c93f60d1d82d2fc3e0b6e6b2f0ca3ad3fe0c2296"
+      }
+    }
+  },
+  {
+    "id": "case-realtime-route",
+    "title": "实时问题分流案例",
+    "knowledge_type": "case",
+    "status": "reviewed",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：用户询问今天利润率，系统错误引用定义文档作答。正确行为是返回 tool_required 和 query_metric，让业务工具读取当前事实。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：用户询问今天利润率，系统错误引用定义文档作答。正确行为是返回 tool_required 和 query_metric，让业务工具读取当前事实。\n\nverification：核对来源 docs/agent/RAG整体搭建计划.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "今天利润率"
+    ],
+    "source_type": "simulated",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": "project-user:A02-review-2026-10-14",
+    "updated_at": "2026-10-14T11:53:22+00:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：用户询问今天利润率，系统错误引用定义文档作答。正确行为是返回 tool_required 和 query_metric，让业务工具读取当前事实。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：用户询问今天利润率，系统错误引用定义文档作答。正确行为是返回 tool_required 和 query_metric，让业务工具读取当前事实。",
+        "verification": "核对来源 docs/agent/RAG整体搭建计划.md 的代码/契约；有相应回归时在隔离环境复现。本卡说明模拟机制；版本发布回归证据另见A02验收记录，不代表企业验证。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "docs/agent/RAG整体搭建计划.md"
+      ],
+      "review": {
+        "actor": "project-user:A02-review-2026-10-14",
+        "reason": "用户“开始实施”批准A02设计与44卡片；项目来源审核，非企业成效验证",
+        "timestamp": "2026-10-14T11:53:22+00:00",
+        "decision": "approve",
+        "base_version": 1,
+        "payload_hash": "57d64b21ffbac0a848cb4775f7d953e133235b0fd20a2720da03eca9d934f2fa"
+      },
+      "source_hashes": {
+        "docs/agent/RAG整体搭建计划.md": "d0d960033fec6488afae29f72383b201745ef859eed67ada458532a38954d252"
+      }
+    }
+  }
+]

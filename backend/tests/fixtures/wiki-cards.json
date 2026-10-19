@@ -1,0 +1,2203 @@
+[
+  {
+    "id": "metric-margin",
+    "title": "利润率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：项目利润率是 margin 输入序列；项目未声明企业财务分子与分母，不等同已确认毛利率或净利率。\n\nphysical_binding：metric.margin → query_metric 的 margin/全国，原单位为%。当前RAG只返回工具提示，不执行读取。\n\ncalculation_boundary：compute_snapshot读取全国序列末值，不从营收重新计算利润率；不得自行补算企业财务公式。\n\ncomparison_scope：同主体、时间范围、单位和已确认口径方可比较；全国范围不替代其他区域。\n\nusage：用于解释利润率规则输入和指向业务读取入口；实时数值由业务读取，不写入本卡。\n\nlimitations：毛利率/净利率先澄清；企业公式、收入确认与采集方法未提供。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "利润占比"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目利润率是 margin 输入序列；项目未声明企业财务分子与分母，不等同已确认毛利率或净利率。",
+        "physical_binding": "metric.margin → query_metric 的 margin/全国，原单位为%。当前RAG只返回工具提示，不执行读取。",
+        "calculation_boundary": "compute_snapshot读取全国序列末值，不从营收重新计算利润率；不得自行补算企业财务公式。",
+        "comparison_scope": "同主体、时间范围、单位和已确认口径方可比较；全国范围不替代其他区域。",
+        "usage": "用于解释利润率规则输入和指向业务读取入口；实时数值由业务读取，不写入本卡。",
+        "limitations": "毛利率/净利率先澄清；企业公式、收入确认与采集方法未提供。"
+      },
+      "concept_note": "按A01已发布概念引用；无新增概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "当前DORA项目代码/演示数据；企业应用须核对实际定义。",
+      "unknowns": [
+        "企业分子分母",
+        "输入采集方法"
+      ],
+      "source_refs": [
+        "knowledge/ontology/releases/dora-ontology-v2.json",
+        "backend/app/engine/engine.py",
+        "backend/app/rag/service.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "metric-returns",
+    "title": "退货率定义与边界",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：项目returns是门店维度退货率输入，单位%；不等同退款率，也未实现全国聚合。\n\nphysical_binding：metricKey=returns；默认dimension=None；dimensionPolicy=store_or_all_rows；sourceUnit=% 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "returns"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.returns"
+    ],
+    "aliases": [
+      "退货占比"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目returns是门店维度退货率输入，单位%；不等同退款率，也未实现全国聚合。",
+        "physical_binding": "metricKey=returns；默认dimension=None；dimensionPolicy=store_or_all_rows；sourceUnit=% 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "metric-orders",
+    "title": "订单量定义与边界",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：项目orders表示全国订单量输入，按周期排序后读取；不以华东切片替代全国。\n\nphysical_binding：metricKey=orders；默认dimension=全国；dimensionPolicy=fixed_with_east_view；sourceUnit=None 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "订单数",
+      "销量订单"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/series_order.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目orders表示全国订单量输入，按周期排序后读取；不以华东切片替代全国。",
+        "physical_binding": "metricKey=orders；默认dimension=全国；dimensionPolicy=fixed_with_east_view；sourceUnit=None 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/series_order.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "metric-revenue",
+    "title": "营收定义与边界",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：项目revenue是全国营收输入，源单位千元；系统没有在本卡核实企业收入确认、含税/未税或会计口径。\n\nphysical_binding：metricKey=revenue；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=千元 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "revenue"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.revenue"
+    ],
+    "aliases": [
+      "销售额",
+      "营业收入"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目revenue是全国营收输入，源单位千元；系统没有在本卡核实企业收入确认、含税/未税或会计口径。",
+        "physical_binding": "metricKey=revenue；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=千元 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "metric-aov",
+    "title": "客单价定义与边界",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：客单价AOV常用销售金额/有效订单数说明；项目直接读取全国aov序列，源单位元，未从当前orders/revenue重算企业口径。\n\nphysical_binding：metricKey=aov；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=元 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "aov"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.aov"
+    ],
+    "aliases": [
+      "平均订单金额",
+      "AOV"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "客单价AOV常用销售金额/有效订单数说明；项目直接读取全国aov序列，源单位元，未从当前orders/revenue重算企业口径。",
+        "physical_binding": "metricKey=aov；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=元 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "metric-east-orders",
+    "title": "华东订单维度",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：项目east_orders是华东订单量输入；不是华东销售额，也不是全国订单量。\n\nphysical_binding：metricKey=east_orders；默认dimension=华东；dimensionPolicy=fixed；sourceUnit=None 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "华东订单量",
+      "东区订单"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目east_orders是华东订单量输入；不是华东销售额，也不是全国订单量。",
+        "physical_binding": "metricKey=east_orders；默认dimension=华东；dimensionPolicy=fixed；sourceUnit=None 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "metric-new-sku",
+    "title": "新品销量与新品 SKU 种数边界",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：项目new_sku表示全区域新品销量；兼容物理key保留，不表示新品SKU种数，不从名字推断企业新品窗口。\n\nphysical_binding：metricKey=new_sku；默认dimension=全区域；dimensionPolicy=fixed；sourceUnit=None 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "new_sku"
+    ],
+    "dimensions": [
+      "全区域"
+    ],
+    "concept_ids": [
+      "metric.new_sku"
+    ],
+    "aliases": [
+      "新品销量",
+      "新品销售量"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目new_sku表示全区域新品销量；兼容物理key保留，不表示新品SKU种数，不从名字推断企业新品窗口。",
+        "physical_binding": "metricKey=new_sku；默认dimension=全区域；dimensionPolicy=fixed；sourceUnit=None 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "metric-high-value",
+    "title": "高客单门店占比与集合边界",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：项目high_value表示全国高客单门店占比，单位%；不是大额订单占比，也不是门店集合。\n\nphysical_binding：metricKey=high_value；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=% 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "high_value"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.high_value"
+    ],
+    "aliases": [
+      "高客单门店占比",
+      "高客单门店比例"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目high_value表示全国高客单门店占比，单位%；不是大额订单占比，也不是门店集合。",
+        "physical_binding": "metricKey=high_value；默认dimension=全国；dimensionPolicy=fixed；sourceUnit=% 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/models.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "metric-supplier-price",
+    "title": "供应商价格指标",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：项目supplier_price按供应商保存价格输入，单位元；品牌/规格/税务条件需由业务另行确认。\n\nphysical_binding：metricKey=supplier_price；默认dimension=None；dimensionPolicy=supplier_or_all_rows；sourceUnit=元 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [
+      "supplier_price"
+    ],
+    "dimensions": [
+      "供应商"
+    ],
+    "concept_ids": [
+      "metric.supplier_price"
+    ],
+    "aliases": [
+      "采购价格"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目supplier_price按供应商保存价格输入，单位元；品牌/规格/税务条件需由业务另行确认。",
+        "physical_binding": "metricKey=supplier_price；默认dimension=None；dimensionPolicy=supplier_or_all_rows；sourceUnit=元 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "metric-store-cluster",
+    "title": "门店集群口径",
+    "knowledge_type": "glossary",
+    "status": "draft",
+    "content": "definition：项目store_cluster是门店画像集合，由Repository.get_cluster_stores读取，不是query_metric可用的指标序列。\n\nphysical_binding：集合读取或暂无物理单指标工具；不伪造query_metric绑定。 当前RAG提示不等于执行。\n\ncalculation_boundary：项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。\n\ncomparison_scope：同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。\n\nusage：解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。\n\nlimitations：本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。",
+    "metric_keys": [],
+    "dimensions": [
+      "门店",
+      "区域"
+    ],
+    "concept_ids": [
+      "metric.store_cluster",
+      "collection.high_aov_stores"
+    ],
+    "aliases": [
+      "门店聚类"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "metric",
+      "sections": {
+        "definition": "项目store_cluster是门店画像集合，由Repository.get_cluster_stores读取，不是query_metric可用的指标序列。",
+        "physical_binding": "集合读取或暂无物理单指标工具；不伪造query_metric绑定。 当前RAG提示不等于执行。",
+        "calculation_boundary": "项目实际读取以来源代码与A01本体为准；输入来源的采集/企业分子分母未提供，不以通用定义填补。",
+        "comparison_scope": "同主体、时间窗口、单位与口径方可比较；明确不支持范围时澄清，不用默认维度覆盖。",
+        "usage": "解释该概念和读取边界；具体当前值及变化必须读业务数据/引擎，不从Wiki取实时数值。",
+        "limitations": "本卡为项目实现说明；企业财务/采集规范和跨期可比性需确认，源定义不证明经营因果。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业采集/计算规范",
+        "企业时间窗口与可比口径"
+      ],
+      "source_refs": [
+        "backend/app/models.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "rule-margin-low",
+    "title": "利润率偏低规则",
+    "knowledge_type": "rule",
+    "status": "draft",
+    "content": "inputs：全国margin序列；margin.target优先取数据库rule_config。\n\npredicate：末尾连续低于target的点数达到3时形成sig-margin/p1问题信号；代码文案称天，输入是否日周期须核对。\n\nconfiguration：margin.target代码缺省18.5%，数据库配置优先；不是企业已批准阈值。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "低利润率"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "全国margin序列；margin.target优先取数据库rule_config。",
+        "predicate": "末尾连续低于target的点数达到3时形成sig-margin/p1问题信号；代码文案称天，输入是否日周期须核对。",
+        "configuration": "margin.target代码缺省18.5%，数据库配置优先；不是企业已批准阈值。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "rule-returns-rise",
+    "title": "退货率上升规则",
+    "knowledge_type": "rule",
+    "status": "draft",
+    "content": "inputs：按门店分组returns输入与returns.baseline配置。\n\npredicate：入选门店至少4个连续上升比较且末值高于baseline至少1.0pp；聚合后delta_pp>=1.0且rising_weeks>=4生成sig-returns/p2。\n\nconfiguration：returns.baseline缺省3.2%；代码文案称周，原始period是否周需核对。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "returns"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.returns"
+    ],
+    "aliases": [
+      "退货增长"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "按门店分组returns输入与returns.baseline配置。",
+        "predicate": "入选门店至少4个连续上升比较且末值高于baseline至少1.0pp；聚合后delta_pp>=1.0且rising_weeks>=4生成sig-returns/p2。",
+        "configuration": "returns.baseline缺省3.2%；代码文案称周，原始period是否周需核对。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "rule-orders-decline",
+    "title": "订单量下降规则",
+    "knowledge_type": "rule",
+    "status": "draft",
+    "content": "inputs：全国orders、revenue序列及aov辅助说明。\n\npredicate：当前独立规则是组合条件：订单delta_pct<-1.5且营收delta_pct>2.0形成sig-order-structure/p3；不表示任意连续订单下降都触发。\n\nconfiguration：delta按各序列末值相对前两个可用点均值计算；-1.5/2.0为当前代码比较值。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "orders",
+      "revenue",
+      "aov"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.orders",
+      "metric.revenue",
+      "metric.aov"
+    ],
+    "aliases": [
+      "订单下滑"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "全国orders、revenue序列及aov辅助说明。",
+        "predicate": "当前独立规则是组合条件：订单delta_pct<-1.5且营收delta_pct>2.0形成sig-order-structure/p3；不表示任意连续订单下降都触发。",
+        "configuration": "delta按各序列末值相对前两个可用点均值计算；-1.5/2.0为当前代码比较值。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "rule-aov-growth",
+    "title": "客单价增长规则",
+    "knowledge_type": "rule",
+    "status": "draft",
+    "content": "inputs：全国aov输入序列；未从销售额和订单数重新算AOV。\n\npredicate：aov.delta_pct有效且>=4.0时生成sig-aov/o1机会信号；比较基期是前两个可用点均值，不默认相邻周期环比。\n\nconfiguration：4.0%为当前代码比较值；无法计算delta时不进入此分支。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "aov"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.aov"
+    ],
+    "aliases": [
+      "客单增长"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "全国aov输入序列；未从销售额和订单数重新算AOV。",
+        "predicate": "aov.delta_pct有效且>=4.0时生成sig-aov/o1机会信号；比较基期是前两个可用点均值，不默认相邻周期环比。",
+        "configuration": "4.0%为当前代码比较值；无法计算delta时不进入此分支。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "rule-east-threshold",
+    "title": "华东订单阈值规则",
+    "knowledge_type": "rule",
+    "status": "draft",
+    "content": "inputs：east_orders/华东的按周期排序序列；缺华东数据没有可用delta，不用全国或演示值补齐。\n\npredicate：引擎以末值相对前两个可用值均值计算delta_pct；delta_pct < -1.0时进入下降分支，且delta_pct <= east.threshold时形成问题，否则形成观察变化。\n\nconfiguration：east.threshold优先取rule_config，缺省为代码默认-3.0；这个值是项目默认配置，不是企业统一标准。\n\nresult：达到升级分支产生sig-east-breach/e2问题信号；未达到升级分支产生观察变化。引擎信号不等于某个Watch已完成移交。\n\nhandling：核对来源、期间和阈值配置，依现有Watch/Action接口继续处理；不由Wiki改写判定。\n\nlimitations：变化比较窗口是当前实现，不把它称作环比或同比；阈值和因果需业务确认。",
+    "metric_keys": [
+      "east_orders"
+    ],
+    "dimensions": [
+      "华东"
+    ],
+    "concept_ids": [
+      "metric.east_orders"
+    ],
+    "aliases": [
+      "东区阈值"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "east_orders/华东的按周期排序序列；缺华东数据没有可用delta，不用全国或演示值补齐。",
+        "predicate": "引擎以末值相对前两个可用值均值计算delta_pct；delta_pct < -1.0时进入下降分支，且delta_pct <= east.threshold时形成问题，否则形成观察变化。",
+        "configuration": "east.threshold优先取rule_config，缺省为代码默认-3.0；这个值是项目默认配置，不是企业统一标准。",
+        "result": "达到升级分支产生sig-east-breach/e2问题信号；未达到升级分支产生观察变化。引擎信号不等于某个Watch已完成移交。",
+        "handling": "核对来源、期间和阈值配置，依现有Watch/Action接口继续处理；不由Wiki改写判定。",
+        "limitations": "变化比较窗口是当前实现，不把它称作环比或同比；阈值和因果需业务确认。"
+      },
+      "concept_note": "按A01已发布概念引用；无新增概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "当前DORA项目代码/演示数据；企业应用须核对实际定义。",
+      "unknowns": [
+        "企业批准阈值",
+        "实际同比/环比基期"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py",
+        "backend/app/series_order.py",
+        "knowledge/ontology/releases/dora-ontology-v2.json"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "rule-new-sku-change",
+    "title": "新品销量变化规则",
+    "knowledge_type": "rule",
+    "status": "draft",
+    "content": "inputs：全区域new_sku新品销量序列，不是新品SKU种数。\n\npredicate：末值相对首个可用点的delta_pct有效且>=30时生成sig-new-sku/c3变化信号；尚未证明增长可复制。\n\nconfiguration：30%为代码比较值；可用序列首末不是已确认企业新品窗口。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "new_sku"
+    ],
+    "dimensions": [
+      "全区域"
+    ],
+    "concept_ids": [
+      "metric.new_sku"
+    ],
+    "aliases": [
+      "新品变化"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "全区域new_sku新品销量序列，不是新品SKU种数。",
+        "predicate": "末值相对首个可用点的delta_pct有效且>=30时生成sig-new-sku/c3变化信号；尚未证明增长可复制。",
+        "configuration": "30%为代码比较值；可用序列首末不是已确认企业新品窗口。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "rule-high-value-cluster",
+    "title": "高客单门店集群规则",
+    "knowledge_type": "rule",
+    "status": "draft",
+    "content": "inputs：Repository门店画像集合，按region分组；不把high_value指标序列当成门店行。\n\npredicate：选择门店数最多的区域（并列按区域名稳定排序），该区域门店数/全表门店数*100>=store_cluster.ratio时形成sig-cluster/o2机会信号。\n\nconfiguration：store_cluster.ratio缺省60%；其余mix字段也是项目配置，不证明经营因果。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "store_cluster"
+    ],
+    "dimensions": [
+      "门店"
+    ],
+    "concept_ids": [
+      "metric.store_cluster",
+      "collection.high_aov_stores"
+    ],
+    "aliases": [
+      "高客单门店集群"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 3,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "Repository门店画像集合，按region分组；不把high_value指标序列当成门店行。",
+        "predicate": "选择门店数最多的区域（并列按区域名稳定排序），该区域门店数/全表门店数*100>=store_cluster.ratio时形成sig-cluster/o2机会信号。",
+        "configuration": "store_cluster.ratio缺省60%；其余mix字段也是项目配置，不证明经营因果。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "rule-supplier-price-change",
+    "title": "供应商价格变化规则",
+    "knowledge_type": "rule",
+    "status": "draft",
+    "content": "inputs：supplier_price按供应商分组；当前snapshot明确读取供应商B和C。\n\npredicate：本主题解释供应商价格变化与同行比较因子，当前evaluate_signals未提供独立supplier_price变化信号；不得虚构一个已执行告警规则。\n\nconfiguration：变化因子的窗口与同行选择以compute_snapshot代码为准；商品规格/合同条件未提供。\n\nresult：仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。\n\nhandling：核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。\n\nlimitations：代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。",
+    "metric_keys": [
+      "supplier_price"
+    ],
+    "dimensions": [
+      "供应商"
+    ],
+    "concept_ids": [
+      "metric.supplier_price"
+    ],
+    "aliases": [
+      "采购价变化"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/engine/engine.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "rule",
+      "sections": {
+        "inputs": "supplier_price按供应商分组；当前snapshot明确读取供应商B和C。",
+        "predicate": "本主题解释供应商价格变化与同行比较因子，当前evaluate_signals未提供独立supplier_price变化信号；不得虚构一个已执行告警规则。",
+        "configuration": "变化因子的窗口与同行选择以compute_snapshot代码为准；商品规格/合同条件未提供。",
+        "result": "仅说明当前代码的信号或因子输出，最终洞察由引擎组装；不代表Action已完成或企业原因已证实。",
+        "handling": "核对原序列、维度、比较窗口与配置，再从证据和现有Action/Watch流程继续调查，不由本卡更改阈值或判定。",
+        "limitations": "代码比较规则是项目实现，period文案不代替真实周期类型；企业批准和经营因果未提供。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业批准阈值/比较基期",
+        "实际经营因果"
+      ],
+      "source_refs": [
+        "backend/app/engine/engine.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "procedure-data-upload",
+    "title": "数据上传流程",
+    "knowledge_type": "procedure",
+    "status": "draft",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：选文件与必要映射→校验格式/表头/数值→写入受影响指标及更新事件→失效旧解释→触发相关Watch检查→返回实际成功/失败。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "导入数据"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/routers.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "选文件与必要映射→校验格式/表头/数值→写入受影响指标及更新事件→失效旧解释→触发相关Watch检查→返回实际成功/失败。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/routers.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "procedure-evidence",
+    "title": "证据链阅读流程",
+    "knowledge_type": "procedure",
+    "status": "draft",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：从具体洞察打开证据→读取引擎及Repository同源数据→显示主体/单位/范围→核对引用→缺历史版本时说明当前证据边界。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.evidence"
+    ],
+    "aliases": [
+      "查看依据"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/routers.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "从具体洞察打开证据→读取引擎及Repository同源数据→显示主体/单位/范围→核对引用→缺历史版本时说明当前证据边界。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/routers.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "procedure-watch",
+    "title": "持续关注委托流程",
+    "knowledge_type": "procedure",
+    "status": "draft",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：解析合法目标与条件→确认创建→进入watching→按条件手动/调度检查→记录触发与升级→明确恢复后再检查。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.watch"
+    ],
+    "aliases": [
+      "盯盘",
+      "提醒流程"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/watch/parser.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "解析合法目标与条件→确认创建→进入watching→按条件手动/调度检查→记录触发与升级→明确恢复后再检查。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/watch/parser.py",
+        "backend/app/watch/evaluator.py",
+        "backend/app/watch/scheduler.py",
+        "backend/app/repository.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "procedure-action",
+    "title": "行动回路流程",
+    "knowledge_type": "procedure",
+    "status": "draft",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：从引擎认可洞察建档→逐步开始/完成/阻塞→全部完成进入waiting_verify→带结论验证→resolved或continue→需要时沉淀经验。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.action"
+    ],
+    "aliases": [
+      "处理闭环",
+      "行动档案"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/action/flow.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "从引擎认可洞察建档→逐步开始/完成/阻塞→全部完成进入waiting_verify→带结论验证→resolved或continue→需要时沉淀经验。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/action/flow.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "procedure-lesson",
+    "title": "经验沉淀流程",
+    "knowledge_type": "procedure",
+    "status": "draft",
+    "content": "preconditions：来源行动档案为resolved；archive-as-lesson请求提供非空note；resolved仅表示流程结束。\n\nsteps：读取已归档档案→创建case_lesson→在同事务写lesson知识归档→拟建治理适配生成draft候选→人工检查来源、适用范围及正文→审核后显式发布新版本。\n\nresult：原知识库保留处理记录展示；正式Wiki案例另经审核与版本发布。重复沉淀和重复候选生成均按来源身份幂等。\n\nfailure_handling：档案未resolved或结论为空按现有接口拒绝；候选写入失败需同事务回滚。正文变化后重新审核；来源失效不能继续发布。\n\nlimitations：候选/审核/发布是A02拟建能力，当前代码尚不存在；无企业历史快照时仅可发布标明reported的处理记录，不升级verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.lesson",
+      "procedure.action"
+    ],
+    "aliases": [
+      "沉淀经验"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/repository.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "来源行动档案为resolved；archive-as-lesson请求提供非空note；resolved仅表示流程结束。",
+        "steps": "读取已归档档案→创建case_lesson→在同事务写lesson知识归档→拟建治理适配生成draft候选→人工检查来源、适用范围及正文→审核后显式发布新版本。",
+        "result": "原知识库保留处理记录展示；正式Wiki案例另经审核与版本发布。重复沉淀和重复候选生成均按来源身份幂等。",
+        "failure_handling": "档案未resolved或结论为空按现有接口拒绝；候选写入失败需同事务回滚。正文变化后重新审核；来源失效不能继续发布。",
+        "limitations": "候选/审核/发布是A02拟建能力，当前代码尚不存在；无企业历史快照时仅可发布标明reported的处理记录，不升级verified_case。"
+      },
+      "concept_note": "按A01已发布概念引用；无新增概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "当前DORA项目代码/演示数据；企业应用须核对实际定义。",
+      "unknowns": [
+        "真实经营结果验证",
+        "不可变历史数据快照"
+      ],
+      "source_refs": [
+        "backend/app/routers.py",
+        "backend/app/repository.py",
+        "openspec/specs/business-action/spec.md"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "procedure-offline",
+    "title": "离线模式语义",
+    "knowledge_type": "procedure",
+    "status": "draft",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：确定API模式→请求后端→判断实际响应或连接失败→按操作契约报告HTTP错误/离线未确认→仅在允许的只读演示使用Mock，写入不假报成功。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "离线演示"
+    ],
+    "source_type": "project",
+    "source_ref": "frontend/src/services/doraApi.ts",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "确定API模式→请求后端→判断实际响应或连接失败→按操作契约报告HTTP错误/离线未确认→仅在允许的只读演示使用Mock，写入不假报成功。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "frontend/src/services/doraApi.ts"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "procedure-rag-tools",
+    "title": "RAG 与业务工具边界",
+    "knowledge_type": "procedure",
+    "status": "draft",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：解析语义→歧义先澄清→定义问题检索受审核知识→当前指标返回tool_required参数→未注册读取明确能力缺失；实际执行待A07。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "知识与实时数据"
+    ],
+    "source_type": "project",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "解析语义→歧义先澄清→定义问题检索受审核知识→当前指标返回tool_required参数→未注册读取明确能力缺失；实际执行待A07。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "docs/agent/RAG整体搭建计划.md"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "procedure-no-data",
+    "title": "无数据与拒答",
+    "knowledge_type": "procedure",
+    "status": "draft",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：检索与阈值判断→没有足够证据则abstained→说明需补资料→不得以最近邻或模型常识填成项目事实。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "不知道",
+      "拒答"
+    ],
+    "source_type": "project",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "检索与阈值判断→没有足够证据则abstained→说明需补资料→不得以最近邻或模型常识填成项目事实。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "docs/agent/RAG整体搭建计划.md"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "procedure-agent-run",
+    "title": "Agent 运行记录",
+    "knowledge_type": "procedure",
+    "status": "draft",
+    "content": "preconditions：在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。\n\nsteps：创建运行记录→追加已公开步骤/工具结果/答案/终止原因→按id读取回放→核对运行所用版本和来源，不保存隐藏思维链。\n\nresult：依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。\n\nfailure_handling：缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。\n\nlimitations：项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "运行轨迹"
+    ],
+    "source_type": "project",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "sop",
+      "sections": {
+        "preconditions": "在DORA当前接口/数据源范围内操作；所需资源和来源可用，权限与状态要求由现有接口校验。",
+        "steps": "创建运行记录→追加已公开步骤/工具结果/答案/终止原因→按id读取回放→核对运行所用版本和来源，不保存隐藏思维链。",
+        "result": "依据真实接口结果记录已完成、未确认或失败；演示、处理记录与受审核知识分别标识。",
+        "failure_handling": "缺数据/非法状态/连接失败明确返回或展示原因，不假报写入、执行或来源存在；恢复后按现有幂等接口重试。",
+        "limitations": "项目SOP不代替企业流程；实例历史快照、统一实时工具执行和新Wiki页面分别属于A05/A07/A08。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "project_definition",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "企业操作流程与责任分工"
+      ],
+      "source_refs": [
+        "backend/app/models.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-zero-denominator",
+    "title": "零分母计算案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：计算客单价或比例时分母为零，旧逻辑可能抛错或制造无穷值。\n\nhandling：先检查分母，返回不可计算并保留原始证据；不得把结果填成零。\n\nverification：核对来源 backend/tests/boundary_check.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [
+      "aov",
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.aov",
+      "metric.margin"
+    ],
+    "aliases": [
+      "除零"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/boundary_check.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：计算客单价或比例时分母为零，旧逻辑可能抛错或制造无穷值。",
+        "handling": "先检查分母，返回不可计算并保留原始证据；不得把结果填成零。",
+        "verification": "核对来源 backend/tests/boundary_check.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/tests/boundary_check.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-period-order",
+    "title": "周期排序案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：月份、季度和日期字符串混在一起时，普通字典序会颠倒趋势。\n\nhandling：集中解析周期并稳定排序，无法识别的标签保持输入相对顺序。\n\nverification：核对来源 backend/app/series_order.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "时间乱序"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/series_order.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：月份、季度和日期字符串混在一起时，普通字典序会颠倒趋势。",
+        "handling": "集中解析周期并稳定排序，无法识别的标签保持输入相对顺序。",
+        "verification": "核对来源 backend/app/series_order.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/app/series_order.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-dimension-mismatch",
+    "title": "维度不匹配案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：上传数据提供新区域，但引擎仍使用固定区域，可能产生错误洞察。\n\nhandling：从真实行读取可用维度；缺少所需维度时返回无结果。\n\nverification：核对来源 backend/tests/boundary_check.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [
+      "orders"
+    ],
+    "dimensions": [
+      "区域"
+    ],
+    "concept_ids": [
+      "metric.orders"
+    ],
+    "aliases": [
+      "区域不一致"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/boundary_check.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：上传数据提供新区域，但引擎仍使用固定区域，可能产生错误洞察。",
+        "handling": "从真实行读取可用维度；缺少所需维度时返回无结果。",
+        "verification": "核对来源 backend/tests/boundary_check.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/tests/boundary_check.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-event-identity",
+    "title": "更新事件身份案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：用展示时间作为更新事件唯一键，会让同一时刻的两个合法上传相互覆盖。\n\nhandling：使用独立事件 ID，时间只负责展示与排序。\n\nverification：核对来源 backend/app/models.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "事件覆盖"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/models.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：用展示时间作为更新事件唯一键，会让同一时刻的两个合法上传相互覆盖。",
+        "handling": "使用独立事件 ID，时间只负责展示与排序。",
+        "verification": "核对来源 backend/app/models.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/app/models.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-action-concurrency",
+    "title": "行动并发案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：模拟测试环境下对同一行动档案并发推进，属于工程回归案例。\n\nobserved_problem：并发请求可能重复完成步骤、覆盖状态或产生部分归档，需要在写入前重新检查状态。\n\nhandling：action_transaction按案件锁定，在同事务内检查步骤状态、推进案件并写知识归档；失败回滚。\n\nverification：复核backend/tests/action_atomic_check.py中的独立PostgreSQL并发验收；本候选材料阶段未运行该测试，不能写成本轮通过。\n\nresult：当前实现提供行锁与原子归档机制；本卡说明工程约束，不宣称某企业行动取得经营收益。\n\nreuse_scope：同一Repository/Action事务边界；其他存储或跨服务需单独验证。\n\nlimitations：source_type保持simulated；不升级verified_case，不据此推断实际经营因果。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.action"
+    ],
+    "aliases": [
+      "并发推进"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/action_atomic_check.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "模拟测试环境下对同一行动档案并发推进，属于工程回归案例。",
+        "observed_problem": "并发请求可能重复完成步骤、覆盖状态或产生部分归档，需要在写入前重新检查状态。",
+        "handling": "action_transaction按案件锁定，在同事务内检查步骤状态、推进案件并写知识归档；失败回滚。",
+        "verification": "复核backend/tests/action_atomic_check.py中的独立PostgreSQL并发验收；本候选材料阶段未运行该测试，不能写成本轮通过。",
+        "result": "当前实现提供行锁与原子归档机制；本卡说明工程约束，不宣称某企业行动取得经营收益。",
+        "reuse_scope": "同一Repository/Action事务边界；其他存储或跨服务需单独验证。",
+        "limitations": "source_type保持simulated；不升级verified_case，不据此推断实际经营因果。"
+      },
+      "concept_note": "按A01已发布概念引用；无新增概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "当前DORA项目代码/演示数据；企业应用须核对实际定义。",
+      "unknowns": [
+        "企业实际案例及经营效果"
+      ],
+      "source_refs": [
+        "backend/tests/action_atomic_check.py",
+        "backend/app/repository.py",
+        "backend/app/action/flow.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-watch-offline",
+    "title": "Watch 离线案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：HTTP 后端离线时界面若仍提示创建成功，会误导用户。\n\nhandling： HTTP 模式报告失败，auto 回退时展示离线状态，Mock 只作为演示。\n\nverification：核对来源 tools/cdp/join_http_offline_check.mjs 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.watch"
+    ],
+    "aliases": [
+      "离线关注"
+    ],
+    "source_type": "simulated",
+    "source_ref": "tools/cdp/join_http_offline_check.mjs",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：HTTP 后端离线时界面若仍提示创建成功，会误导用户。",
+        "handling": " HTTP 模式报告失败，auto 回退时展示离线状态，Mock 只作为演示。",
+        "verification": "核对来源 tools/cdp/join_http_offline_check.mjs 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "tools/cdp/join_http_offline_check.mjs"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-watch-escalation",
+    "title": "Watch 升级终态案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：Watch 触发升级后若仍标为 watching，会被重复评估。\n\nhandling：升级时把状态设为 escalated，并要求用户明确恢复后才重新评估。\n\nverification：核对来源 backend/app/repository.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.watch"
+    ],
+    "aliases": [
+      "重复升级"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/repository.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：Watch 触发升级后若仍标为 watching，会被重复评估。",
+        "handling": "升级时把状态设为 escalated，并要求用户明确恢复后才重新评估。",
+        "verification": "核对来源 backend/app/repository.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/app/repository.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-chart-source",
+    "title": "图表事实同源案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：前端图表使用静态数组，而文字洞察来自后端，会展示互相冲突的事实。\n\nhandling：图表与文字共同消费引擎返回的同一证据数据。\n\nverification：核对来源 frontend/src/components/charts/EngineChart.tsx 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.evidence"
+    ],
+    "aliases": [
+      "图文不一致"
+    ],
+    "source_type": "simulated",
+    "source_ref": "frontend/src/components/charts/EngineChart.tsx",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：前端图表使用静态数组，而文字洞察来自后端，会展示互相冲突的事实。",
+        "handling": "图表与文字共同消费引擎返回的同一证据数据。",
+        "verification": "核对来源 frontend/src/components/charts/EngineChart.tsx 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "frontend/src/components/charts/EngineChart.tsx"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-unknown-tool",
+    "title": "未知工具拒绝案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：模型请求注册表之外的工具。执行器必须在调用前拒绝，运行以 failed 结束并记录原因，不能通过动态属性或任意函数名执行。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：模型请求注册表之外的工具。执行器必须在调用前拒绝，运行以 failed 结束并记录原因，不能通过动态属性或任意函数名执行。\n\nverification：核对来源 backend/tests/agent_loop_check.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "工具白名单"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/tests/agent_loop_check.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：模型请求注册表之外的工具。执行器必须在调用前拒绝，运行以 failed 结束并记录原因，不能通过动态属性或任意函数名执行。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：模型请求注册表之外的工具。执行器必须在调用前拒绝，运行以 failed 结束并记录原因，不能通过动态属性或任意函数名执行。",
+        "verification": "核对来源 backend/tests/agent_loop_check.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/tests/agent_loop_check.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-agent-budget",
+    "title": "Agent 预算停止案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：provider 持续请求合法工具。循环达到最大轮数或工具调用数后必须停止为 limited，保留已发生事件且不再执行额外调用。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：provider 持续请求合法工具。循环达到最大轮数或工具调用数后必须停止为 limited，保留已发生事件且不再执行额外调用。\n\nverification：核对来源 backend/app/agent/loop.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "循环上限"
+    ],
+    "source_type": "simulated",
+    "source_ref": "backend/app/agent/loop.py",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：provider 持续请求合法工具。循环达到最大轮数或工具调用数后必须停止为 limited，保留已发生事件且不再执行额外调用。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：provider 持续请求合法工具。循环达到最大轮数或工具调用数后必须停止为 limited，保留已发生事件且不再执行额外调用。",
+        "verification": "核对来源 backend/app/agent/loop.py 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "backend/app/agent/loop.py"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-prompt-injection",
+    "title": "知识提示注入案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：知识正文出现忽略系统要求、调用写工具等句子。检索资料只作为不可信证据，不能改变工具权限、回答边界或引用规则。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：知识正文出现忽略系统要求、调用写工具等句子。检索资料只作为不可信证据，不能改变工具权限、回答边界或引用规则。\n\nverification：核对来源 docs/agent/README.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "提示注入"
+    ],
+    "source_type": "simulated",
+    "source_ref": "docs/agent/README.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：知识正文出现忽略系统要求、调用写工具等句子。检索资料只作为不可信证据，不能改变工具权限、回答边界或引用规则。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：知识正文出现忽略系统要求、调用写工具等句子。检索资料只作为不可信证据，不能改变工具权限、回答边界或引用规则。",
+        "verification": "核对来源 docs/agent/README.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "docs/agent/README.md"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-invalid-citation",
+    "title": "非法引用案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：回答 provider 引用本次检索上下文之外的 chunk。后处理必须拒绝发布答案并记录 citation_not_in_context，不能仅检查引用格式。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：回答 provider 引用本次检索上下文之外的 chunk。后处理必须拒绝发布答案并记录 citation_not_in_context，不能仅检查引用格式。\n\nverification：核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [
+      "procedure.evidence"
+    ],
+    "aliases": [
+      "伪造引用"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：回答 provider 引用本次检索上下文之外的 chunk。后处理必须拒绝发布答案并记录 citation_not_in_context，不能仅检查引用格式。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：回答 provider 引用本次检索上下文之外的 chunk。后处理必须拒绝发布答案并记录 citation_not_in_context，不能仅检查引用格式。",
+        "verification": "核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "openspec/specs/business-agent/spec.md"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-empty-retrieval",
+    "title": "空检索拒答案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：问题与项目知识无关但向量仍返回最近邻。检索器应用最低相关性门槛，回答层在无足够证据时返回 abstained，不拼接无关答案。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：问题与项目知识无关但向量仍返回最近邻。检索器应用最低相关性门槛，回答层在无足够证据时返回 abstained，不拼接无关答案。\n\nverification：核对来源 docs/agent/RAG整体搭建计划.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "无命中"
+    ],
+    "source_type": "simulated",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：问题与项目知识无关但向量仍返回最近邻。检索器应用最低相关性门槛，回答层在无足够证据时返回 abstained，不拼接无关答案。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：问题与项目知识无关但向量仍返回最近邻。检索器应用最低相关性门槛，回答层在无足够证据时返回 abstained，不拼接无关答案。",
+        "verification": "核对来源 docs/agent/RAG整体搭建计划.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "docs/agent/RAG整体搭建计划.md"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-idempotent-index",
+    "title": "索引幂等案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：相同知识源重复导入导致文档和 chunk 数不断增长。\n\nhandling：以文档 ID、版本、chunk 序号和内容哈希建立稳定身份，相同内容返回 unchanged。\n\nverification：核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "重复索引"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：相同知识源重复导入导致文档和 chunk 数不断增长。",
+        "handling": "以文档 ID、版本、chunk 序号和内容哈希建立稳定身份，相同内容返回 unchanged。",
+        "verification": "核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "openspec/specs/business-agent/spec.md"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-version-retention",
+    "title": "知识版本保留案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：新口径覆盖旧文档会失去历史追溯。导入新版本时保留旧版本并把当前检索指向最新有效版本；按版本读取仍可检查旧内容。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：新口径覆盖旧文档会失去历史追溯。导入新版本时保留旧版本并把当前检索指向最新有效版本；按版本读取仍可检查旧内容。\n\nverification：核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "历史版本"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：新口径覆盖旧文档会失去历史追溯。导入新版本时保留旧版本并把当前检索指向最新有效版本；按版本读取仍可检查旧内容。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：新口径覆盖旧文档会失去历史追溯。导入新版本时保留旧版本并把当前检索指向最新有效版本；按版本读取仍可检查旧内容。",
+        "verification": "核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "openspec/specs/business-agent/spec.md"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-transaction-import",
+    "title": "导入事务案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：一批知识中最后一篇无效，前面的文档已部分写入。正确做法是在写入前验证全批次，并在单一事务中更新文档与 chunk，失败后零写入。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：一批知识中最后一篇无效，前面的文档已部分写入。正确做法是在写入前验证全批次，并在单一事务中更新文档与 chunk，失败后零写入。\n\nverification：核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [],
+    "dimensions": [],
+    "concept_ids": [],
+    "aliases": [
+      "半批写入"
+    ],
+    "source_type": "simulated",
+    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：一批知识中最后一篇无效，前面的文档已部分写入。正确做法是在写入前验证全批次，并在单一事务中更新文档与 chunk，失败后零写入。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：一批知识中最后一篇无效，前面的文档已部分写入。正确做法是在写入前验证全批次，并在单一事务中更新文档与 chunk，失败后零写入。",
+        "verification": "核对来源 openspec/specs/business-agent/spec.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "当前A01本体未收录该主题独立概念，保留空引用，不新增或借用不相关概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "openspec/specs/business-agent/spec.md"
+      ],
+      "review": null
+    }
+  },
+  {
+    "id": "case-realtime-route",
+    "title": "实时问题分流案例",
+    "knowledge_type": "case",
+    "status": "draft",
+    "content": "context：项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。\n\nobserved_problem：模拟案例：用户询问今天利润率，系统错误引用定义文档作答。正确行为是返回 tool_required 和 query_metric，让业务工具读取当前事实。\n\nhandling：按本模拟案例正文与来源约束处理：模拟案例：用户询问今天利润率，系统错误引用定义文档作答。正确行为是返回 tool_required 和 query_metric，让业务工具读取当前事实。\n\nverification：核对来源 docs/agent/RAG整体搭建计划.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。\n\nresult：记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。\n\nreuse_scope：只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。\n\nlimitations：source_type保持simulated；测试通过也不能升级为verified_case。",
+    "metric_keys": [
+      "margin"
+    ],
+    "dimensions": [
+      "全国"
+    ],
+    "concept_ids": [
+      "metric.margin"
+    ],
+    "aliases": [
+      "今天利润率"
+    ],
+    "source_type": "simulated",
+    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_url": "",
+    "version": 2,
+    "valid_from": "2026-10-14",
+    "valid_to": null,
+    "reviewed_by": null,
+    "updated_at": "2026-10-14T00:00:00+08:00",
+    "schema_version": 2,
+    "wiki_card": {
+      "card_type": "case",
+      "sections": {
+        "context": "项目工程/演示中的模拟案例，供说明失败边界；不是企业已验证经营样本。",
+        "observed_problem": "模拟案例：用户询问今天利润率，系统错误引用定义文档作答。正确行为是返回 tool_required 和 query_metric，让业务工具读取当前事实。",
+        "handling": "按本模拟案例正文与来源约束处理：模拟案例：用户询问今天利润率，系统错误引用定义文档作答。正确行为是返回 tool_required 和 query_metric，让业务工具读取当前事实。",
+        "verification": "核对来源 docs/agent/RAG整体搭建计划.md 的代码/契约；有相应回归时在隔离环境复现。当前候选材料阶段未执行该案例验收。",
+        "result": "记录上述机制与预期处理，不填本轮未取得的实测结果，也不宣称企业经营收益。",
+        "reuse_scope": "只在同项目/来源条件和对应接口边界下参考；其他输入、环境与企业流程需另外核验。",
+        "limitations": "source_type保持simulated；测试通过也不能升级为verified_case。"
+      },
+      "concept_note": "引用A01已发布概念。"
+    },
+    "governance": {
+      "evidence_level": "simulated",
+      "applicability": "DORA当前项目代码/模拟输入；企业适用性待核对。",
+      "unknowns": [
+        "本轮独立案例运行结果",
+        "企业经营验证材料"
+      ],
+      "source_refs": [
+        "docs/agent/RAG整体搭建计划.md"
+      ],
+      "review": null
+    }
+  }
+]

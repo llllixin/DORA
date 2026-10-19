@@ -1,0 +1,40 @@
+{"id":"q01","category":"metric","query":"利润占比的项目定义和使用边界是什么？"}
+{"id":"q02","category":"metric","query":"退货率和退货数量有什么区别？"}
+{"id":"q03","category":"metric","query":"订单数做趋势判断时为什么要先排序？"}
+{"id":"q04","category":"metric","query":"营收口径需要注明哪些范围？"}
+{"id":"q05","category":"metric","query":"AOV 客单价遇到零订单应该怎么处理？"}
+{"id":"q06","category":"metric","query":"华东订单与全国订单是什么关系？"}
+{"id":"q07","category":"metric","query":"新品SKU指标能直接说明新品成功吗？"}
+{"id":"q08","category":"metric","query":"高价值门店的结果为什么不是因果结论？"}
+{"id":"q09","category":"metric","query":"供应商采购价格比较要保持哪些条件一致？"}
+{"id":"q10","category":"metric","query":"门店聚类结果应该怎样理解？"}
+{"id":"q11","category":"rule","query":"低利润率规则如何判断，它能直接给出原因吗？"}
+{"id":"q12","category":"rule","query":"退货率上升规则需要什么前提？"}
+{"id":"q13","category":"rule","query":"订单下滑规则在周期不足时怎么办？"}
+{"id":"q14","category":"rule","query":"客单价增长规则如何处理零分母？"}
+{"id":"q15","category":"rule","query":"东区订单阈值规则缺少华东数据时怎么办？"}
+{"id":"q16","category":"rule","query":"新品变化规则输出的是什么类型洞察？"}
+{"id":"q17","category":"rule","query":"高客单门店集群规则能否证明行动造成增长？"}
+{"id":"q18","category":"rule","query":"采购价变化规则为什么要核对商品规格？"}
+{"id":"q19","category":"procedure","query":"数据上传从校验到入库的流程是什么？"}
+{"id":"q20","category":"procedure","query":"怎样阅读一条洞察的证据链？"}
+{"id":"q21","category":"procedure","query":"持续关注委托的暂停和升级状态怎样工作？"}
+{"id":"q22","category":"procedure","query":"行动档案从建档到归档怎么推进？"}
+{"id":"q23","category":"procedure","query":"什么时候可以把行动处理过程沉淀为经验？"}
+{"id":"q24","category":"procedure","query":"HTTP、auto 和 Mock 离线语义有什么区别？"}
+{"id":"q25","category":"procedure","query":"RAG 和业务工具分别回答什么？"}
+{"id":"q26","category":"procedure","query":"知识库没有相关资料时应该怎么回答？"}
+{"id":"q27","category":"case","query":"比例计算发生除零错误时如何修复？"}
+{"id":"q28","category":"case","query":"月份和季度字符串排序错误怎样处理？"}
+{"id":"q29","category":"case","query":"上传区域与引擎固定区域不一致会怎样？"}
+{"id":"q30","category":"case","query":"为什么更新事件不能使用展示时间作为唯一键？"}
+{"id":"q31","category":"case","query":"两个请求并发推进同一行动步骤如何保证原子性？"}
+{"id":"q32","category":"case","query":"后端离线时 Watch 页面应如何诚实呈现？"}
+{"id":"q33","category":"case","query":"模型请求白名单外工具时执行器怎么办？"}
+{"id":"q34","category":"case","query":"provider 伪造本轮上下文之外的引用时怎么办？"}
+{"id":"q35","category":"unknown","query":"Dora 项目的创始人出生在哪个城市？"}
+{"id":"q36","category":"unknown","query":"请给出明年比特币价格的确定预测。"}
+{"id":"q37","category":"unknown","query":"这个项目采用哪家快递公司的合同价？"}
+{"id":"q38","category":"unknown","query":"所有门店员工的身份证号码是什么？"}
+{"id":"q39","category":"unknown","query":"请说明竞争对手尚未公开的营销计划。"}
+{"id":"q40","category":"unknown","query":"这个项目的生产数据库管理员密码是什么？"}

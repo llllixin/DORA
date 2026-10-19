@@ -48,8 +48,11 @@ function expertPool(d: ActionCaseDetail) {
 }
 
 export function ActionPage({ joined, onTrace, onNotice }: Props) {
-  const [cases, setCases] = useState<ActionCaseCard[]>([]);
-  const [demo, setDemo] = useState(false);
+  const [mineCases, setMineCases] = useState<ActionCaseCard[]>([]);
+  const [demoRows, setDemoRows] = useState<ActionCaseCard[]>([]);   // 库中演示档案（origin=demo）
+  // action-demo-separation：默认只看「我的」；开关只保存在页面 state（不加 localStorage 键，D4）
+  const [view, setView] = useState<'mine' | 'demo'>('mine');
+  const [offline, setOffline] = useState(false);                    // 后端不可用 → 离线演示分支
   const [currentId, setCurrentId] = useState('');
   const [detail, setDetail] = useState<ActionCaseDetail | null>(null);
   const [verifyNote, setVerifyNote] = useState('');
@@ -61,20 +64,25 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
   const [poolOpen, setPoolOpen] = useState<Record<number, boolean>>({});
 
   const loadList = async () => {
-    try {
-      const list = await listActionCases();
-      if (list.length) {
-        setDemo(false);
-        setCases(list);
-        setCurrentId((cur) => cur || list[0].id);
-      } else {
-        setCases([]);
-        setDemo(true);
-      }
-    } catch {
-      setCases([]);
-      setDemo(true);
+    let fellBack = false;
+    const onFallback = () => { fellBack = true; };
+    // 两个视图各自的口径都取回来：计数/开关文案要「演示 N 份」，且空态要给出演示出口
+    const [mine, demo] = await Promise.all([
+      listActionCases('mine', onFallback),
+      listActionCases('demo', onFallback),
+    ]);
+    if (fellBack) {
+      // 后端不可用：整块走离线演示（不伪造来源标记、不假装「我的」有数据）
+      setMineCases([]);
+      setDemoRows([]);
+      setOffline(true);
+      return;
     }
+    setOffline(false);
+    setMineCases(mine);
+    setDemoRows(demo);
+    const visible = [...mine, ...demo];
+    setCurrentId((cur) => (visible.some((c) => c.id === cur) ? cur : (mine[0]?.id ?? demo[0]?.id ?? '')));
   };
 
   useEffect(() => {
@@ -105,13 +113,13 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
   };
 
   useEffect(() => {
-    if (demo) return; // 离线演示不轮询
+    if (offline) return; // 离线演示不轮询
     const timer = window.setInterval(() => {
       void reload();
     }, 20000); // F7：20s 轻量轮询（正式推送留阶段 2 SSE/异步）
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentId, demo]);
+  }, [currentId, offline]);
 
   const act = async (fn: () => Promise<unknown>, msg: string) => {
     try {
@@ -145,18 +153,22 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
     }
   };
 
-  const demoCases = joined
+  const offlineCases = joined
     .map((id) => actionCases[id])
     .filter((x): x is ActionCase => Boolean(x));
 
-  // 列表排序：执行中在前（D1）；计数供列表头展示
-  const sortedCases = [...cases].sort(
+  // 列表排序：执行中在前（D1）；计数按**当前视图**（D5：不给未过滤总数冒充当前视图）
+  const visibleCases = view === 'mine' ? mineCases : [...mineCases, ...demoRows];
+  const sortedCases = [...visibleCases].sort(
     (a, b) => Number(a.status === 'resolved') - Number(b.status === 'resolved') || a.code.localeCompare(b.code),
   );
-  const runningCount = cases.filter((c) => c.status !== 'resolved').length;
-  const archivedCount = cases.length - runningCount;
+  const runningCount = visibleCases.filter((c) => c.status !== 'resolved').length;
+  const archivedCount = visibleCases.length - runningCount;
+  const caseCountText = view === 'mine'
+    ? `我的档案 ${sortedCases.length} 份`
+    : `全部档案 ${sortedCases.length} 份（含演示 ${demoRows.length}）`;
 
-  if (demo) {
+  if (offline) {
     return (
       <section className="page active">
         <div className="head">
@@ -165,11 +177,11 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
             <div className="h1">把问题 / 机会推进成可验证的行动档案</div>
             <p className="sub">离线演示：显示本地演示档案（data.ts）。启动后端后这里显示真实行动档案。</p>
           </div>
-          <span className="status"><span className="dot" />{demoCases.length} 份行动档案（离线演示）</span>
+          <span className="status"><span className="dot" />{offlineCases.length} 份行动档案（离线演示）</span>
         </div>
         <div className="card" style={{ padding: 16 }}>
-          {demoCases.length === 0 && <div className="action-empty">还没有行动档案。前往「洞察」加入问题 / 机会。</div>}
-          {demoCases.map((it) => (
+          {offlineCases.length === 0 && <div className="action-empty">还没有行动档案。前往「洞察」加入问题 / 机会。</div>}
+          {offlineCases.map((it) => (
             <div key={it.id} className="insight-item" style={{ cursor: 'default' }}>
               <div className="itop">
                 <Tag tone={it.tagCls as 'red' | 'green'}>{it.kind === 'problem' ? '问题' : '机会'}</Tag>
@@ -197,7 +209,7 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
           <div className="h1">把问题 / 机会推进成可验证的行动档案</div>
           <p className="sub">档案来自引擎判定的洞察；步骤执行与验证结果都会回写档案。</p>
         </div>
-        <span className="status"><span className="dot" />{cases.length} 份行动档案</span>
+        <span className="status"><span className="dot" />{caseCountText}</span>
       </div>
       <div style={{ display: 'flex', gap: 14, marginTop: 14, alignItems: 'flex-start' }}>
         <div className="card" style={{ padding: drawerOpen ? 12 : 8, width: drawerOpen ? 300 : 60, flexShrink: 0, transition: 'width .18s ease' }}>
@@ -206,7 +218,27 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
               <b>档案列表</b>
               <button className="rowbtn" onClick={() => setDrawerOpen(false)}>收起 «</button>
             </div>
-          {cases.length === 0 && <div className="action-empty">还没有行动档案。前往「洞察」把问题 / 机会加入行动回路。</div>}
+          {/* 视图开关（D4/D5）：默认只看我的；演示档案份数写在开关文案里 */}
+          <div style={{ margin: '0 4px 8px' }}>
+            {view === 'mine' ? (
+              <button className="rowbtn" onClick={() => setView('demo')}>
+                显示演示档案（{demoRows.length} 份）→
+              </button>
+            ) : (
+              <button className="rowbtn" onClick={() => setView('mine')}>← 只看我的</button>
+            )}
+          </div>
+          {visibleCases.length === 0 && demoRows.length === 0 && (
+            <div className="action-empty">还没有行动档案。前往「洞察」把问题 / 机会加入行动回路。</div>
+          )}
+          {view === 'mine' && visibleCases.length === 0 && demoRows.length > 0 && (
+            <div className="action-empty">
+              没有我的档案。演示档案 {demoRows.length} 份可在演示库查看。
+              <div style={{ marginTop: 8 }}>
+                <button className="rowbtn" onClick={() => setView('demo')}>显示演示档案（{demoRows.length} 份）</button>
+              </div>
+            </div>
+          )}
           {sortedCases.length > 0 && (
             <div className="list-head"><span>执行中 {runningCount} · 已归档 {archivedCount}</span></div>
           )}
@@ -215,6 +247,7 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
                     onClick={() => { setCurrentId(it.id); setDetail(null); }}>
               <div className="itop">
                 <Tag tone={it.kind === 'problem' ? 'red' : 'green'}>{it.kind === 'problem' ? '问题' : '机会'}</Tag>
+                {it.origin === 'demo' && <Tag tone="ai">演示</Tag>}
                 <small style={{ opacity: 0.6 }}>{it.code}</small>
               </div>
               <div className="iname">{it.case_title}</div>
@@ -233,8 +266,8 @@ export function ActionPage({ joined, onTrace, onNotice }: Props) {
           {!drawerOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
               <button className="rowbtn" onClick={() => setDrawerOpen(true)} title="展开">»</button>
-              {cases.map((it) => (
-                <button key={it.id} className="rowbtn" title={it.code}
+              {sortedCases.map((it) => (
+                <button key={it.id} className="rowbtn" title={`${it.code}${it.origin === 'demo' ? '（演示）' : ''}`}
                         onClick={() => { setCurrentId(it.id); setDetail(null); setDrawerOpen(true); }}>
                   {it.code.slice(0, 1)}
                 </button>

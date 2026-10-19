@@ -14,6 +14,8 @@ from app.schemas import (
     InsightSummary,
     KnowledgeSearchRequest,
     Pulse,
+    RagAnswerRequest,
+    RagSearchRequest,
     StepBodyRequest,
     StepExpertsRequest,
     VerifyRequest,
@@ -30,15 +32,25 @@ from app.ingest import (
 )
 from app.reasoning.cache import refresh as reasoning_refresh
 from app.reasoning.provider import resolve_provider
+from app.reasoning.singleflight import SingleFlight
 from app.repository import Repository
 from app.seed import run_seed
 from app.watch.evaluator import evaluate_all as watch_evaluate_all
 from app.watch.evaluator import evaluate_one as watch_evaluate_one
 from app.watch.parser import parse_watch_text
+from app.watch.trend import build_trend
 from app.action.builder import create_case_from_insight as action_build_case
 from app.action import flow as action_flow
+from app.rag import RagService
+from app.rag.repository import RagRepository
+from app.runtime.contracts import RuntimeFailure
+from app.rag.contracts import RagContractError
+from app.rag.evaluation import evaluate as rag_evaluate
 
 router = APIRouter(prefix="/api")
+
+from app.wiki.router import router as wiki_router
+router.include_router(wiki_router)
 
 
 @router.get("/health")
@@ -52,13 +64,15 @@ def pulse():
 
 
 @router.get("/insights")
-def list_insights(type: str = Query("problem", pattern="^(problem|opportunity|change)$")):
-    return [i for i in run_engine()["insights"] if i["type"] == type]
+def list_insights(type: str = Query("problem", pattern="^(problem|opportunity|change|all)$")):
+    return [i for i in run_engine()["insights"] if type == "all" or i["type"] == type]
 
 
 @router.get("/insights/{insight_id}")
-def get_insight(insight_id: str):
-    for item in run_engine()["insights"]:
+def get_insight(insight_id: str, revision: str | None = None):
+    result = run_engine()
+    _require_revision(revision, result["businessVersion"])
+    for item in result["insights"]:
         if item["id"] == insight_id:
             return {
                 **_to_summary(item).model_dump(),
@@ -68,13 +82,16 @@ def get_insight(insight_id: str):
                 "factors": item["factors"],
                 "evidence": item["evidence"],
                 "semantics": item["semantics"],
+                "chart": item.get("chart"),
             }
     raise HTTPException(status_code=404, detail="insight not found")  # 只认当前引擎判定（静态兜底已下线）
 
 
 @router.get("/evidence/{evidence_id}", response_model=EvidenceModel)
-def get_evidence(evidence_id: str):
-    item = engine_evidence(evidence_id)  # 只认 Repository 生成证据（静态兜底已下线）
+def get_evidence(evidence_id: str, revision: str | None = None):
+    frozen = Repository().read_business_inputs()
+    _require_revision(revision, frozen.business_version)
+    item = engine_evidence(evidence_id, frozen)
     if not item:
         raise HTTPException(status_code=404, detail="evidence not found")
     return EvidenceModel(**item)
@@ -96,10 +113,15 @@ def _watch_card(repo: Repository, target: dict) -> dict:
     freq_txt = {"on_update": "数据更新时", "daily 09:00": "每日 09:00", "weekly": "每周"}.get(freq, freq)
     events = repo.list_watch_events(target["id"])
     last = events[-1] if events else None
-    if target["status"] == "paused":
-        value, color = "已暂停", "blue"
-    elif last and last["kind"] == "escalate":
+    # watch-goal-workbench：走向摘要（引擎同源；复用评估器读入口 repo.get_series，无 intent 则 null）
+    key = intent.get("metric_key")
+    trend = build_trend(repo.get_series(key), key, dimension) if key else None
+    # watch-escalate-handoff：呈现状态由库内 status 派生（唯一事实源），不再由末条事件现算
+    status = target["status"]
+    if status == "escalated":
         value, color = "已升级", "red"
+    elif status == "paused":
+        value, color = "已暂停", "blue"
     elif last and last["kind"] == "change":
         value, color = "有变化", "blue"
     else:
@@ -124,6 +146,12 @@ def _watch_card(repo: Repository, target: dict) -> dict:
             {"kind": last["kind"], "summary": last["summary"], "triggeredAt": last["triggered_at"]}
             if last else None
         ),
+        # watch-goal-workbench：走向摘要 + 升级引用的引擎洞察 id（零新增查询：复用上面已取的 last）
+        "engineInsightId": (
+            (last.get("values") or {}).get("engine_insight")
+            if last and last["kind"] == "escalate" else None
+        ),
+        "trend": trend,
     }
 
 
@@ -139,7 +167,17 @@ MODEL_FIELDS = set(InsightSummary.model_fields)
 
 
 def _to_summary(item: dict) -> InsightSummary:
-    return InsightSummary(**{k: item[k] for k in MODEL_FIELDS})
+    return InsightSummary(**{k: item[k] for k in MODEL_FIELDS if k in item})
+
+
+def _require_revision(expected, version):
+    if expected is not None and expected != version["revision"]:
+        raise HTTPException(status_code=409, detail={"code": "revision_conflict", "currentRevision": version["revision"]})
+
+
+@router.get("/business/version")
+def current_business_version():
+    return Repository().read_business_inputs().business_version
 
 
 @router.get("/engine/run")
@@ -175,21 +213,17 @@ def _watch_after_data_write(repo: Repository) -> None:
 
 @router.post("/datasets/sample")
 def upload_sample():
-    counts = run_seed()
+    result = run_seed(include_version=True,reset_watch_events=True)
     # 出厂重置：数据回到出厂 → 旧命中事件失效（清事件、保留委托），再即时评估
     repo = Repository()
-    repo.delete_all_reasoning()
-    repo.delete_all_watch_events()
     _watch_after_data_write(repo)
-    return {"ok": True, "counts": counts}
+    return {"ok": True, **result}
 
 
 @router.get("/datasets/current")
 def current_dataset():
-    repo = Repository()
-    latest = repo.get_latest_update() or {}
-    counts = {t: repo.count_rows(t) for t in ("metric_series", "store_cluster_store", "data_update_log", "rule_config")}
-    return {"latest": latest, "counts": counts}
+    frozen = Repository().read_business_inputs()
+    return {"latest": frozen.get_latest_update() or {}, "counts": frozen.current_counts, "businessVersion": frozen.business_version}
 
 
 @router.post("/datasets")
@@ -197,28 +231,21 @@ async def upload_dataset(file: UploadFile = File(...)):
     name = file.filename or "upload.csv"
     if not (name.lower().endswith(".csv") or name.lower().endswith(".xlsx")):
         raise HTTPException(status_code=400, detail="仅支持 .csv / .xlsx 文件")
-    content = await file.read()
+    content = await file.read(MAX_UPLOAD + 1)
     if len(content) > MAX_UPLOAD:
         raise HTTPException(status_code=413, detail="文件超过 10MB 上限")
     try:
         items = parse_dataset(name, content)
     except IngestValidationError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc))
     if not items:
         raise HTTPException(status_code=400, detail="文件内容为空")
     keys = sorted({it["metric_key"] for it in items})
     repo = Repository()
-    repo.delete_all_reasoning()  # 数据变更 → 旧解释失效
-    repo.replace_series(keys, items)
-    now = datetime.now().strftime("%H:%M")
-    repo.upsert_data_update({
-        "updated_at": now,
-        "rows_added": len(items),
-        "total_rows": repo.count_rows("metric_series"),
-        "metrics": keys,
-    })
+    now = datetime.now().astimezone().isoformat(timespec="microseconds")
+    version = repo.import_dataset(items, {"updated_at": now})
     _watch_after_data_write(repo)
-    return {"ok": True, "name": name, "rows": len(items), "affectedMetrics": keys, "updated": now}
+    return {"ok": True, "name": name, "rows": len(items), "affectedMetrics": keys, "updated": now, "businessVersion": version}
 
 
 def _check_upload(name: str, content: bytes) -> None:
@@ -231,12 +258,12 @@ def _check_upload(name: str, content: bytes) -> None:
 @router.post("/datasets/preview")
 async def preview_dataset(file: UploadFile = File(...)):
     name = file.filename or "preview.csv"
-    content = await file.read()
+    content = await file.read(MAX_UPLOAD + 1)
     _check_upload(name, content)
     try:
         data = preview_rows(content, name)
     except IngestValidationError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc))
     return {"ok": True, "name": name, **data}
 
 
@@ -249,67 +276,36 @@ async def mapped_dataset(file: UploadFile = File(...), mapping: str = Form(...))
     if not isinstance(mp, dict):
         raise HTTPException(status_code=400, detail="mapping 必须是对象")
     name = file.filename or "mapped.csv"
-    content = await file.read()
+    content = await file.read(MAX_UPLOAD + 1)
     _check_upload(name, content)
     try:
         raw = read_rows(content, name)
         items = items_from_mapping(raw, mp)
     except IngestValidationError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc))
     keys = sorted({it["metric_key"] for it in items})
     repo = Repository()
-    repo.delete_all_reasoning()  # 数据变更 → 旧解释失效
-    repo.replace_series(keys, items)
-    now = datetime.now().strftime("%H:%M")
-    repo.upsert_data_update({
-        "updated_at": now,
-        "rows_added": len(items),
-        "total_rows": repo.count_rows("metric_series"),
-        "metrics": keys,
-    })
+    now = datetime.now().astimezone().isoformat(timespec="microseconds")
+    version = repo.import_dataset(items, {"updated_at": now})
     _watch_after_data_write(repo)
-    return {"ok": True, "name": name, "rows": len(items), "affectedMetrics": keys, "updated": now}
+    return {"ok": True, "name": name, "rows": len(items), "affectedMetrics": keys, "updated": now, "businessVersion": version}
+
+_refresh_flights = SingleFlight()
+
 
 @router.post("/reason/refresh")
 def reason_refresh():
-    """批量刷新（阶段 1 单飞）：并发重复请求合并为一次执行，后到者复用首个结果。"""
-    with _refresh_cond:
-        if _refresh_state["running"]:
-            while _refresh_state["running"]:
-                _refresh_cond.wait()
-            if _refresh_state["error"] is not None:
-                raise _refresh_state["error"]
-            return _refresh_state["result"]
-        _refresh_state["running"] = True
-        _refresh_state["result"] = None
-        _refresh_state["error"] = None
-    try:
-        out = _compute_refresh_once()
-    except Exception as exc:
-        with _refresh_cond:
-            _refresh_state["error"] = exc
-            _refresh_state["running"] = False
-            _refresh_cond.notify_all()
-        raise
-    with _refresh_cond:
-        _refresh_state["result"] = out
-        _refresh_state["running"] = False
-        _refresh_state["error"] = None
-        _refresh_cond.notify_all()
-    return out
-
-
-_refresh_cond = threading.Condition()
-_refresh_state = {"running": False, "result": None, "error": None}
-
-
-def _compute_refresh_once() -> dict:
+    """Only identical input/profile batches share a flight; DB checks write safety."""
     repo = Repository()
     provider = resolve_provider()
-    res = run_engine(repo)
-    if not res["insights"]:
-        return {"ok": True, "updated": [], "fallback": [], "provider": provider.kind}
-    out = reasoning_refresh(repo, res["insights"], res["snapshot"], provider)
+    result = run_engine(repo, profile=provider.profile)
+    version = result["businessVersion"]
+    key = (version["scopeId"], version["revision"], version["reasoningProfile"])
+    return _refresh_flights.run(key, lambda: _compute_refresh_once(repo, result, provider))
+
+
+def _compute_refresh_once(repo, result, provider):
+    out = reasoning_refresh(repo, result["insights"], result["snapshot"], provider)
     return {"ok": True, **out}
 
 
@@ -345,8 +341,16 @@ def get_watch(watch_id: str):
 
 @router.patch("/watch/{watch_id}")
 def update_watch_status(watch_id: str, req: WatchStatusRequest):
+    """暂停 / 恢复（watch-escalate-handoff：`escalated` 委托可恢复为 `watching`）。
+
+    非法取值与非法迁移（请求 `escalated`、`escalated → paused`）显式 400 + 原因，
+    不静默改写状态（旧行为：未映射的 ValueError 会 500）。
+    """
     repo = Repository()
-    target = repo.set_watch_status(watch_id, req.status)
+    try:
+        target = repo.set_watch_status(watch_id, req.status)
+    except ValueError as exc:
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc)) from exc
     if target is None:
         raise HTTPException(status_code=404, detail="watch not found")
     return {"ok": True, "target": _watch_card(repo, target)}
@@ -361,13 +365,22 @@ def delete_watch(watch_id: str):
 
 @router.post("/watch/{watch_id}/check")
 def check_watch(watch_id: str):
-    """手动立即评估一次（验收/测试用）。"""
+    """手动立即评估一次（验收/测试用）。
+
+    watch-escalate-handoff：只有在手（`watching`）委托可评估——终态已移交、暂停态按
+    「暂停后不评估」语义均不再评估（显式 4xx + 原因，不静默跳过、不产生事件）。
+    """
     repo = Repository()
     target = repo.get_watch_target(watch_id)
     if target is None:
         raise HTTPException(status_code=404, detail="watch not found")
+    if target["status"] != "watching":
+        reason = {
+            "paused": "该委托已暂停：恢复持续关注后才评估",
+            "escalated": "该委托已升级移交：不再评估（可先恢复持续关注）",
+        }.get(target["status"], "该委托当前不可评估")
+        raise HTTPException(status_code=400, detail=reason)
     out = watch_evaluate_one(repo, target)
-    repo.touch_watch_target(watch_id, datetime.now(timezone.utc).isoformat(timespec="seconds"))
     return {"ok": True, **out}
 
 
@@ -399,14 +412,25 @@ def create_action_case(req: ActionCreateRequest):
     try:
         out = action_build_case(repo, insight)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-    return {"ok": True, "created": out["created"], "case": out["case"]}
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc))
+    case = out["case"]
+    # action-demo-separation：命中已存在的**演示**档案且用户明确认领 → 改标 engine（幂等）。
+    # 不带 claim 的调用（含全部门禁）不触碰来源标记。
+    if not out["created"] and req.claim and case.get("origin") == "demo":
+        repo.claim_action_case(case["id"])
+        case = repo.get_action_case(case["id"]) or case
+    return {"ok": True, "created": out["created"], "case": case}
 
 
 @router.get("/action/cases")
-def list_action_cases():
+def list_action_cases(origin: str = "all"):
+    """来源过滤：all（缺省，保持既有行为）/ mine（我的）/ demo（演示）；非法值 400 不静默兜底。"""
     repo = Repository()
-    return {"ok": True, "cases": repo.list_action_cases()}
+    try:
+        cases = repo.list_action_cases(origin)
+    except ValueError as exc:
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc))
+    return {"ok": True, "cases": cases}
 
 
 @router.get("/action/cases/{case_id}")
@@ -428,7 +452,7 @@ def _step_action(case_id: str, seq: int, action: str, note: str = "", result: st
         else:
             updated = action_flow.block_step(repo, case_id, seq, note=note)
     except action_flow.ActionFlowError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc))
     return {"ok": True, "case": updated}
 
 
@@ -454,7 +478,7 @@ def action_step_experts(case_id: str, seq: int, body: StepExpertsRequest):
     try:
         updated = action_flow.set_step_experts(repo, case_id, seq, body.experts)
     except action_flow.ActionFlowError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc))
     return {"ok": True, "case": updated}
 
 
@@ -464,7 +488,7 @@ def action_verify(case_id: str, body: VerifyRequest):
     try:
         updated = action_flow.verify(repo, case_id, body.outcome, note=body.note)
     except action_flow.ActionFlowError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc))
     return {"ok": True, "case": updated}
 
 
@@ -522,6 +546,56 @@ def knowledge_search(req: KnowledgeSearchRequest):
     return {"ok": True, "query": req.query, "empty": not hits, "hits": hits, "references": refs}
 
 
+# ---------------------------------------------------------------------------
+# 普通 RAG：独立于历史行动归档 `/knowledge/search`
+# ---------------------------------------------------------------------------
+@router.post("/rag/index")
+def rag_index():
+    """从仓库内受审核知识源幂等重建索引。"""
+    try:
+        return RagService().rebuild_index()
+    except (ValueError, RagContractError) as exc:
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc)) from exc
+    except RuntimeFailure as exc:
+        raise HTTPException(status_code=503, detail={'reasonCode':exc.category, 'runId':getattr(exc,'run_id',None)}) from exc
+
+
+@router.get('/rag/index/status')
+def rag_index_status():
+    return {'ok': True, **RagRepository().index_status()}
+
+
+@router.post("/rag/search")
+def rag_search(req: RagSearchRequest):
+    try:
+        return {"ok": True, **RagService().search(req.query, req.top_k, req.knowledge_types or None)}
+    except ValueError as exc:
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc)) from exc
+
+
+@router.post("/rag/answer")
+def rag_answer(req: RagAnswerRequest):
+    try:
+        return {"ok": True, **RagService().answer(req.question, req.top_k, req.knowledge_types or None)}
+    except ValueError as exc:
+        raise HTTPException(status_code=getattr(exc, "status_code", 400), detail=str(exc)) from exc
+
+
+@router.get("/rag/documents/{document_id}")
+def rag_document(document_id: str, version: int | None = Query(default=None, ge=1)):
+    document = RagRepository().get_document(document_id, version)
+    if document is None:
+        raise HTTPException(status_code=404, detail="rag document not found")
+    return {"ok": True, "document": document}
+
+
+@router.post("/rag/evaluate")
+def rag_evaluation():
+    """运行固定问题集；返回逐题证据，供学习与本地发布门禁使用。"""
+    report = rag_evaluate(RagService())
+    return {"ok": True, **report}
+
+
 @router.post("/agent/runs")
 def create_agent_run(req: AgentRunCreateRequest):
     repo = Repository()
@@ -573,7 +647,11 @@ def _sse(event: str, data: dict) -> str:
 
 
 def _compose_answer(intent: str, insight: dict | None, engine: dict, references: list[dict]) -> dict:
-    """答案只由引擎字段 + 检索引用组装（数字锁：不引入引擎外数字/判定）。"""
+    """答案只由引擎字段 + 检索引用组装（数字锁：不引入引擎外新数字/新判定）。
+
+    数字锁基准 = 该洞察的引擎 payload ∪ 本答案下发的 `references`（`code/title/source_id`）；
+    引用编号（如 `ORD-1022`/`PRF-0831`）属可回溯标识，不计为「引擎外新数字」（D045）。
+    """
     if insight is None:
         pulse = engine.get("pulse", {})
         return {"text": f"当前没有引擎判定的洞察；脉搏计数：{json.dumps(pulse, ensure_ascii=False)}",
@@ -659,4 +737,3 @@ def dora_chat(req: ChatRequest):
         yield _sse("done", {"run_id": run["id"], "intent": intent})
 
     return StreamingResponse(_gen(), media_type="text/event-stream")
-

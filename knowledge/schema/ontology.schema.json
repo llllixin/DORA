@@ -1,0 +1,513 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dora reviewed ontology v2",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "2.0"
+    },
+    "ontologyVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewStatus": {
+      "enum": [
+        "candidate_for_review",
+        "reviewed",
+        "retired"
+      ]
+    },
+    "materialInput": {
+      "type": "string",
+      "minLength": 1
+    },
+    "conceptTypes": {
+      "const": [
+        "Metric",
+        "Dimension",
+        "Region",
+        "Procedure",
+        "Collection",
+        "Rule"
+      ]
+    },
+    "instanceTypes": {
+      "const": [
+        "MetricObservation",
+        "InsightOccurrence",
+        "Snapshot",
+        "WatchTarget",
+        "WatchEvent",
+        "ActionCase",
+        "Lesson"
+      ]
+    },
+    "concepts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "enum": [
+              "Metric",
+              "Dimension",
+              "Region",
+              "Procedure",
+              "Collection",
+              "Rule"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "sourceRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "meaning": {
+            "type": "string",
+            "minLength": 1
+          },
+          "metricBinding": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "metricKey": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "dimension": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "sourceUnit": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "dimensionPolicy": {
+                    "enum": [
+                      "fixed",
+                      "fixed_with_east_view",
+                      "store_or_all_rows",
+                      "supplier_or_all_rows"
+                    ]
+                  },
+                  "semanticStatus": {
+                    "const": "operational_only"
+                  },
+                  "tool": {
+                    "const": "query_metric"
+                  }
+                },
+                "required": [
+                  "metricKey",
+                  "dimension",
+                  "sourceUnit",
+                  "dimensionPolicy",
+                  "semanticStatus",
+                  "tool"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "name",
+          "aliases",
+          "sourceRefs",
+          "meaning",
+          "metricBinding"
+        ]
+      },
+      "minItems": 1
+    },
+    "relationTypes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "domain": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "Metric",
+                "Dimension",
+                "Region",
+                "Procedure",
+                "Collection",
+                "Rule",
+                "MetricObservation",
+                "InsightOccurrence",
+                "Snapshot",
+                "WatchTarget",
+                "WatchEvent",
+                "ActionCase",
+                "Lesson"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "range": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "Metric",
+                "Dimension",
+                "Region",
+                "Procedure",
+                "Collection",
+                "Rule",
+                "MetricObservation",
+                "InsightOccurrence",
+                "Snapshot",
+                "WatchTarget",
+                "WatchEvent",
+                "ActionCase",
+                "Lesson"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "layer": {
+            "enum": [
+              "concept",
+              "instance"
+            ]
+          },
+          "symmetric": {
+            "type": "boolean"
+          },
+          "queryExpansion": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "fromMatched": {
+                "type": "boolean"
+              },
+              "toMatched": {
+                "type": "boolean"
+              },
+              "maxHops": {
+                "const": 1
+              }
+            },
+            "required": [
+              "fromMatched",
+              "toMatched",
+              "maxHops"
+            ]
+          },
+          "evidenceRequired": {
+            "const": true
+          },
+          "causalityAllowed": {
+            "const": false
+          }
+        },
+        "required": [
+          "id",
+          "domain",
+          "range",
+          "layer",
+          "symmetric",
+          "queryExpansion",
+          "evidenceRequired",
+          "causalityAllowed"
+        ]
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceType": {
+            "enum": [
+              "project",
+              "official",
+              "simulated",
+              "verified_case"
+            ]
+          },
+          "sourceRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "evidenceKind": {
+            "const": "definition"
+          },
+          "causality": {
+            "const": "not_asserted"
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "type",
+          "to",
+          "sourceType",
+          "sourceRefs",
+          "evidenceKind",
+          "causality"
+        ]
+      }
+    },
+    "blockedTerms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "clarification": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "terms",
+          "reason",
+          "clarification"
+        ]
+      }
+    },
+    "matchingPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ascii": {
+          "type": "string",
+          "minLength": 1
+        },
+        "chinese": {
+          "type": "string",
+          "minLength": 1
+        },
+        "multipleMetrics": {
+          "type": "string",
+          "minLength": 1
+        },
+        "regionBinding": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unknown": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "ascii",
+        "chinese",
+        "multipleMetrics",
+        "regionBinding",
+        "unknown"
+      ]
+    },
+    "regionViews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "baseConceptId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "regionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "viewConceptId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "baseConceptId",
+          "regionId",
+          "viewConceptId"
+        ]
+      }
+    },
+    "legacyConceptIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "dimensionPatterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "metricConceptIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "normalization": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "pattern",
+          "metricConceptIds",
+          "normalization"
+        ]
+      }
+    },
+    "ambiguityGroups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "conceptIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "rule": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "conceptIds",
+          "rule"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "ontologyVersion",
+    "reviewStatus",
+    "materialInput",
+    "conceptTypes",
+    "instanceTypes",
+    "concepts",
+    "relationTypes",
+    "relations",
+    "blockedTerms",
+    "matchingPolicy",
+    "regionViews",
+    "legacyConceptIds",
+    "notes",
+    "dimensionPatterns",
+    "ambiguityGroups"
+  ]
+}

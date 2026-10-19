@@ -1,0 +1,1076 @@
+{
+  "schemaVersion": "2.0",
+  "ontologyVersion": "dora-ontology-v2",
+  "reviewStatus": "reviewed",
+  "materialInput": "a00-v1-candidate",
+  "conceptTypes": [
+    "Metric",
+    "Dimension",
+    "Region",
+    "Procedure",
+    "Collection",
+    "Rule"
+  ],
+  "instanceTypes": [
+    "MetricObservation",
+    "InsightOccurrence",
+    "Snapshot",
+    "WatchTarget",
+    "WatchEvent",
+    "ActionCase",
+    "Lesson"
+  ],
+  "concepts": [
+    {
+      "id": "metric.margin",
+      "type": "Metric",
+      "name": "利润率",
+      "aliases": [
+        "利润占比"
+      ],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py"
+      ],
+      "meaning": "项目 margin 序列；财务分子分母未声明，不能等同毛利率或净利率。",
+      "metricBinding": {
+        "metricKey": "margin",
+        "dimension": "全国",
+        "sourceUnit": "%",
+        "dimensionPolicy": "fixed",
+        "semanticStatus": "operational_only",
+        "tool": "query_metric"
+      }
+    },
+    {
+      "id": "metric.returns",
+      "type": "Metric",
+      "name": "退货率",
+      "aliases": [
+        "退货占比"
+      ],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py"
+      ],
+      "meaning": "当前 returns 是门店序列；没有全国退货率聚合算法；不等同退款率。",
+      "metricBinding": {
+        "metricKey": "returns",
+        "dimension": null,
+        "sourceUnit": "%",
+        "dimensionPolicy": "store_or_all_rows",
+        "semanticStatus": "operational_only",
+        "tool": "query_metric"
+      }
+    },
+    {
+      "id": "metric.orders",
+      "type": "Metric",
+      "name": "订单量",
+      "aliases": [
+        "订单数",
+        "销量订单"
+      ],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py"
+      ],
+      "meaning": "全国订单计数；华东切片使用独立存储 key。",
+      "metricBinding": {
+        "metricKey": "orders",
+        "dimension": "全国",
+        "sourceUnit": null,
+        "dimensionPolicy": "fixed_with_east_view",
+        "semanticStatus": "operational_only",
+        "tool": "query_metric"
+      }
+    },
+    {
+      "id": "metric.revenue",
+      "type": "Metric",
+      "name": "营收",
+      "aliases": [
+        "销售额",
+        "营业收入"
+      ],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py"
+      ],
+      "meaning": "项目 revenue 全国收入序列；含税与确认口径需业务声明。",
+      "metricBinding": {
+        "metricKey": "revenue",
+        "dimension": "全国",
+        "sourceUnit": "千元",
+        "dimensionPolicy": "fixed",
+        "semanticStatus": "operational_only",
+        "tool": "query_metric"
+      }
+    },
+    {
+      "id": "metric.aov",
+      "type": "Metric",
+      "name": "客单价",
+      "aliases": [
+        "平均订单金额",
+        "AOV"
+      ],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py"
+      ],
+      "meaning": "读取项目 aov 序列，分母/有效订单范围仍需业务确认。",
+      "metricBinding": {
+        "metricKey": "aov",
+        "dimension": "全国",
+        "sourceUnit": "元",
+        "dimensionPolicy": "fixed",
+        "semanticStatus": "operational_only",
+        "tool": "query_metric"
+      }
+    },
+    {
+      "id": "metric.east_orders",
+      "type": "Metric",
+      "name": "华东订单量",
+      "aliases": [
+        "华东订单",
+        "东区订单"
+      ],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py"
+      ],
+      "meaning": "项目 east_orders 华东订单序列；不能改用 orders+华东猜测等价。",
+      "metricBinding": {
+        "metricKey": "east_orders",
+        "dimension": "华东",
+        "sourceUnit": null,
+        "dimensionPolicy": "fixed",
+        "semanticStatus": "operational_only",
+        "tool": "query_metric"
+      }
+    },
+    {
+      "id": "metric.new_sku",
+      "type": "Metric",
+      "name": "新品销量",
+      "aliases": [
+        "新品销售量"
+      ],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py",
+        "backend/app/engine/dataset.py"
+      ],
+      "meaning": "项目 key 名保留 new_sku；种子与引擎描述的是新品销量，不是 SKU 种数。新品窗口与实际销量单位待确认。",
+      "metricBinding": {
+        "metricKey": "new_sku",
+        "dimension": "全区域",
+        "sourceUnit": null,
+        "dimensionPolicy": "fixed",
+        "semanticStatus": "operational_only",
+        "tool": "query_metric"
+      }
+    },
+    {
+      "id": "metric.high_value",
+      "type": "Metric",
+      "name": "高客单门店占比",
+      "aliases": [
+        "高客单门店比例"
+      ],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py",
+        "backend/app/engine/dataset.py"
+      ],
+      "meaning": "项目 high_value 是全国百分比序列；不等同门店集合或大额订单占比，分子分母阈值待业务确认。",
+      "metricBinding": {
+        "metricKey": "high_value",
+        "dimension": "全国",
+        "sourceUnit": "%",
+        "dimensionPolicy": "fixed",
+        "semanticStatus": "operational_only",
+        "tool": "query_metric"
+      }
+    },
+    {
+      "id": "metric.supplier_price",
+      "type": "Metric",
+      "name": "供应商价格",
+      "aliases": [
+        "采购价格"
+      ],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py"
+      ],
+      "meaning": "项目 supplier_price 是供应商维度价格序列；商品规格和币种不能凭名称推定。",
+      "metricBinding": {
+        "metricKey": "supplier_price",
+        "dimension": null,
+        "sourceUnit": "元",
+        "dimensionPolicy": "supplier_or_all_rows",
+        "semanticStatus": "operational_only",
+        "tool": "query_metric"
+      }
+    },
+    {
+      "id": "metric.store_cluster",
+      "type": "Collection",
+      "name": "门店集群",
+      "aliases": [
+        "门店聚类"
+      ],
+      "sourceRefs": [
+        "backend/app/repository.py",
+        "backend/app/engine/engine.py"
+      ],
+      "meaning": "门店行集合与描述性分组；保留旧逻辑 ID，但它不是可通过 query_metric(store_cluster) 读取的指标序列。",
+      "metricBinding": null
+    },
+    {
+      "id": "procedure.watch",
+      "type": "Procedure",
+      "name": "持续关注",
+      "aliases": [
+        "盯盘",
+        "提醒",
+        "Watch"
+      ],
+      "sourceRefs": [
+        "knowledge/documents.json"
+      ],
+      "meaning": "关注流程概念，不是具体 WatchTarget 实例。",
+      "metricBinding": null
+    },
+    {
+      "id": "procedure.action",
+      "type": "Procedure",
+      "name": "行动回路",
+      "aliases": [
+        "行动档案",
+        "处理闭环"
+      ],
+      "sourceRefs": [
+        "knowledge/documents.json"
+      ],
+      "meaning": "行动处理流程概念，不是某个 ActionCase。",
+      "metricBinding": null
+    },
+    {
+      "id": "procedure.evidence",
+      "type": "Procedure",
+      "name": "证据链",
+      "aliases": [
+        "证据",
+        "依据"
+      ],
+      "sourceRefs": [
+        "knowledge/documents.json"
+      ],
+      "meaning": "证据阅读流程概念，不是不可变 Snapshot。",
+      "metricBinding": null
+    },
+    {
+      "id": "procedure.lesson",
+      "type": "Procedure",
+      "name": "经验沉淀",
+      "aliases": [
+        "沉淀经验"
+      ],
+      "sourceRefs": [
+        "knowledge/documents.json"
+      ],
+      "meaning": "从已验证归档产生候选经验的流程，不代表某条经验已发生。",
+      "metricBinding": null
+    },
+    {
+      "id": "procedure.upload",
+      "type": "Procedure",
+      "name": "数据上传",
+      "aliases": [
+        "上传数据"
+      ],
+      "sourceRefs": [
+        "knowledge/documents.json"
+      ],
+      "meaning": "上传校验与更新流程，不是数据更新事件实例。",
+      "metricBinding": null
+    },
+    {
+      "id": "region.national",
+      "type": "Region",
+      "name": "全国",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "区域/汇总范围词 全国；不是授权 scopeId，不代表所有指标都支持此范围。",
+      "metricBinding": null
+    },
+    {
+      "id": "region.east",
+      "type": "Region",
+      "name": "华东",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "区域/汇总范围词 华东；不是授权 scopeId，不代表所有指标都支持此范围。",
+      "metricBinding": null
+    },
+    {
+      "id": "region.south",
+      "type": "Region",
+      "name": "华南",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "区域/汇总范围词 华南；不是授权 scopeId，不代表所有指标都支持此范围。",
+      "metricBinding": null
+    },
+    {
+      "id": "region.north",
+      "type": "Region",
+      "name": "华北",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "区域/汇总范围词 华北；不是授权 scopeId，不代表所有指标都支持此范围。",
+      "metricBinding": null
+    },
+    {
+      "id": "region.southwest",
+      "type": "Region",
+      "name": "西南",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "区域/汇总范围词 西南；不是授权 scopeId，不代表所有指标都支持此范围。",
+      "metricBinding": null
+    },
+    {
+      "id": "region.all",
+      "type": "Region",
+      "name": "全区域",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "区域/汇总范围词 全区域；不是授权 scopeId，不代表所有指标都支持此范围。",
+      "metricBinding": null
+    },
+    {
+      "id": "dimension.region",
+      "type": "Dimension",
+      "name": "区域维度",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "维度轴概念；具体维度值或周期在业务行中，不在本体里伪造实例。",
+      "metricBinding": null
+    },
+    {
+      "id": "dimension.store",
+      "type": "Dimension",
+      "name": "门店维度",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "维度轴概念；具体维度值或周期在业务行中，不在本体里伪造实例。",
+      "metricBinding": null
+    },
+    {
+      "id": "dimension.supplier",
+      "type": "Dimension",
+      "name": "供应商维度",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "维度轴概念；具体维度值或周期在业务行中，不在本体里伪造实例。",
+      "metricBinding": null
+    },
+    {
+      "id": "dimension.period",
+      "type": "Dimension",
+      "name": "周期维度",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "meaning": "维度轴概念；具体维度值或周期在业务行中，不在本体里伪造实例。",
+      "metricBinding": null
+    },
+    {
+      "id": "metric.gross_margin",
+      "type": "Metric",
+      "name": "毛利率",
+      "aliases": [],
+      "sourceRefs": [
+        "knowledge/ontology/ontology.json",
+        "backend/app/watch/parser.py"
+      ],
+      "meaning": "独立财务概念，项目无已确认的物理指标绑定；不能指向 margin。",
+      "metricBinding": null
+    },
+    {
+      "id": "metric.net_margin",
+      "type": "Metric",
+      "name": "净利率",
+      "aliases": [],
+      "sourceRefs": [
+        "knowledge/ontology/ontology.json",
+        "backend/app/watch/parser.py"
+      ],
+      "meaning": "独立财务概念，项目无已确认的物理指标绑定；不能指向 margin。",
+      "metricBinding": null
+    },
+    {
+      "id": "metric.refund_rate",
+      "type": "Metric",
+      "name": "退款率",
+      "aliases": [],
+      "sourceRefs": [
+        "knowledge/ontology/ontology.json",
+        "backend/app/watch/parser.py"
+      ],
+      "meaning": "独立退款概念，项目无已确认绑定；不能指向 returns。",
+      "metricBinding": null
+    },
+    {
+      "id": "metric.new_sku_count",
+      "type": "Metric",
+      "name": "新品SKU数量",
+      "aliases": [
+        "新品SKU种数"
+      ],
+      "sourceRefs": [
+        "knowledge/ontology/ontology.json",
+        "backend/app/watch/parser.py"
+      ],
+      "meaning": "SKU 种数概念；不能指向 new_sku 新品销量。",
+      "metricBinding": null
+    },
+    {
+      "id": "metric.high_amount_order_share",
+      "type": "Metric",
+      "name": "大额订单占比",
+      "aliases": [
+        "高价值订单占比"
+      ],
+      "sourceRefs": [
+        "knowledge/ontology/ontology.json",
+        "backend/app/watch/parser.py"
+      ],
+      "meaning": "订单金额分布概念；不能指向 high_value 门店占比。",
+      "metricBinding": null
+    },
+    {
+      "id": "collection.high_aov_stores",
+      "type": "Collection",
+      "name": "高客单门店",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/repository.py"
+      ],
+      "meaning": "按客单等条件确定的集合概念；与高客单门店占比区分，具体识别阈值待确认。",
+      "metricBinding": null
+    },
+    {
+      "id": "rule.margin-low",
+      "type": "Rule",
+      "name": "利润率偏低规则",
+      "aliases": [],
+      "sourceRefs": [
+        "backend/app/engine/engine.py"
+      ],
+      "meaning": "规则定义概念；判定实现与配置仍由引擎掌握，非本体重新计算。",
+      "metricBinding": null
+    }
+  ],
+  "relationTypes": [
+    {
+      "id": "related_to",
+      "domain": [
+        "Metric"
+      ],
+      "range": [
+        "Metric"
+      ],
+      "layer": "concept",
+      "symmetric": true,
+      "queryExpansion": {
+        "fromMatched": true,
+        "toMatched": true,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "slice_of",
+      "domain": [
+        "Metric"
+      ],
+      "range": [
+        "Metric"
+      ],
+      "layer": "concept",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": true,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "describes_collection",
+      "domain": [
+        "Metric"
+      ],
+      "range": [
+        "Collection"
+      ],
+      "layer": "concept",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "uses_procedure",
+      "domain": [
+        "Procedure"
+      ],
+      "range": [
+        "Procedure"
+      ],
+      "layer": "concept",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": true,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "references_metric",
+      "domain": [
+        "Procedure"
+      ],
+      "range": [
+        "Metric"
+      ],
+      "layer": "concept",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "applies_to",
+      "domain": [
+        "Rule"
+      ],
+      "range": [
+        "Metric"
+      ],
+      "layer": "concept",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "has_region",
+      "domain": [
+        "Metric",
+        "Collection"
+      ],
+      "range": [
+        "Region"
+      ],
+      "layer": "concept",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "has_dimension",
+      "domain": [
+        "Metric",
+        "Collection"
+      ],
+      "range": [
+        "Dimension"
+      ],
+      "layer": "concept",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "observed_as",
+      "domain": [
+        "Metric"
+      ],
+      "range": [
+        "MetricObservation"
+      ],
+      "layer": "instance",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "produced_occurrence",
+      "domain": [
+        "Rule"
+      ],
+      "range": [
+        "InsightOccurrence"
+      ],
+      "layer": "instance",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "supported_by",
+      "domain": [
+        "InsightOccurrence"
+      ],
+      "range": [
+        "Snapshot"
+      ],
+      "layer": "instance",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "monitors",
+      "domain": [
+        "WatchTarget"
+      ],
+      "range": [
+        "Metric"
+      ],
+      "layer": "instance",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "emitted",
+      "domain": [
+        "WatchTarget"
+      ],
+      "range": [
+        "WatchEvent"
+      ],
+      "layer": "instance",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "opened_from",
+      "domain": [
+        "ActionCase"
+      ],
+      "range": [
+        "InsightOccurrence"
+      ],
+      "layer": "instance",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    },
+    {
+      "id": "lesson_from",
+      "domain": [
+        "Lesson"
+      ],
+      "range": [
+        "ActionCase"
+      ],
+      "layer": "instance",
+      "symmetric": false,
+      "queryExpansion": {
+        "fromMatched": false,
+        "toMatched": false,
+        "maxHops": 1
+      },
+      "evidenceRequired": true,
+      "causalityAllowed": false
+    }
+  ],
+  "relations": [
+    {
+      "id": "concept-edge-01",
+      "from": "metric.margin",
+      "type": "related_to",
+      "to": "metric.revenue",
+      "sourceType": "project",
+      "sourceRefs": [
+        "knowledge/ontology/ontology.json"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-02",
+      "from": "metric.margin",
+      "type": "related_to",
+      "to": "metric.supplier_price",
+      "sourceType": "project",
+      "sourceRefs": [
+        "knowledge/ontology/ontology.json"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-03",
+      "from": "metric.east_orders",
+      "type": "slice_of",
+      "to": "metric.orders",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/engine/engine.py",
+        "backend/app/seed.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-04",
+      "from": "metric.aov",
+      "type": "describes_collection",
+      "to": "collection.high_aov_stores",
+      "sourceType": "project",
+      "sourceRefs": [
+        "knowledge/documents.json"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-05",
+      "from": "procedure.action",
+      "type": "uses_procedure",
+      "to": "procedure.evidence",
+      "sourceType": "project",
+      "sourceRefs": [
+        "knowledge/documents.json"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-06",
+      "from": "procedure.watch",
+      "type": "references_metric",
+      "to": "metric.orders",
+      "sourceType": "project",
+      "sourceRefs": [
+        "knowledge/ontology/ontology.json"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-07",
+      "from": "procedure.watch",
+      "type": "references_metric",
+      "to": "metric.margin",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/watch/parser.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-08",
+      "from": "rule.margin-low",
+      "type": "applies_to",
+      "to": "metric.margin",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/engine/engine.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-09",
+      "from": "metric.margin",
+      "type": "has_region",
+      "to": "region.national",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-10",
+      "from": "metric.orders",
+      "type": "has_region",
+      "to": "region.national",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-11",
+      "from": "metric.east_orders",
+      "type": "has_region",
+      "to": "region.east",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-12",
+      "from": "metric.new_sku",
+      "type": "has_region",
+      "to": "region.all",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-13",
+      "from": "metric.high_value",
+      "type": "has_region",
+      "to": "region.national",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-14",
+      "from": "metric.returns",
+      "type": "has_dimension",
+      "to": "dimension.store",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    },
+    {
+      "id": "concept-edge-15",
+      "from": "metric.supplier_price",
+      "type": "has_dimension",
+      "to": "dimension.supplier",
+      "sourceType": "project",
+      "sourceRefs": [
+        "backend/app/seed.py"
+      ],
+      "evidenceKind": "definition",
+      "causality": "not_asserted"
+    }
+  ],
+  "blockedTerms": [
+    {
+      "id": "profit-basis",
+      "terms": [
+        "毛利",
+        "净利"
+      ],
+      "reason": "amount_rate_and_project_basis_unconfirmed",
+      "clarification": "请明确是金额还是比率，并提供项目财务口径。"
+    },
+    {
+      "id": "generic-new-product",
+      "terms": [
+        "新商品",
+        "新品增长",
+        "新品SKU指标"
+      ],
+      "reason": "sales_count_window_unconfirmed",
+      "clarification": "请明确新品销量、SKU种数或增长率，以及观察窗口。"
+    },
+    {
+      "id": "generic-value",
+      "terms": [
+        "高价值门店",
+        "大额订单",
+        "高价值订单"
+      ],
+      "reason": "store_collection_vs_order_share",
+      "clarification": "请明确是门店集合/门店占比，还是订单金额分布指标。"
+    }
+  ],
+  "matchingPolicy": {
+    "ascii": "case_insensitive_token_boundary",
+    "chinese": "longest_non_overlapping_span",
+    "multipleMetrics": "clarify_for_single_metric_tool; preserve_for_knowledge_only_if_no_unbound_or_ambiguous_term",
+    "regionBinding": "explicit_scope_cannot_be_replaced_by_default",
+    "unknown": "no_match_is_not_an_alias; no_auto_sameAs"
+  },
+  "regionViews": [
+    {
+      "baseConceptId": "metric.orders",
+      "regionId": "region.east",
+      "viewConceptId": "metric.east_orders"
+    }
+  ],
+  "legacyConceptIds": [
+    "metric.margin",
+    "metric.returns",
+    "metric.orders",
+    "metric.revenue",
+    "metric.aov",
+    "metric.east_orders",
+    "metric.new_sku",
+    "metric.high_value",
+    "metric.supplier_price",
+    "metric.store_cluster",
+    "procedure.watch",
+    "procedure.action",
+    "procedure.evidence"
+  ],
+  "notes": [
+    "This is a review artifact, not a deployed ontology.",
+    "Instance types describe future permitted records; no production instance nodes/edges are included.",
+    "Direction/evidence declarations explain schema constraints, not business causality."
+  ],
+  "dimensionPatterns": [
+    {
+      "id": "store-number",
+      "pattern": "门店\\s*[0-9]+",
+      "metricConceptIds": [
+        "metric.returns"
+      ],
+      "normalization": "preserve_original_text"
+    },
+    {
+      "id": "supplier-price",
+      "pattern": "供应商(?P<identifier>[A-Za-z0-9]+)\\s*价格",
+      "metricConceptIds": [
+        "metric.supplier_price"
+      ],
+      "normalization": "supplier_identity_from_original_text"
+    }
+  ],
+  "ambiguityGroups": [
+    {
+      "id": "profit-basis",
+      "conceptIds": [
+        "metric.margin",
+        "metric.gross_margin",
+        "metric.net_margin"
+      ],
+      "rule": "Co-mentioned basis comparison clarifies; unbound concept cannot route to margin."
+    },
+    {
+      "id": "returns-refunds",
+      "conceptIds": [
+        "metric.returns",
+        "metric.refund_rate"
+      ],
+      "rule": "No sameAs or physical key fallback."
+    },
+    {
+      "id": "new-product-quantity",
+      "conceptIds": [
+        "metric.new_sku",
+        "metric.new_sku_count"
+      ],
+      "rule": "Sales quantity differs from SKU kind count."
+    },
+    {
+      "id": "store-vs-order-share",
+      "conceptIds": [
+        "metric.high_value",
+        "metric.high_amount_order_share",
+        "collection.high_aov_stores"
+      ],
+      "rule": "Ratio, collection and order share keep separate targets."
+    }
+  ]
+}

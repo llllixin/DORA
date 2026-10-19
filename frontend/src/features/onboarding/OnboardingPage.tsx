@@ -8,7 +8,7 @@ const FLOW: [string, string][] = [
   ['生成业务脉搏', 'Dora 主动发现值得关注的'],
 ];
 
-export function OnboardingPage({ onReady }: { onReady: (ds: DataSource) => void }) {
+export function OnboardingPage({ onReady, onReadKnowledge }: { onReady: (ds: DataSource) => void; onReadKnowledge: () => void }) {
   return (
     <div className="boot">
       <div className="boot-card">
@@ -34,6 +34,7 @@ export function OnboardingPage({ onReady }: { onReady: (ds: DataSource) => void 
         </div>
 
         <DataSourcePicker onPick={onReady} />
+        <p><a href="#page=knowledge" onClick={event => { event.preventDefault(); onReadKnowledge(); }}>先阅读知识库 →</a></p>
 
         <div className="boot-note">
           <Tag tone="ai">数据源</Tag>

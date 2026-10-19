@@ -1,0 +1,530 @@
+# Dora 普通 RAG 整体搭建计划
+
+> 状态：第一版普通混合 RAG 已实施，后端链路与固定评价已完成。  
+> 核对日期：2026-09-23。  
+> 适用范围：Dora 门店经营项目的领域 Wiki、历史案例检索和带引用问答。  
+> 当前选择：先完成普通混合 RAG，再根据评估结果升级为受限 Agentic RAG。
+
+## 0. 当前实现结果
+
+截至 2026-09-23，M0–M8 已合并为一次完整但模块化的交付：
+
+- `knowledge/` 有 44 篇受审核项目知识、13 个 ontology 概念、40 道固定题和逐题 judgment。
+- `backend/app/rag/` 分开实现契约、索引、embedding、ontology、混合检索、回答、引用校验与评价。
+- `/api/rag/index|search|answer|evaluate` 和文档读取接口已经接通；运行轨迹写入 `agent_run`。
+- 固定离线评价当前为 `Recall@5=1.0`、`MRR=0.970588`、引用与数字可回溯率/拒答准确率/实时分流准确率均为 `1.0`、无依据答案数为 `0`。这些是当前固定小型项目语料的回归成绩，不代表开放世界准确率。
+- 默认使用 256 维确定性哈希 embedding，真实 OpenAI embedding 与结构化回答是可选 provider；自动门禁不调用付费模型。
+
+首批只有 44 chunks，因此向量先以 PostgreSQL JSON 保存并在进程内计算余弦相似度。这样能先学懂完整链路，又保留 provider 与 repository 替换边界。达到 10,000 chunks、检索 p95 超过 300ms，或需要数据库侧联合过滤排序时，再迁移 pgvector；这项取舍替代了原计划中第一版直接引入 pgvector 的建议。
+
+## 1. 建设目标
+
+第一版 RAG 要解决三个具体问题：
+
+1. 用户询问指标、规则或流程时，能找到项目认可的 Wiki 内容并给出来源。
+2. 用户询问“以前是否处理过类似问题”时，能检索人工验证过的历史案例。
+3. 没有足够资料时明确回答“知识库暂无依据”，不把当前经营数值或模型常识伪装成项目事实。
+
+完成后的固定流程：
+
+```text
+用户问题
+  ↓
+查询规范化（保留原问题）
+  ↓
+关键词检索 + 向量检索 + 轻量 ontology 过滤/扩展
+  ↓
+合并去重与重排
+  ↓
+构造有限上下文（每段带 document/chunk/version/source）
+  ↓
+模型回答或明确无答案
+  ↓
+引用校验 + 运行记录
+```
+
+第一版不是搜索互联网，不执行写操作，不修改规则引擎结论，也不让模型自由循环检索。
+
+## 2. 与现有系统的边界
+
+### 2.1 进入 RAG 的内容
+
+- 指标定义、公式、单位、维度和别名。
+- 规则含义、触发条件、适用范围和边界说明。
+- Watch、Action、数据上传等业务操作说明。
+- 经过人工验证的历史处理案例。
+- 行业官方材料的摘要、来源与适用范围。
+
+### 2.2 不进入 RAG 的内容
+
+- 当前利润率、订单量等实时数值：由 `query_metric` 或引擎工具读取。
+- 当前 Watch、Action 状态：由对应业务接口读取。
+- 模型生成但未经审核的结论：不得自动成为正式知识。
+- OpenSpec 全部历史 change、完整开发日志：它们是研发证据，不是业务问答语料。
+- 演示种子中的数值：只用于测试，不得冒充真实企业经验。
+
+### 2.3 数据来源优先级
+
+1. 当前主 Spec 和运行代码确认的项目口径。
+2. 人工审核后的项目 Wiki 与案例。
+3. 国家统计局、商务部等官方材料的摘要。
+4. 其它材料只能作为候选，必须记录来源和审核状态。
+
+## 3. 计划中的目录结构
+
+实施时建议新增独立 `knowledge/`，不要把 RAG 语料混入 `docs/`：
+
+```text
+knowledge/
+├── README.md                 # 维护规则、状态和导入方法
+├── schema/
+│   ├── document.schema.json  # 文档元数据契约
+│   └── ontology.schema.json  # 概念/关系契约
+├── ontology/
+│   ├── concepts.yaml         # 概念、别名、说明
+│   └── relations.yaml        # 允许的关系类型和人工关系
+├── wiki/
+│   ├── metrics/              # 指标词典
+│   ├── rules/                # 规则说明
+│   └── procedures/           # SOP/流程说明
+├── cases/
+│   ├── simulated/            # 明确标注的模拟案例
+│   └── verified/             # 人工验证并可追溯的真实案例
+└── eval/
+    ├── questions.jsonl       # 固定问题集
+    └── judgments.jsonl       # 期望文档、答案要点、拒答要求
+```
+
+生成的 chunk、embedding 和索引不写回上述人工源文件；它们进入数据库或可重建缓存。
+
+## 4. 知识文档契约
+
+每篇文档只解决一个主题，正文建议 200–800 个中文字符。初始字段：
+
+```yaml
+id: metric-margin
+title: 利润率定义与使用边界
+knowledge_type: glossary      # glossary | rule | procedure | case | external
+status: reviewed              # draft | reviewed | retired
+content: |
+  ……
+metric_keys: [margin]
+dimensions: [全国]
+concept_ids: [metric.margin]
+aliases: [利润占比]
+source_type: project          # project | official | simulated | verified_case
+source_ref: backend/app/engine/engine.py
+source_url: ""
+version: 1
+valid_from: 2026-09-21
+valid_to: null
+reviewed_by: project-owner
+updated_at: 2026-09-21T00:00:00+08:00
+```
+
+约束：
+
+- `id + version` 唯一；同一 `id` 的新版本不能覆盖历史版本。
+- `reviewed` 才能进入生产检索；`draft` 只供编辑与预览。
+- 外部内容必须有 `source_url`；项目内容必须有 `source_ref`。
+- 案例必须注明 `simulated` 或 `verified_case`。
+- `valid_to` 已过期的内容默认不参与当前口径问答，但可在明确查询历史时使用。
+- 当前数值不得写进长期 Wiki；历史案例数值必须带时间、主体、单位和来源。
+
+## 5. 轻量 ontology 契约
+
+第一版不用 OWL、SPARQL 或独立图数据库。使用人工维护的 YAML/数据库表表达概念、别名和有限关系。
+
+### 5.1 首批概念类型
+
+```text
+Metric        指标
+Dimension     维度
+Region        区域
+TimePeriod    时间范围
+Rule          规则
+Insight       洞察
+Evidence      证据
+WatchTarget   持续关注委托
+ActionCase    行动档案
+Knowledge     知识条目
+```
+
+### 5.2 首批关系类型
+
+```text
+Rule applies_to Metric
+Metric scoped_by Dimension
+Insight triggered_by Rule
+Insight derived_from Evidence
+WatchTarget monitors Metric
+ActionCase resolves Insight
+Knowledge describes Metric|Rule|Procedure
+Knowledge related_to Knowledge
+```
+
+### 5.3 第一版用途
+
+- 把“利润占比”归一到 `metric.margin`。
+- 根据概念给检索加 `metric_keys` / `knowledge_type` 过滤。
+- 查询某规则时补充与该规则直接相连的指标说明。
+- 限制最多一跳扩展，避免图关系造成上下文泛滥。
+
+Ontology 只参与规范化、过滤和有限扩展；不得代替规则引擎进行数值判定。
+
+## 6. 分阶段实施与验收
+
+每阶段单独建立 OpenSpec change。前一阶段未通过，不进入后一阶段。
+
+### M0｜问题集与边界基线
+
+**目标**：先定义 RAG 要回答什么，避免做完索引才发现没有评价标准。
+
+**工作项**：
+
+1. 收集 40 个固定问题：指标 10、规则 8、流程 8、案例 8、明确无答案 6。
+2. 每个问题标注：答案要点、应命中的文档 ID、允许引用、是否必须拒答。
+3. 标记哪些问题必须走实时工具，不能交给 RAG。
+4. 保存当前词法检索的基线结果，不预先修改问题迎合检索器。
+
+**交付物**：
+
+- `knowledge/eval/questions.jsonl`
+- `knowledge/eval/judgments.jsonl`
+- 一份基线报告：命中、漏召回、错召回、工具/RAG 路由错误。
+
+**验收**：
+
+- 40 个问题均有唯一 ID 和问题类型。
+- 每个可回答问题至少指定一个期望文档 ID。
+- 6 个无答案问题均声明 `must_abstain=true`。
+- 至少 5 个实时问题被明确标记为 `route=tool`。
+- 测试脚本能读取全部记录并检查字段，重复运行结果一致。
+
+### M1｜知识源与文档规范
+
+**目标**：形成可人工阅读、审核和版本化的第一批语料。
+
+**工作项**：
+
+1. 从引擎、主 Spec 和学习手册提炼 15–20 篇指标词典。
+2. 整理 8–10 篇规则说明和 8–10 篇操作流程。
+3. 编写 10–20 篇模拟案例，明确 `source_type=simulated`。
+4. 只保存官方材料摘要、链接和适用范围，不复制大篇受版权保护的原文。
+5. 完成概念、别名和关系的轻量 ontology 初稿。
+
+**项目内来源**：
+
+- `backend/app/engine/engine.py`
+- `backend/app/seed.py`
+- `openspec/specs/business-engine/spec.md`
+- `openspec/specs/business-watch/spec.md`
+- `openspec/specs/business-action/spec.md`
+- `docs/fullstack/README.md`
+- `docs/开发问题与经验.md`
+
+**外部候选来源**：
+
+- [国家统计局指标解释](https://www.stats.gov.cn/sj/zbjs/)
+- [国家统计局批发和零售业指标解释](https://www.stats.gov.cn/sj/ndsj/2018/html/zb15.htm)
+- [商务部流通标准信息](https://ltbzh.mofcom.gov.cn/)
+
+**验收**：
+
+- 至少 40 篇短文档，全部通过 schema 校验。
+- 100% 文档带来源、版本、状态和适用范围。
+- 100% 案例明确区分模拟/已验证。
+- 同一术语不存在两个未解释的冲突定义。
+- 每篇文档由人阅读确认，`reviewed` 数量与导入数量一致。
+- ontology 至少覆盖 10 个核心概念、10 个别名和 8 条人工确认关系。
+
+### M2｜幂等导入、切块与版本
+
+**目标**：把人工源文件稳定转换成可检索记录。
+
+**计划模块**：
+
+```text
+backend/app/rag/schema.py
+backend/app/rag/loader.py
+backend/app/rag/chunker.py
+backend/app/rag/repository.py
+```
+
+**工作项**：
+
+1. 解析 Markdown/YAML，并在写库前完成全部校验。
+2. 使用标题和段落边界切块，不按固定字符粗暴截断。
+3. 每个 chunk 保存 `document_id/version/chunk_index/source_ref/content_hash`。
+4. 同内容重复导入幂等；新版本并存并切换 active；删除源文件先标记 retired，不静默物理删除引用历史。
+5. 导入失败采用事务回滚，不留下半份文档。
+
+**验收**：
+
+- 合法语料全部导入，chunk 可反查完整源文档。
+- 重复导入两次，document/chunk 行数不增加。
+- 修改一篇文档后，只更新该文档的新版本和 chunk。
+- 非法类型、缺来源、重复 ID/version、空正文全部被拒绝且数据库不变。
+- 切块后不存在空 chunk；标题、列表和代码块不被无理由拆断。
+- 导入报告给出新增、未变、更新、拒绝和 retired 数量。
+
+### M3｜关键词检索基线
+
+**目标**：先建立零 embedding 成本、可解释的检索基线。
+
+**工作项**：
+
+1. 复用并改造现有 `search_knowledge`，对标题、别名、正文分别计分。
+2. 用 ontology 别名规范化查询，保留原查询以便审计。
+3. 支持 `knowledge_type/metric_keys/dimensions/status/version` 过滤。
+4. 返回 chunk、分数、命中字段和文档引用。
+5. 新增只读调试接口 `POST /api/rag/search`。
+
+**接口草案**：
+
+```json
+{
+  "query": "利润占比为什么下降",
+  "filters": {"knowledge_types": ["glossary", "rule", "case"]},
+  "top_k": 5
+}
+```
+
+**验收**：
+
+- API 对相同索引和查询返回稳定排序。
+- 未知查询返回 `hits=[]`，不伪造片段。
+- 每个 hit 可打开源文档并定位 chunk。
+- 非法 `top_k`、类型和过滤字段返回可读 4xx。
+- M0 可回答问题的 `Recall@5 ≥ 0.70`。
+- 无答案问题不出现人工标注为明显无关的高分命中。
+- 本地 40–60 篇语料的检索 p95 小于 300ms；记录测试机器和样本量。
+
+`0.70` 是第一版工程门槛，不是永久指标；基线报告出来后，阈值变更必须在后续 change 中说明原因。
+
+### M4｜Embedding 与混合检索
+
+**目标**：改善同义表达和语义近似问题，同时保留关键词精确命中。
+
+**工作项**：
+
+1. 定义 `EmbeddingProvider`，生产 provider 与测试假 provider 分离。
+2. embedding 缓存键包含 `content_hash + provider + model + dimensions`。
+3. 在现有 PostgreSQL 引入 pgvector，迁移与回滚单独验证。
+4. 关键词和向量各自返回候选，再用确定性的 RRF 合并。
+5. ontology 只做规范化、过滤和一跳扩展，不参与模糊生成。
+6. provider 不可用时明确降级关键词检索，并在响应中标注检索模式。
+
+**验收**：
+
+- 假 embedding 测试不联网且结果确定。
+- 同一 chunk 不重复调用 embedding provider。
+- 文档新版本只重算受影响 chunk。
+- provider 超时/失败不破坏旧索引，关键词模式仍可用。
+- 混合检索 `Recall@5 ≥ 0.80`，且不得低于关键词基线。
+- 至少 5 个同义问法通过向量或 ontology 别名得到正确文档。
+- 对精确编号、规则名和指标 key，关键词结果不被语义结果挤出前 5。
+
+### M5｜上下文构造与普通 RAG 回答
+
+**目标**：使用固定检索流程生成带引用回答。
+
+**工作项**：
+
+1. 增加 `ContextBuilder`：去重、限制每文档 chunk 数、限制总字符/token。
+2. 文档内容以“不可信参考资料”传给模型，不允许资料中的指令改变系统权限。
+3. `RagAnswerProvider` 只接收问题和已选上下文，输出答案与使用的 chunk ID。
+4. 增加 `POST /api/rag/answer`，暂不接 Agent 自由循环。
+5. 无高质量命中或模型引用非法 chunk 时拒答/降级。
+6. 当前经营问题提示用户转实时工具，不用历史 Wiki 数字回答。
+
+**返回草案**：
+
+```json
+{
+  "answer": "……",
+  "status": "answered",
+  "retrieval_mode": "hybrid",
+  "citations": [
+    {"document_id": "metric-margin", "version": 1, "chunk_id": "metric-margin:v1:0"}
+  ],
+  "run_id": "r-..."
+}
+```
+
+**验收**：
+
+- 每个事实性回答至少有一个合法引用。
+- 引用必须来自本次检索上下文，伪造 chunk ID 被拒绝。
+- `must_abstain` 问题不得生成确定性项目结论。
+- 实时问题不引用过期案例数值冒充当前事实。
+- 相同问题在假 provider 下输出和引用完全一致。
+- provider 超时、非法 JSON、空答案均有明确失败状态和运行记录。
+- 所有引用能通过 API/调试页查看原文、版本和来源。
+
+### M6｜引用与事实校验
+
+**目标**：验证“引用存在”和“引用支持答案”是两件事。
+
+**工作项**：
+
+1. 机械校验引用 ID、版本、有效期和本次上下文归属。
+2. 对数字抽取主体、时间、单位和维度，检查是否出现在引用或实时工具结果中。
+3. 对关键回答增加人工判分：完全支持、部分支持、不支持。
+4. 案例结论必须带案例时间与 `simulated/verified_case` 标识。
+5. 保存检索结果与最终引用，便于复盘“找错”还是“答错”。
+
+**验收**：
+
+- 引用存在性和上下文归属校验 100% 通过。
+- 人工标注集上，不支持答案必须被门禁发现。
+- 回答中的业务数字 100% 能追到引用或实时工具结果。
+- 模拟案例在答案中明确显示“模拟案例”。
+- 过期规则不会默认用于当前口径回答。
+
+### M7｜运行记录、监控与数据安全
+
+**目标**：知道一次回答使用了什么数据、模型和检索路径。
+
+**工作项**：
+
+1. 复用 `agent_run` 或新增等价运行记录，保存公开事件，不保存隐藏思维链。
+2. 记录 corpus revision、ontology version、检索模式、候选/最终 chunk、provider/model、耗时和错误类型。
+3. 文档导入记录操作者与审核状态；第一版单工作区也保留未来权限字段。
+4. 增加语料提示注入样例、越权来源和恶意 HTML/Markdown 测试。
+5. 日志中不保存密钥；敏感原文按权限返回。
+
+**验收**：
+
+- 任意回答可用 `run_id` 回放检索候选、最终上下文、引用和停止原因。
+- 日志不存在 API key、Authorization 等秘密字段。
+- 恶意文档要求“忽略规则/调用写工具”时，RAG 仍只产生只读回答。
+- 未审核文档不进入生产检索。
+- 数据库、embedding provider、生成 provider 任一失败时都有明确错误类型。
+
+### M8｜固定评估门禁与发布
+
+**目标**：让后续优化有可比较的数字，而不是凭主观看起来更聪明。
+
+**自动指标**：
+
+- `Recall@5`：期望文档是否进入前 5。
+- `MRR`：第一个正确文档排序位置。
+- 引用合法率：引用是否来自本次上下文。
+- 拒答准确率：无答案问题是否拒答。
+- 工具路由准确率：实时问题是否避免走 Wiki 数值。
+- 检索延迟和完整回答延迟：分别统计。
+
+**人工指标**：
+
+- 答案是否被引用完整支持。
+- 是否混淆当前事实与历史案例。
+- 是否遗漏关键适用范围。
+- 是否给出不应有的确定性结论。
+
+**发布门槛**：
+
+- `Recall@5 ≥ 0.80`。
+- 引用合法率 `= 100%`。
+- 6 个 `must_abstain` 问题全部拒答。
+- 实时问题工具路由准确率 `= 100%`。
+- 人工判定“不支持”的答案为 0。
+- 文档、Spec、迁移、单元/集成测试和独立测试库门禁全部通过。
+
+门槛只针对固定版本的语料和问题集；新增知识后保留历史报告，不能覆盖旧成绩。
+
+## 7. OpenSpec change 拆分
+
+建议不要用一个超大 change 实现全部内容：
+
+1. `rag-corpus-contract`：目录、schema、首批语料、ontology 和评估集。
+2. `rag-ingestion-versioning`：解析、切块、幂等导入、版本与事务。
+3. `rag-lexical-search`：关键词检索、过滤、调试 API 和基线评估。
+4. `rag-hybrid-retrieval`：embedding、pgvector、RRF 与降级。
+5. `rag-grounded-answer`：上下文构造、回答接口、引用和拒答。
+6. `rag-evaluation-observability`：事实校验、运行记录、攻击测试和发布门禁。
+7. `agent-rag-router`：普通 RAG 稳定后，才允许 Agent 在实时工具/Wiki/案例之间受限选择。
+
+每个 change 都必须包含：proposal、design、spec delta、tasks、修复前或基线证据、实现后证据和归档。
+
+## 8. 可扩展性设计
+
+### 8.1 Provider 可替换
+
+- `EmbeddingProvider` 与具体厂商 SDK 分离。
+- `RagAnswerProvider` 与现有 reasoning provider 分离。
+- 测试使用假 provider，不依赖网络和费用。
+- 索引记录 provider/model/dimensions，模型切换后可并行重建而非覆盖。
+
+### 8.2 Retriever 可组合
+
+统一接口：
+
+```text
+retrieve(query, filters, top_k) -> Candidate[]
+```
+
+关键词、向量、ontology 和未来图检索都返回统一 Candidate；融合器不依赖具体数据库。
+
+### 8.3 语料可版本化
+
+人工源文件是事实源，数据库索引可以完全重建。回答绑定 corpus revision 和文档版本，后续内容更新不会改写历史运行证据。
+
+### 8.4 从普通 RAG 升级到 Agentic RAG
+
+以下条件同时满足后才升级：
+
+- 普通混合 RAG 达到 M8 门槛。
+- 失败分析证明主要问题是“需要多来源、多轮检索”，而非语料差或单次检索差。
+- 已有总时长、token、轮数和工具调用预算。
+- Wiki、案例、实时工具都有独立权限和错误语义。
+
+升级时保留现有 `rag/search` 和 `rag/answer`，Agent 只新增路由和迭代决策，不重写底层索引。
+
+## 9. 第一批数据清单
+
+- **指标词典 15–20 篇**：来自 engine、seed 和业务确认；审核公式、单位、维度与别名。
+- **规则说明 8–10 篇**：来自 engine 和 business-engine Spec；审核阈值来源、零基数与时间顺序。
+- **操作流程 8–10 篇**：来自 Watch/Action/ingest Spec 和全栈手册；审核前置条件、失败与终态。
+- **模拟案例 10–20 篇**：由 seed 场景和已修 bug 改写；明确模拟、时间、主体与结果。
+- **官方摘要 3–5 篇**：来自国家统计局、商务部；审核来源、许可和项目适用性。
+- **评估问题 40 个**：从上述知识反向设计；覆盖正例、无答案和实时工具路由。
+
+第一版总量控制在 40–60 篇知识文档。先保证每篇正确、可读、可引用，再扩充数量。
+
+## 10. 整体验收定义
+
+普通 RAG 只有同时满足以下条件才算完成：
+
+- 人能直接阅读并审核全部知识源，schema 与维护规则清楚。
+- 导入幂等、版本可追溯、索引可重建。
+- 混合检索达到固定问题集门槛。
+- 回答只使用本次上下文，引用真实、可打开、可定位。
+- 无答案会拒答，实时问题会转工具。
+- 当前事实、历史案例、模拟案例和外部行业知识不会混为一谈。
+- provider、索引和 ontology 可以独立替换或升级。
+- 所有测试使用独立数据库，不调用未授权的付费服务。
+- 主 Spec、学习文档、测试证据和 OpenSpec 归档保持一致。
+
+达到这些条件后，再开始 `agent-rag-router`，让已经存在的有限 Agent 循环决定是否调用普通 RAG。
+
+## 11. 推荐学习顺序
+
+代码能力较弱时按下面顺序学习，不需要一次读完所有实现：
+
+1. 先亲手写 5 篇指标知识卡和 10 个问题。
+2. 写 schema 检查，理解“数据契约”。
+3. 写最简单的关键词检索，观察为什么找错。
+4. 加元数据过滤和别名，理解 ontology 的实际作用。
+5. 再加入 embedding，比较同一套问题集的变化。
+6. 接模型回答，重点检查引用和拒答。
+7. 最后接 Agent 路由，观察普通 RAG 为什么仍然是底层基础。
+
+每一步都保留一个成功例子、一个失败例子和一条自动化断言。
+
+## 12. 参考边界
+
+- [Microsoft GraphRAG](https://microsoft.github.io/graphrag/) 用于理解图结构检索，不表示本项目第一版需要 GraphRAG。
+- [W3C OWL 2 Overview](https://www.w3.org/TR/owl-overview/) 用于理解 ontology 的正式含义；第一版采用轻量 schema，不实现 OWL 推理。
+- [Agentic RAG Survey](https://arxiv.org/abs/2501.09136) 用于理解未来迭代检索；当前阶段仍是固定流程普通 RAG。
+- 外部研究结果不能替代本项目固定问题集上的实测。

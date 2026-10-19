@@ -74,19 +74,24 @@ export function signalsFrom(opportunities: Insight[], changes: Insight[]): Signa
   return [...opportunities.map((i) => toRow(i, 'op')), ...changes.map((i) => toRow(i, 'ch'))];
 }
 
-/** 监控卡行：来自真实 watch 卡片 + 问题标题包含匹配（已触发问题）。 */
-export function monitorsFrom(watch: WatchItem[], problems: Insight[]): MonitorRow[] {
-  const isTriggered = (w: WatchItem) =>
-    problems.some((p) => p.id === w.id || p.title.includes(w.name));
+/**
+ * 监控卡行：**只**来自在手委托（`watching|paused`）与卡片真实字段。
+ *
+ * watch-escalate-handoff：删除「问题标题包含委托名 → 已触发问题」的第二判定链——它与真实
+ * `escalate` 事件无关、可给出相反结论（同一事实两个来源）；已升级移交的委托不再进入运行中
+ * 目标列表（改由「另有 N 个已升级移交」披露行承载，见 PulsePage）。
+ */
+export function monitorsFrom(watch: WatchItem[]): MonitorRow[] {
+  const inHand = watch.filter((w) => (w as WatchTargetCard).status !== 'escalated');
   const statusOf = (w: WatchItem): string => {
-    const status = (w as WatchTargetCard).status;
-    if (status === 'paused') return '已暂停';
-    if (isTriggered(w)) return '已触发问题';
+    const card = w as WatchTargetCard;
+    if (card.status === 'paused') return '已暂停';
+    if (card.lastEvent?.kind === 'escalate') return '已恢复观察（曾升级移交）';
+    if (card.lastEvent) return '有变化';
     if (w.color === 'green') return '机会候选';
-    if ((w as WatchTargetCard).lastEventAt) return '有变化';
     return '观察中';
   };
-  return watch.map((w) => ({
+  return inHand.map((w) => ({
     name: w.name,
     sub: w.source || w.logic || '',
     status: statusOf(w),
@@ -104,15 +109,6 @@ export function metricLabelOf(insight?: Insight | null): string | null {
     (insight as { metric_key?: string }).metric_key ??
     null;
   return kind ? (FOLLOW_ALIASES[kind] ?? null) : null;
-}
-
-/**
- * 可委托跟进文本：仅当 metric 命中别名表才返回可解析委托句（显式 streak_below days=3，
- * curl 实测 condition_defaulted=false），否则 null（按钮禁用并提示原因）。
- */
-export function followTargetFor(insight?: Insight | null): string | null {
-  const label = metricLabelOf(insight);
-  return label ? `关注${label}，连续 3 天下跌提醒我` : null;
 }
 
 /** 已关注态：watchItems 中是否存在同 label（如「利润率」）的委托。 */

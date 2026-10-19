@@ -81,9 +81,5 @@ def create_case_from_insight(repo: Repository, insight: dict) -> dict:
     existing = repo.get_action_case(insight["id"])
     if existing is not None:
         return {"case": existing, "created": False}
-    engine_insights = run_engine(repo)["insights"]
-    if not _is_engine_judged(insight, engine_insights):
-        raise ValueError(f"只允许为引擎判定的 problem/opportunity 建档，收到：{insight.get('id')}/{insight.get('type')}")
-    case = _case_for(insight)
-    detail = repo.create_action_case(case, _steps_for(insight), status="open")
-    return {"case": detail, "created": True}
+    from app.evidence.action import attach_legacy_opening
+    return attach_legacy_opening(repo,insight)

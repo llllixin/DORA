@@ -3,7 +3,7 @@
 - 值口径与引擎一致：全部来自 repo.get_series（engine 同源）。
 - dimension=="" → 按 label 同周期跨维度聚合（均值）构造时间线（returns 门店级即此类）。
 - escalate 红线：仅当引擎 run_engine 已产出 ESCALATION[key] 对应洞察时才升级并引用该 insight id。
-- 去重：与最近一条事件 kind+values 相同则跳过（幂等重评估/重置不刷屏）。
+- 去重：相同事实版本、意图及末次 kind+values 跳过；新世代可产生新事件。
 """
 from datetime import datetime, timezone
 
@@ -24,12 +24,15 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def _chrono_values(rows: list[dict], dimension: str) -> list[float]:
-    """时间序列值：单 dimension 直取；dimension=="" 按 label 周期跨维度均值聚合。"""
+def chrono_points(rows: list[dict], dimension: str) -> list[tuple[str, float]]:
+    """时间线（保留 label）：单 dimension 直取；dimension=="" 按 label 周期跨维度均值聚合。
+
+    走向摘要（app/watch/trend.py）与评估器共用此口径，避免出现第二条判定链。
+    """
     if not rows:
         return []
     if dimension:
-        return [r["value"] for r in rows if r["dimension"] == dimension]
+        return [(r["label"], r["value"]) for r in rows if r["dimension"] == dimension]
     # 整表聚合：同一 label（观察期）跨维度取均值，顺序按 label 首次出现
     by_label: dict[str, list[float]] = {}
     order: list[str] = []
@@ -39,7 +42,12 @@ def _chrono_values(rows: list[dict], dimension: str) -> list[float]:
             by_label[lab] = []
             order.append(lab)
         by_label[lab].append(r["value"])
-    return [_mean(by_label[lab]) for lab in order]
+    return [(lab, _mean(by_label[lab])) for lab in order]
+
+
+def _chrono_values(rows: list[dict], dimension: str) -> list[float]:
+    """时间序列值：`chrono_points` 的薄包装（既有调用点的取值与顺序不变）。"""
+    return [v for _, v in chrono_points(rows, dimension)]
 
 
 def _decline_run(values: list[float]) -> int:
@@ -77,7 +85,7 @@ def _eval_condition(cond: dict | None, values: list[float]) -> bool:
     return False
 
 
-def evaluate_one(repo: Repository, target: dict, engine_insights: list[dict] | None = None) -> dict:
+def _evaluate_frozen(repo, target: dict, engine_insights: list[dict] | None = None) -> dict:
     """评估单个委托；返回 {hit, kind: change|escalate|miss, event?, skipped?}。"""
     intent = target.get("intent") or {}
     key = intent.get("metric_key")
@@ -127,15 +135,24 @@ def evaluate_one(repo: Repository, target: dict, engine_insights: list[dict] | N
     events = repo.list_watch_events(target["id"])
     last = events[-1] if events else None
     if last is not None and last["kind"] == kind and last["values"] == values:
+        # 去重：不重复写事件；但"升级即移交"仍须成立（恢复后再评估 / 数据未变时）
+        if kind == "escalate":
+            repo.mark_watch_escalated(target["id"])
         return {"hit": True, "kind": kind, "event": None, "skipped": True}
 
-    ev = repo.add_watch_event(target["id"], kind, summary, values)
+    ev = repo.add_watch_event(target["id"], kind, summary, values, escalate=(kind == "escalate"))
     return {"hit": True, "kind": kind, "event": ev, "skipped": False}
+
+
+def evaluate_one(repo: Repository, target: dict, engine_insights: list[dict] | None = None) -> dict:
+    """External unversioned engine results cannot authorize a historical event."""
+    from app.evidence.watch import evaluate_captured
+    return evaluate_captured(repo,target['id'])
 
 
 def evaluate_all(repo: Repository, freqs: tuple[str, ...] = ("on_update",),
                  engine_insights: list[dict] | None = None) -> dict:
-    """批量评估 watching 委托；run_engine 只算一次共享。返回计数。"""
+    """逐目标短事务评估 watching 委托；失败不会计成成功。"""
     counts = {"checked": 0, "change": 0, "escalate": 0, "miss": 0, "skipped": 0}
     targets = [
         t for t in repo.list_watch_targets()
@@ -143,10 +160,8 @@ def evaluate_all(repo: Repository, freqs: tuple[str, ...] = ("on_update",),
     ]
     if not targets:
         return counts
-    insights = engine_insights if engine_insights is not None else run_engine(repo)["insights"]
-    now = _now_iso()
     for t in targets:
-        out = evaluate_one(repo, t, insights)
+        out = evaluate_one(repo, t)
         counts["checked"] += 1
         if out["kind"] != "miss":
             counts[out["kind"]] += 1 if not out["skipped"] else 0
@@ -154,5 +169,4 @@ def evaluate_all(repo: Repository, freqs: tuple[str, ...] = ("on_update",),
                 counts["skipped"] += 1
         else:
             counts["miss"] += 1
-        repo.touch_watch_target(t["id"], now)
     return counts

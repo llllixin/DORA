@@ -109,13 +109,32 @@ for (const list of Object.values(insights)) {
   }
 }
 
+/**
+ * 持续关注镜像（离线演示兜底）。
+ *
+ * watch-goal-workbench D9：镜像补 `trend`，与在线同一渲染分支（组件/样式不分叉）。
+ * - 数值来源：2026-09-11 后端 `GET /api/watch` 的 `trend` 快照（引擎口径），非前端推算。
+ * - **已知差异（不在本 change 范围）**：镜像 `value` 是首版手写的展示值（如 c1 `-1.8%`），
+ *   与引擎当前序列的 `changePct`（`-2.6%`）可能不一致；离线/在线数值同步见
+ *   `docs/持续优化路线.md` §4 候选「离线镜像数值与引擎口径同步」。
+ * - 只给口径确有序列的 4 条（`east_orders` / `new_sku` / `margin` / `aov`）；其余两条保持无 `trend`
+ *   → 离线也按「暂无序列」渲染（不编造点位）。
+ */
 export const watchItems: WatchTargetCard[] = [
-  { id:'c1', name:'华东订单量', value:'-1.8%', color:'red', logic:'连续 3 天偏弱 → 未达 -3% 升级阈值，持续观察', source:'订单明细.xlsx · 华东' },
+  { id:'c1', name:'华东订单量', value:'-1.8%', color:'red', logic:'连续 3 天偏弱 → 未达 -3% 升级阈值，持续观察', source:'订单明细.xlsx · 华东',
+    trend:{ metricKey:'east_orders', dimension:'华东', unit:'', direction:'down', runDays:4, changePct:-2.6, basis:'近 5 点 · 方向按全序列（5 点） · 引擎口径 east_orders/华东 · 离线镜像快照',
+      points:[{label:'08/30',value:4401},{label:'08/31',value:4352},{label:'09/01',value:4318},{label:'09/02',value:4295},{label:'09/03',value:4286}] } },
   { id:'c2', name:'门店销售数据更新', value:'+327 条', color:'blue', logic:'数据更新事件 → 重算核心指标，判断是否触发新洞察', source:'门店经营数据.xlsx · 全量' },
-  { id:'c3', name:'新品销量', value:'2,460', color:'green', logic:'连续 3 周增长 → 趋势出现，观察是否升级为机会', source:'新品销量数据.xlsx · 全区域' },
+  { id:'c3', name:'新品销量', value:'2,460', color:'green', logic:'连续 3 周增长 → 趋势出现，观察是否升级为机会', source:'新品销量数据.xlsx · 全区域',
+    trend:{ metricKey:'new_sku', dimension:'全区域', unit:'', direction:'up', runDays:3, changePct:35.2, basis:'近 4 点 · 方向按全序列（4 点） · 引擎口径 new_sku/全区域 · 离线镜像快照',
+      points:[{label:'第4周',value:1820},{label:'第5周',value:2080},{label:'第6周',value:2300},{label:'第7周',value:2460}] } },
   { id:'c4', name:'高客单门店占比', value:'24%', color:'green', logic:'结构变化 → 观察是否稳定，评估升级为机会', source:'门店分层数据.xlsx · 全国' },
-  { id:'p1', name:'利润率', value:'18.7%', color:'red', logic:'连续 3 天 < 18.5% → 问题已触发', source:'门店经营数据.xlsx · 利润率' },
-  { id:'o1', name:'客单价', value:'¥2,998', color:'green', logic:'连续 4 周增长 → 机会候选', source:'客单价 + 商品 + 门店' },
+  { id:'p1', name:'利润率', value:'18.7%', color:'red', logic:'连续 3 天 < 18.5% → 问题已触发', source:'门店经营数据.xlsx · 利润率',
+    trend:{ metricKey:'margin', dimension:'全国', unit:'%', direction:'down', runDays:8, changePct:-6.7, basis:'近 9 点 · 方向按全序列（9 点） · 引擎口径 margin/全国 · 离线镜像快照',
+      points:[{label:'08/26',value:19.4},{label:'08/27',value:19.2},{label:'08/28',value:19},{label:'08/29',value:18.9},{label:'08/30',value:18.7},{label:'08/31',value:18.4},{label:'09/01',value:18.3},{label:'09/02',value:18.2},{label:'09/03',value:18.1}] } },
+  { id:'o1', name:'客单价', value:'¥2,998', color:'green', logic:'连续 4 周增长 → 机会候选', source:'客单价 + 商品 + 门店',
+    trend:{ metricKey:'aov', dimension:'全国', unit:'元', direction:'up', runDays:4, changePct:5.1, basis:'近 7 点 · 方向按全序列（7 点） · 引擎口径 aov/全国 · 离线镜像快照',
+      points:[{label:'08/28',value:2841},{label:'08/29',value:2875},{label:'08/30',value:2871},{label:'08/31',value:2904},{label:'09/01',value:2951},{label:'09/02',value:2983},{label:'09/03',value:2985}] } },
 ];
 
 export const capabilities: Record<string, [string,string][]> = {

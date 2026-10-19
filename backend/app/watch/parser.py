@@ -1,26 +1,15 @@
 """V4-T2 委托语句解析：中文一句话 → 结构化 intent（规则词典，不接 LLM 判定）。
 
 支持范围（D029 红线）：
-- 指标 = 引擎受支持的 metric key（TARGETS 有序词典，最先命中者胜）。
+- 指标 = 已审核本体中的单一可读指标与支持维度；歧义先拒绝。
 - 条件 = 连续 N 天下降/上涨，或跌破/低于/超过/高于 X(%)（单条件，breach 优先）。
 - 频率 = on_update / daily 09:00 / weekly；未提 → null（创建时由确认步选择）。
 - 拒绝 = 匹配不到任何指标 → ok=false + unsupported（显式，不静默兜底）。
 """
 import re
 from typing import Any
+from app.rag.ontology import Ontology
 
-# 指标词典（有序：靠前的 key 先匹配；别名覆盖引擎 key 的中文说法）
-# dimension="" 表示该指标为门店/维度级，聚合口径由 T3 评估器定义
-TARGETS: list[dict[str, Any]] = [
-    {"key": "margin", "aliases": ["利润率", "毛利率", "毛利"], "label": "利润率", "dimension": "全国"},
-    {"key": "east_orders", "aliases": ["华东销售额", "华东销售", "华东订单量", "华东订单"], "label": "华东销售额", "dimension": "华东"},
-    {"key": "new_sku", "aliases": ["新品增长", "新品销量", "新品"], "label": "新品增长", "dimension": "全区域"},
-    {"key": "returns", "aliases": ["退货率"], "label": "退货率", "dimension": ""},
-    {"key": "revenue", "aliases": ["销售额", "营收"], "label": "销售额", "dimension": "全国"},
-    {"key": "orders", "aliases": ["订单量", "总订单"], "label": "订单量", "dimension": "全国"},
-    {"key": "aov", "aliases": ["客单价"], "label": "客单价", "dimension": "全国"},
-    {"key": "high_value", "aliases": ["大额订单", "高客单", "高价值订单"], "label": "大额订单", "dimension": "全国"},
-]
 
 # 频率词（先后顺序有意义：更长词优先）
 FREQ_TOKENS = [
@@ -37,7 +26,7 @@ _RE_STREAK_UP = re.compile(r"连续\s*(?:(\d+|[一二两三四五六七八九十
 _RE_BREACH = re.compile(r"(跌破|低于|降至)\s*(-?\d+(?:\.\d+)?)\s*(%?)")
 _RE_ABOVE = re.compile(r"(超过|突破|高于|达到)\s*(-?\d+(?:\.\d+)?)\s*(%?)")
 
-SUPPORTED_HINT = "支持的关键词示例：华东销售 / 利润率 / 退货率 / 新品增长 / 大额订单"
+SUPPORTED_HINT = "支持的关键词示例：华东订单量 / 利润率 / 退货率 / 新品销量 / 高客单门店占比"
 
 
 def _to_int(token: str | None) -> int:
@@ -49,14 +38,6 @@ def _to_int(token: str | None) -> int:
     if token in _CN_NUM:
         return _CN_NUM[token]
     return 3
-
-
-def _find_target(text: str) -> dict[str, Any] | None:
-    for target in TARGETS:
-        for alias in target["aliases"]:
-            if alias in text:
-                return target
-    return None
 
 
 def _find_frequency(text: str) -> str | None:
@@ -85,8 +66,10 @@ def _find_condition(text: str) -> tuple[dict[str, Any] | None, bool]:
 
 
 def parse_watch_text(text: str) -> dict[str, Any]:
-    target = _find_target(text)
-    if target is None:
+    ontology = Ontology.load()
+    semantics = ontology.resolve(text, "watch")
+    binding = semantics["metricBinding"]
+    if semantics["semanticStatus"] != "resolved" or binding is None:
         # 粗略定位"疑似指标词"（名词性片段）用于 unsupported 提示
         fragment = text.replace("帮我", "").replace("关注", "").replace("如果", "").strip()
         words = re.split(r"[，,。；;\s]", fragment)
@@ -94,7 +77,7 @@ def parse_watch_text(text: str) -> dict[str, Any]:
         return {
             "ok": False,
             "intent": None,
-            "unsupported": [{"token": suspect, "reason": f"暂不支持该指标（{SUPPORTED_HINT}）"}],
+            "unsupported": [{"token": suspect, "reason": " ".join(item["question"] for item in semantics["ambiguities"]) or f"暂不支持该指标（{SUPPORTED_HINT}）"}],
         }
 
     condition, defaulted = _find_condition(text)
@@ -103,11 +86,11 @@ def parse_watch_text(text: str) -> dict[str, Any]:
         defaulted = True
 
     intent = {
-        "metric_key": target["key"],
-        "dimension": target["dimension"],
+        "metric_key": binding["metricKey"],
+        "dimension": binding["dimension"] or "",
         "condition": condition,
         "frequency": _find_frequency(text),
-        "label": target["label"],
+        "label": ontology.concepts[semantics["primaryMetricId"]]["name"],
         "condition_defaulted": defaulted,
     }
     return {"ok": True, "intent": intent, "unsupported": []}

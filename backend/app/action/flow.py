@@ -5,6 +5,7 @@
 - resolved 冻结一切推进；continue → running（人工/工具继续推进，不自动开新步）。
 """
 from app.repository import Repository
+from functools import wraps
 
 
 class ActionFlowError(ValueError):
@@ -36,6 +37,15 @@ def _recompute_case_status(repo: Repository, case_id: str) -> str:
     return next_status
 
 
+def _atomic(fn):
+    @wraps(fn)
+    def call(repo, case_id, *args, **kwargs):
+        with repo.action_transaction(case_id) as transaction:
+            return fn(transaction, case_id, *args, **kwargs)
+    return call
+
+
+@_atomic
 def start_step(repo: Repository, case_id: str, seq: int) -> dict:
     case = _get(repo, case_id)
     step = _step(case, seq)
@@ -46,6 +56,7 @@ def start_step(repo: Repository, case_id: str, seq: int) -> dict:
     return repo.get_action_case(case_id)
 
 
+@_atomic
 def done_step(repo: Repository, case_id: str, seq: int, note: str = "", result: str = "") -> dict:
     case = _get(repo, case_id)
     step = _step(case, seq)
@@ -56,6 +67,7 @@ def done_step(repo: Repository, case_id: str, seq: int, note: str = "", result: 
     return repo.get_action_case(case_id)
 
 
+@_atomic
 def block_step(repo: Repository, case_id: str, seq: int, note: str = "") -> dict:
     case = _get(repo, case_id)
     step = _step(case, seq)
@@ -69,6 +81,7 @@ def block_step(repo: Repository, case_id: str, seq: int, note: str = "") -> dict
 MAX_STEP_EXPERTS = 8
 
 
+@_atomic
 def set_step_experts(repo: Repository, case_id: str, seq: int, experts: list[str]) -> dict:
     """action-loop-timeline：整体设置某步负责专家（结构性校验 + resolved 冻结）。
 
@@ -90,6 +103,11 @@ def set_step_experts(repo: Repository, case_id: str, seq: int, experts: list[str
 
 
 def verify(repo: Repository, case_id: str, outcome: str, note: str = "") -> dict:
+    from app.evidence.action import verify_case_captured
+    return verify_case_captured(repo,case_id,outcome,note)
+
+
+def _verify_in_transaction(repo: Repository, case_id: str, outcome: str, note: str = "") -> dict:
     if outcome not in ("resolved", "continue"):
         raise ActionFlowError(f"invalid verify outcome: {outcome}")
     case = repo.get_action_case(case_id)

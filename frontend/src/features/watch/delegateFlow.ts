@@ -14,7 +14,7 @@ import type { WatchCondition, WatchParseIntent, WatchTargetCard } from '../../ty
  * 红线：只消费真实字段，不嗅探 `logic`/`value` 字符串（D003/D004）；离线只推进本地已知步骤（D5）。
  */
 
-export type DelegateStepState = 'pending' | 'done' | 'active' | 'paused';
+export type DelegateStepState = 'pending' | 'done' | 'active' | 'paused' | 'handoff';
 
 export interface DelegateStep {
   n: string;
@@ -54,6 +54,18 @@ export function frequencyText(freq?: string | null): string {
   return { on_update: '数据更新时', 'daily 09:00': '每日 09:00', weekly: '每周' }[freq ?? ''] ?? (freq || '数据更新时');
 }
 
+/**
+ * 折叠提示条的一行摘要（watch-goal-workbench 决策 10）。
+ *
+ * 优先显式 `hint`（离线 / 尚未创建委托），其次**编号最大的**「已完成 / 进行中」步骤的 note
+ * （命中升级后即步骤 4 的事件摘要），最后回步骤 1。只做选择，不改写任何状态文案。
+ */
+export function flowSummary(flow: DelegateFlow): string {
+  if (flow.hint) return flow.hint;
+  const progress = flow.steps.filter((s) => s.state === 'done' || s.state === 'active');
+  return (progress[progress.length - 1] ?? flow.steps[0]).note;
+}
+
 /** ISO 时刻 → `MM-DD HH:mm`（与 `_watch_card` 的 logic 片段同格式；非法值原样返回）。 */
 export function shortAt(at?: string | null): string {
   if (!at || at.length < 16) return at || '';
@@ -69,7 +81,10 @@ export function buildDelegateFlow({ intent, target, online }: DelegateFlowInput)
   const session = intent && intent.metric_key ? intent : null;
   const card = target?.intent && target.intent.metric_key ? target.intent : null;
   const parsed = session ?? card; // 会话 parse 优先，其次卡片回显的 intent
-  const paused = target?.status === 'paused';
+  // watch-escalate-handoff：状态**只由卡片 status 派生**（不再按 lastEvent 二次推断；兜底=在手）
+  const status = target?.status;
+  const paused = status === 'paused';
+  const handedOff = status === 'escalated';
   const lastEvent = target?.lastEvent ?? null;
 
   const steps: DelegateStep[] = [
@@ -107,26 +122,32 @@ export function buildDelegateFlow({ intent, target, online }: DelegateFlowInput)
 
   // 步骤 3：真实委托状态（离线只到步骤 1/2，D5）
   if (online && target) {
-    if (paused) {
+    const at = shortAt(target.lastCheckedAt);
+    if (handedOff) {
+      steps[2] = {
+        ...steps[2], state: 'handoff',
+        note: `已移交 · 不再评估${at ? `（最近检查 ${at}）` : ''}`,
+      };
+    } else if (paused) {
       steps[2] = { ...steps[2], state: 'paused', note: '已暂停 · 不评估' };
     } else {
       const freq = frequencyText(target.frequency);
-      const at = shortAt(target.lastCheckedAt);
       steps[2] = { ...steps[2], state: 'active', note: at ? `${freq} · 最近检查 ${at}` : freq };
     }
   } else if (!online) {
     steps[2] = { ...steps[2], note: '需连接后端' };
   }
 
-  // 步骤 4：最近命中事件（change/escalate 同源；无命中 = 观察中）
+  // 步骤 4：最近命中事件（change/escalate 同源；无命中 = 观察中）；升级文案由卡片 status 派生
   if (online && target) {
     if (lastEvent) {
-      const escalated = lastEvent.kind === 'escalate';
       steps[3] = {
         ...steps[3],
         state: 'done',
-        note: `${escalated ? '已升级' : '已命中变化'} · ${lastEvent.summary}${paused ? '（已暂停）' : ''}`,
+        note: `${handedOff ? '已升级移交' : '已命中变化'} · ${lastEvent.summary}${paused ? '（已暂停）' : ''}`,
       };
+    } else if (handedOff) {
+      steps[3] = { ...steps[3], state: 'done', note: '已移交（无命中事件回显）' };
     } else if (paused) {
       steps[3] = { ...steps[3], state: 'pending', note: '已暂停 · 恢复后继续评估' };
     } else {
@@ -136,20 +157,20 @@ export function buildDelegateFlow({ intent, target, online }: DelegateFlowInput)
     steps[3] = { ...steps[3], note: '需连接后端' };
   }
 
-  // 头部状态 pill 与步骤态同源推导（避免 pill 说 A、步骤说 B）
+  // 头部状态 pill 与步骤态同源推导（避免 pill 说 A、步骤说 B）；升级/暂停只认卡片 status
   let state: string;
   let stateLabel: string;
   if (!online) {
     state = 'offline';
     stateLabel = '离线演示';
   } else if (target) {
-    if (paused) {
+    if (handedOff) {
+      state = 'escalated';
+      stateLabel = '已升级移交';
+    } else if (paused) {
       state = 'paused';
       stateLabel = '已暂停';
-    } else if (lastEvent?.kind === 'escalate') {
-      state = 'escalated';
-      stateLabel = '已升级';
-    } else if (lastEvent) {
+    } else if (lastEvent?.kind === 'change') {
       state = 'hit';
       stateLabel = '已命中变化';
     } else {

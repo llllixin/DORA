@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { DataSource, InsightType, Page } from "./types";
 import { insights } from "./data";
 import { Sidebar } from "./components/layout/Sidebar";
@@ -12,7 +12,7 @@ import { InsightPage } from "./features/insight/InsightPage";
 import { ActionPage } from "./features/action/ActionPage";
 import { KnowledgePage } from "./features/knowledge/KnowledgePage";
 import { WatchPage } from "./features/watch/WatchPage";
-import { createAction, getEvidence, refreshReasoningApi, syncRemoteData } from './services/doraApi';
+import { dataConnection, createAction, getEvidence, refreshReasoningApi, syncRemoteData } from './services/doraApi';
 import type { Evidence } from "./types";
 
 const readHash = (): { page: Page; type: InsightType; idx: number } => {
@@ -77,13 +77,16 @@ export default function App() {
         : "smooth",
     });
   };
+  const toastTimer = useRef<number | undefined>(undefined);
   const notify = (msg: string) => {
+    window.clearTimeout(toastTimer.current);
     setToast(msg);
-    window.setTimeout(() => setToast(""), 2200);
+    toastTimer.current = window.setTimeout(() => setToast(""), 4000);
   };
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   const openTrace = async (id: string) => {
-    const e = await getEvidence(id);
-    setDrawer(e);
+    try { const e = await getEvidence(id); setDrawer(e); }
+    catch (err) { notify(`证据读取失败：${err instanceof Error ? err.message : String(err)}`); }
   };
   useEffect(() => {
     const onHash = () => {
@@ -108,48 +111,50 @@ export default function App() {
   useEffect(() => {
     if (!dataSrc) return;
     let alive = true;
-    (async () => {
-      const synced = await syncRemoteData();
-      if (!alive || !synced) return;
-      setSyncTick((t) => t + 1);
-      notify('✓ 已连接 FastAPI：页面数据（洞察 / 行动 / 关注）已从后端同步');
-    })();
-    return () => {
-      alive = false;
+    const refresh = async () => {
+      await syncRemoteData();
+      if (alive) setSyncTick((t) => t + 1);
     };
+    void refresh();
+    const timer = window.setInterval(() => { if (!document.hidden) void refresh(); }, 20000);
+    return () => { alive = false; window.clearInterval(timer); };
   }, [dataSrc]);
   const onInsight = (t: InsightType, idx = 0) => navigate("insight", t, idx);
   const route = async (t: InsightType, id: string) => {
     if (t === "change") {
       navigate("watch");
-      notify("✓ 已加入持续关注；后续变化会回到业务脉搏");
+      notify("已打开持续关注，请选择关注条件并确认创建委托");
       return;
     }
     try {
-      const r = await createAction(id);
+      // action-demo-separation：用户明确「加入行动回路」→ 认领已存在的演示档案（幂等）
+      const r = await createAction(id, true);
+      if (r.offline) {
+        // 离线 = 未连后端、未确认建档（D047）：不谎报成功 —— 意图记入本机，由行动回路的「离线演示」分支如实展示
+        setJoinedAction((p) => (p.includes(id) ? p : [...p, id]));
+        navigate("action", t, 0);
+        notify("✓ 已加入行动回路（离线演示：未连接后端，未确认建档；档案保存在本机）");
+        return;
+      }
       navigate("action", t, 0);
       notify(r.created ? `✓ 已建档并加入行动回路：${r.case?.code ?? id}` : `✓ 已加入行动回路（档案已存在）`);
     } catch (err) {
-      // 后端明确拒绝（不在引擎判定集等）：展示原因，不伪造本地加入
+      // 后端明确拒绝（业务 4xx / http 模式未连后端）：展示原因，不伪造本地加入
       notify(`✗ 无法加入行动回路：${err instanceof Error ? err.message : String(err)}`);
-      if (!(err instanceof Error && /HTTP|detail/.test(err.message))) {
-        setJoinedAction((p) => (p.includes(id) ? p : [...p, id]));
-        navigate("action", t, 0);
-      }
     }
   };
   const handleReady = (ds: DataSource) => {
     setDataSrc(ds);
     navigate("pulse");
     notify(
-      `✓ 数据就绪：${ds.name}（${ds.rows.toLocaleString()} 行 · ${ds.fields} 字段）；Dora 已完成首次分析`,
+      `✓ 数据就绪：${ds.name}（${ds.rows.toLocaleString()} 行 · ${ds.fields} 字段）；数据已接收，请查看分析结果`,
     );
   };
   const handleApply = (ds: DataSource) => {
     setDataSrc(ds);
     setDsOpen(false);
     navigate("pulse");
-    notify(`✓ ${ds.name} 已更新；Dora 已重新生成业务脉络（演示）`);
+    notify(`✓ ${ds.name} 已更新；请查看最新分析结果`);
   };
   const handleClear = () => {
     setDataSrc(null);
@@ -180,7 +185,7 @@ export default function App() {
     notify(msg);
   };
 
-  if (!dataSrc) return <OnboardingPage onReady={handleReady} />;
+  if (!dataSrc && page !== 'knowledge') return <OnboardingPage onReady={handleReady} onReadKnowledge={() => navigate('knowledge')} />;
   return (
     <div className="app">
       <Sidebar
@@ -190,11 +195,12 @@ export default function App() {
         onNotice={notify}
       />
       <main className="main">
+        {page !== 'knowledge' && !dataConnection.online && <div className="note" role="status">{dataConnection.source === 'demo' ? '离线演示：当前为历史样例，不代表上传数据的分析结果' : '连接中断：当前为上次读取的数据，可能已过期'}</div>}
         <Topbar
           page={page}
           onTrace={() => openTrace("p1")}
           onNotice={notify}
-          onUpdateData={() => setDsOpen(true)}
+          onUpdateData={() => dataSrc ? setDsOpen(true) : navigate("pulse")}
         />
         {page === "pulse" && (
           <PulsePage
@@ -202,7 +208,7 @@ export default function App() {
             onInsight={onInsight}
             onTrace={openTrace}
             onNotice={notify}
-            dataLabel={`${dataSrc.name} · ${dataSrc.at} 更新`}
+            dataLabel={dataSrc ? `${dataSrc.name} · ${dataSrc.at} 更新` : ""}
           />
         )}{" "}
         {page === "insight" && (
@@ -236,9 +242,16 @@ export default function App() {
           <WatchPage
             onTrace={openTrace}
             onNotice={notify}
+            onAction={() => navigate("action")}
             onInsight={(id) => {
-              const i = insights.change.findIndex((x) => x.id === id);
-              onInsight("change", i >= 0 ? i : 0);
+              // watch-escalate-handoff：移交去向可能是 problem（如 p1）或 opportunity（如 o1），
+              // 按真实洞察类型定位（原先只在 change 里找 → 会落到错列表第 0 项）
+              const pi = insights.problem.findIndex((x) => x.id === id);
+              if (pi >= 0) { onInsight("problem", pi); return; }
+              const oi = insights.opportunity.findIndex((x) => x.id === id);
+              if (oi >= 0) { onInsight("opportunity", oi); return; }
+              const ci = insights.change.findIndex((x) => x.id === id);
+              onInsight("change", ci >= 0 ? ci : 0);
             }}
           />
         )}
@@ -247,10 +260,15 @@ export default function App() {
       <EvidenceDrawer
         data={drawer}
         onClose={() => setDrawer(null)}
-        onLocate={() => notify("已定位到本条洞察对应的原始数据")}
+        onLocate={() => {
+          const rows = document.querySelector('.drawer .raw');
+          rows?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          rows?.classList.add('located');
+          notify('已定位到当前证据表；完整上传文件的历史版本尚未保存');
+        }}
       />
       <CapabilityPanel name={cap} onClose={() => setCap(null)} />
-      {dsOpen && (
+      {dsOpen && dataSrc && (
         <DataSourceModal
           current={dataSrc}
           onClose={() => setDsOpen(false)}

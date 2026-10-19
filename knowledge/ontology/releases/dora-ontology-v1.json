@@ -1,0 +1,148 @@
+{
+  "concepts": [
+    {
+      "id": "metric.margin",
+      "type": "Metric",
+      "name": "利润率",
+      "aliases": [
+        "利润占比",
+        "毛利率"
+      ]
+    },
+    {
+      "id": "metric.returns",
+      "type": "Metric",
+      "name": "退货率",
+      "aliases": [
+        "退款率",
+        "退货占比"
+      ]
+    },
+    {
+      "id": "metric.orders",
+      "type": "Metric",
+      "name": "订单量",
+      "aliases": [
+        "订单数",
+        "销量订单"
+      ]
+    },
+    {
+      "id": "metric.revenue",
+      "type": "Metric",
+      "name": "营收",
+      "aliases": [
+        "销售额",
+        "营业收入"
+      ]
+    },
+    {
+      "id": "metric.aov",
+      "type": "Metric",
+      "name": "客单价",
+      "aliases": [
+        "平均订单金额",
+        "AOV"
+      ]
+    },
+    {
+      "id": "metric.east_orders",
+      "type": "Metric",
+      "name": "华东订单",
+      "aliases": [
+        "东区订单"
+      ]
+    },
+    {
+      "id": "metric.new_sku",
+      "type": "Metric",
+      "name": "新品SKU",
+      "aliases": [
+        "新商品"
+      ]
+    },
+    {
+      "id": "metric.high_value",
+      "type": "Metric",
+      "name": "高客单门店",
+      "aliases": [
+        "高价值门店"
+      ]
+    },
+    {
+      "id": "metric.supplier_price",
+      "type": "Metric",
+      "name": "供应商价格",
+      "aliases": [
+        "采购价格"
+      ]
+    },
+    {
+      "id": "metric.store_cluster",
+      "type": "Metric",
+      "name": "门店集群",
+      "aliases": [
+        "门店聚类"
+      ]
+    },
+    {
+      "id": "procedure.watch",
+      "type": "WatchTarget",
+      "name": "持续关注",
+      "aliases": [
+        "盯盘",
+        "提醒"
+      ]
+    },
+    {
+      "id": "procedure.action",
+      "type": "ActionCase",
+      "name": "行动回路",
+      "aliases": [
+        "行动档案",
+        "处理闭环"
+      ]
+    },
+    {
+      "id": "procedure.evidence",
+      "type": "Evidence",
+      "name": "证据链",
+      "aliases": [
+        "证据",
+        "依据"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "from": "metric.margin",
+      "type": "related_to",
+      "to": "metric.revenue"
+    },
+    {
+      "from": "metric.margin",
+      "type": "related_to",
+      "to": "metric.supplier_price"
+    },
+    {
+      "from": "metric.orders",
+      "type": "related_to",
+      "to": "metric.east_orders"
+    },
+    {
+      "from": "metric.aov",
+      "type": "related_to",
+      "to": "metric.high_value"
+    },
+    {
+      "from": "procedure.action",
+      "type": "derived_from",
+      "to": "procedure.evidence"
+    },
+    {
+      "from": "procedure.watch",
+      "type": "monitors",
+      "to": "metric.orders"
+    }
+  ]
+}

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "demo:html": "node scripts/build-design-demo.mjs"
   },
   "dependencies": {
     "react": "^19.1.1",

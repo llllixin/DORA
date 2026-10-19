@@ -9,7 +9,7 @@ import time
 from datetime import datetime, timezone
 
 from app.repository import Repository
-from app.watch.evaluator import evaluate_one, _now_iso
+from app.watch.evaluator import evaluate_one
 
 
 def _parse_dt(s: str) -> datetime | None:
@@ -46,12 +46,9 @@ def _tick_once() -> dict:
     due = [t for t in targets if _is_due(t, now)]
     if not due:
         return {"checked": 0}
-    from app.engine.engine import run_engine
-    insights = run_engine(repo)["insights"]
     checked = 0
     for t in due:
-        evaluate_one(repo, t, insights)
-        repo.touch_watch_target(t["id"], _now_iso())
+        evaluate_one(repo, t)
         checked += 1
     return {"checked": checked}
 

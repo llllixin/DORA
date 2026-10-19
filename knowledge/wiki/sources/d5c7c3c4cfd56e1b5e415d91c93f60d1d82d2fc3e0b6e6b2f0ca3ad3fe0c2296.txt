@@ -1,0 +1,170 @@
+# business-agent Specification
+
+## Purpose
+
+Dora Agent 层的行为契约：**Agent 只能通过只读工具观察系统、通过可回溯引用使用历史知识、其运行轨迹可持久化回放；问答流不产生新判定与新数字**。为 Dify 工作流（`docs/archive/2026-09-20/Agent/workflow.md`）提供后端能力面（工具层 / 知识检索 / 运行记录 / 问答流）。
+
+## 需求来源表（Traceability）
+
+| 需求 | 由谁新增 | 归档 change | 迭代 |
+|---|---|---|---|
+| Agent 工具层可查询指标序列 | agent-tool-layer | `changes/archive/2026-09-10-agent-tool-layer` | 42 |
+| 知识检索返回可回溯引用 | agent-tool-layer | `changes/archive/2026-09-10-agent-tool-layer` | 42 |
+| Agent 运行可持久化与回放 | agent-tool-layer | `changes/archive/2026-09-10-agent-tool-layer` | 42 |
+| 问答流只引用引擎判定与证据（数字锁） | agent-tool-layer | `changes/archive/2026-09-10-agent-tool-layer` | 42 |
+| 问答流只引用引擎判定与证据（数字锁）（基准 = 引擎 payload ∪ 该答案引用） | 迭代48 门禁幂等性 | changes/archive/2026-09-12-chat-number-lock-references | 48 |
+| 只读 Agent 在有限循环内选择工具 | agent-readonly-loop | `changes/archive/2026-09-21-agent-readonly-loop` | 59 |
+
+## Requirements
+
+### Requirement: Agent 工具层可查询指标序列
+
+系统 SHALL 提供只读工具端点 `GET /api/tools/query_metric`，按 `metric_key`（可选 `dimension`）返回 `metric_series` 的序列行（`label/value/unit/dimension`）；当指标不存在时 SHALL 返回空数组而非错误；工具 SHALL NOT 返回引擎未持久化的臆造数值。
+
+#### Scenario: 命中指标返回序列
+- **WHEN** 请求 `GET /api/tools/query_metric?metric_key=margin`
+- **THEN** `ok=true`、`count>0`，每行包含 `label/value/unit`
+
+#### Scenario: 未知指标返回空数组
+- **WHEN** 请求 `GET /api/tools/query_metric?metric_key=not_exist`
+- **THEN** HTTP 200、`count=0`、`rows=[]`（不抛 404、不编造数据）
+
+### Requirement: 知识检索返回可回溯引用
+
+系统 SHALL 提供 `POST /api/knowledge/search`，对知识归档（`knowledge_archive`）做检索并返回 `hits[]` 与 `references[]`；每个 `reference` SHALL 包含 `entry_type/source_id/code/title`，可回溯到具体归档行；命中为空时 SHALL 返回 `empty=true`，SHALL NOT 返回编造的引用。
+
+#### Scenario: 命中并返回引用
+- **WHEN** 对一个存在知识条目的关键词发起检索
+- **THEN** `hits` 非空、`references` 与 `hits` 对应且 `source_id` 指向真实归档行
+
+#### Scenario: 无命中显式为空
+- **WHEN** 检索词与语料无关（或语料为空）
+- **THEN** `empty=true`、`hits=[]`、`references=[]`
+
+### Requirement: Agent 运行可持久化与回放
+
+系统 SHALL 持久化 Agent 运行记录（`agent_run`：trigger/status/input/events/output），并暴露 `POST /api/agent/runs`、`GET /api/agent/runs/{id}`、`POST /api/agent/runs/{id}/events`；运行 id SHALL 形如 `r-<hex12>`；对不存在 id 的读写 SHALL 返回 404。
+
+#### Scenario: 创建-读取-追加一致
+- **WHEN** 创建一条运行记录后读取，再追加一个事件后再次读取
+- **THEN** 首读字段与创建一致；追加后 `events` 增一且顺序保持
+
+### Requirement: 问答流只引用引擎判定与证据（数字锁）
+
+系统 SHALL 提供 `POST /api/dora/chat`，以 SSE 输出 `thought_step/tool_call/evidence/answer/done` 事件，并落一条 `agent_run`；答案文本 SHALL 仅由引擎字段（洞察 `title/desc/metric/delta/source/semantics`）与证据、检索引用组装，SHALL NOT 引入引擎外的新数字或新判定；无可引用历史时 SHALL 显式说明"暂无先例"。数字锁的可回溯基准 SHALL 为**该洞察的引擎 payload ∪ 该条答案自身下发的检索引用**（`references[].code`/`title`/`source_id`）——其中 `XXX-NNNN` 形式的引用编号属**可回溯标识**（随答案结构化下发、来源为真实检索结果），SHALL NOT 被计为「引擎外新数字」；答案 SHALL NOT 出现既不在引擎 payload、也不在该答案引用集合中的数字。该口径 SHALL 与知识库是否有内容无关：同一问答在知识库新增同指标归档（答案因此附带引用）前后均 SHALL 通过数字锁。
+
+#### Scenario: 事件序列完整且可回放
+- **WHEN** 提交一个针对引擎判定的问题
+- **THEN** 流中出现 5 类事件，`done.run_id` 可在 `GET /api/agent/runs/{id}` 查到
+
+#### Scenario: 数字锁
+- **WHEN** 检查 `answer` 文本中出现的数字
+- **THEN** 每个数字均出现在该洞察的引擎 payload（`metric`/`delta`/`confidence`/`desc`/`semantics` 等）中，**或**出现在该条答案 `references` 的 `code`/`title`/`source_id` 中（引用编号可回溯）
+
+#### Scenario: 门禁可重复运行（知识库有归档先例时也不假红）
+- **WHEN** 知识库中已存在与该洞察同指标的历史归档条目（答案末尾因此附带「可参考历史先例：…（ORD-1022）」）后连续两次运行问答门禁
+- **THEN** 两次均通过，`run_all` 的绿/红不因「第二次跑」而改变（引用编号不再被判为引擎外数字）
+
+### Requirement: 问答流支持「后果」意图
+
+系统 SHALL 在 `POST /api/dora/chat` 的意图识别中支持 `consequence` 意图（用户询问「后果/影响/不处理会怎样/风险」类问题），并在 `answer` 文本中产出**带固定前缀**的 `严重等级：` 与 `可能后果：` 段落；两段文本 SHALL 只由该洞察的引擎字段（`severity`/`consequence`/`desc`/`semantics`）组装，数字 SHALL 继续满足既有数字锁。未命中 `consequence` 关键词的问题，意图分类 SHALL 保持既有行为（`why`/`evidence`/`opportunity`/`delegate`/`handle`/`what`）不变。
+
+#### Scenario: 问到后果时返回等级段与后果段
+- **WHEN** 提交问题「这条洞察不处理会怎样？」并带对应 `insight_id`
+- **THEN** `answer` 文本含 `严重等级：` 与 `可能后果：` 两段，其内容分别与该洞察的 `severity`、`consequence` 字段一致
+
+#### Scenario: 段落前缀稳定可归位
+- **WHEN** 前端按前缀把 `answer` 文本拆行归位（`严重等级：` / `可能后果：`）
+- **THEN** 两段均可被逐个识别，且不与 `下一步建议：` / `可参考历史先例：` / `主要影响因素：` 段落内容重复
+
+#### Scenario: 既有意图不受影响
+- **WHEN** 提交「为什么利润率会失速？」或「证据是什么？」
+- **THEN** `intent` 仍分别为 `why` / `evidence`，`answer` 文本结构与本需求引入前保持一致
+
+#### Scenario: 数字锁继续成立
+- **WHEN** 检查 `consequence` 意图下 `answer` 文本中出现的数字
+- **THEN** 这些数字均出现在该洞察的引擎 payload（`metric`/`delta`/`confidence`/`desc`/`semantics`/`severity`/`consequence`）中
+
+### Requirement: 只读 Agent 在有限循环内选择工具
+
+系统 SHALL 允许 Agent provider 在白名单只读工具与最终回答之间做选择；每个工具调用必须先通过名称与参数校验。循环 SHALL 受轮数和工具调用预算约束，任何停止结果均可从 `agent_run` 回放，且运行记录不得保存模型隐藏思维过程。
+
+#### Scenario: 查询指标后回答
+- **WHEN** provider 先选择合法 `query_metric`，收到结果后返回最终回答
+- **THEN** 工具只执行一次，运行状态为 done，事件包含工具调用、结果与最终回答
+
+#### Scenario: 非法调用被拒绝
+- **WHEN** provider 请求未知工具或传入非法参数
+- **THEN** 工具不执行，运行状态为 failed，output 与事件记录明确停止原因
+
+#### Scenario: 达到预算后停止
+- **WHEN** provider 持续请求合法工具直至超过最大轮数或调用数
+- **THEN** 循环停止为 limited，不再执行额外工具，并保留已发生事件
+
+### Requirement: 受审核知识可幂等建立版本化索引
+
+系统 SHALL 只索引通过契约校验、状态为 reviewed 且当前有效的知识版本。相同源重复导入不得产生重复文档或 chunk；新版本 SHALL 保留旧版本且默认只检索最新有效版本；批次内任一文档非法时 SHALL 整批拒绝。
+
+#### Scenario: 重复导入
+- **WHEN** 管理入口连续两次导入相同知识源
+- **THEN** 第二次返回 unchanged，文档与 chunk 数量保持不变
+
+#### Scenario: 非法批次
+- **WHEN** 批次中有缺少来源或不符合枚举的文档
+- **THEN** 导入失败且该批次不产生任何写入
+
+### Requirement: 混合检索返回可回溯证据
+
+系统 SHALL 对受审核知识执行关键词与向量召回，以确定性融合排序返回有限结果。每个命中 SHALL 包含 document id、version、chunk id、来源、检索分数和命中方式；ontology SHALL 只执行已声明、安全解析后的别名归一与最多一跳关系扩展。歧义语义 SHALL 优先于历史 chunk 的别名元数据，不能以旧 alias 绕过澄清。
+
+#### Scenario: 中文别名查询
+- **WHEN** 用户以利润占比查询利润率口径
+- **THEN** 系统把别名归一到利润率概念，并在前五条返回其指标定义
+
+#### Scenario: 无相关资料
+- **WHEN** 所有候选均未达到相关性阈值
+- **THEN** 系统返回空命中而不是任意最相近文档
+
+#### Scenario: 旧 chunk 仍含错误别名
+- **WHEN** 毛利率被判定为未确认口径，而旧文档 metadata 仍含毛利率别名
+- **THEN** 检索返回空命中及语义澄清状态，不因旧 alias 生成利润率答案
+
+### Requirement: RAG 回答必须受证据和事实边界约束
+
+系统 SHALL 仅依据本次检索上下文回答，并验证引用属于该上下文。证据不足时 SHALL 明确拒答；有可读指标映射的当前经营事实问题 SHALL 返回 tool_required，提示包含正确物理 key 和维度。未确认口径或不支持范围 SHALL 返回 clarification_required；未注册的读取能力 SHALL 明确缺失，不能伪造工具。知识正文 SHALL NOT 获得工具权限或覆盖系统指令。
+
+#### Scenario: 带合法引用回答
+- **WHEN** 检索得到足够相关的受审核资料且 provider 只引用上下文 chunk
+- **THEN** 系统返回 answered，并给出可读取的文档与 chunk 引用
+
+#### Scenario: provider 伪造引用
+- **WHEN** provider 返回不在本次上下文中的 chunk id
+- **THEN** 系统返回 failed，不发布该答案
+
+#### Scenario: 实时事实问题
+- **WHEN** 用户询问今天全国利润率是多少
+- **THEN** 系统返回 tool_required 和 query_metric 的 margin/全国参数，不使用 Wiki 数值作答，不宣称工具已经执行
+
+#### Scenario: 实时华东订单提示
+- **WHEN** 用户询问最新华东订单量
+- **THEN** 系统返回 tool_required 和 query_metric 的 east_orders/华东参数
+
+#### Scenario: 财务口径未确认
+- **WHEN** 用户询问毛利率，且项目没有已审核毛利率来源绑定
+- **THEN** 系统返回 clarification_required，答案与引用不来自 margin 资料，且不调用回答模型或指标工具
+
+#### Scenario: 当前门店集合无现有读取工具
+- **WHEN** 请求当前门店集群而现有注册表没有对应读取能力
+- **THEN** 系统明确 abstained 与 tool_unavailable 原因，不生成 query_metric(store_cluster) 假提示
+
+### Requirement: 固定评估集形成发布门禁
+
+系统 SHALL 对版本化固定问题与人工 judgment 计算 Hit@5（兼容原 recall_at_5 字段）、MRR、引用有效率、拒答准确率、实时分流提示准确率和无依据答案数，并保留逐题结果。增加澄清能力时 SHALL 显式记录澄清判据与准确率，保留旧问题/原判据；修订 SHALL 有独立 profile、理由与审核依据，不能覆盖旧评价掩盖差异。引用有效率 SHALL NOT 被宣称为语义正确率。
+
+#### Scenario: 运行评价
+- **WHEN** 执行 RAG 评价入口
+- **THEN** 返回评价 profile、汇总指标和每题结果，只有所有阈值及澄清判据满足时 passed=true
+
+#### Scenario: 原口径与新口径分开报告
+- **WHEN** 原 q07/q08 要求回答，但批准的新口径要求先澄清
+- **THEN** 原判据保留并可报告不通过，新 profile 标明这两项有意变化及原因，不宣称原门槛仍全部通过

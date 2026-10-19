@@ -1,0 +1,48 @@
+# DORA Wiki
+
+由正式JSON生成；来源/审核不代表身份认证或企业成效验证。
+
+- [利润率定义与边界](./metric/metric-margin.md) · v3
+- [退货率定义与边界](./metric/metric-returns.md) · v3
+- [订单量定义与边界](./metric/metric-orders.md) · v2
+- [营收定义与边界](./metric/metric-revenue.md) · v2
+- [客单价定义与边界](./metric/metric-aov.md) · v2
+- [华东订单维度](./metric/metric-east-orders.md) · v3
+- [新品销量与新品 SKU 种数边界](./metric/metric-new-sku.md) · v3
+- [高客单门店占比与集合边界](./metric/metric-high-value.md) · v3
+- [供应商价格指标](./metric/metric-supplier-price.md) · v2
+- [门店集群口径](./metric/metric-store-cluster.md) · v3
+- [利润率偏低规则](./rule/rule-margin-low.md) · v2
+- [退货率上升规则](./rule/rule-returns-rise.md) · v2
+- [订单量下降规则](./rule/rule-orders-decline.md) · v2
+- [客单价增长规则](./rule/rule-aov-growth.md) · v2
+- [华东订单阈值规则](./rule/rule-east-threshold.md) · v3
+- [新品销量变化规则](./rule/rule-new-sku-change.md) · v2
+- [高客单门店集群规则](./rule/rule-high-value-cluster.md) · v3
+- [供应商价格变化规则](./rule/rule-supplier-price-change.md) · v2
+- [数据上传流程](./sop/procedure-data-upload.md) · v2
+- [证据链阅读流程](./sop/procedure-evidence.md) · v2
+- [持续关注委托流程](./sop/procedure-watch.md) · v2
+- [行动回路流程](./sop/procedure-action.md) · v2
+- [经验沉淀流程](./sop/procedure-lesson.md) · v2
+- [离线模式语义](./sop/procedure-offline.md) · v2
+- [RAG 与业务工具边界](./sop/procedure-rag-tools.md) · v2
+- [无数据与拒答](./sop/procedure-no-data.md) · v2
+- [Agent 运行记录](./sop/procedure-agent-run.md) · v2
+- [零分母计算案例](./case/case-zero-denominator.md) · v2
+- [周期排序案例](./case/case-period-order.md) · v2
+- [维度不匹配案例](./case/case-dimension-mismatch.md) · v2
+- [更新事件身份案例](./case/case-event-identity.md) · v2
+- [行动并发案例](./case/case-action-concurrency.md) · v2
+- [Watch 离线案例](./case/case-watch-offline.md) · v2
+- [Watch 升级终态案例](./case/case-watch-escalation.md) · v2
+- [图表事实同源案例](./case/case-chart-source.md) · v2
+- [未知工具拒绝案例](./case/case-unknown-tool.md) · v2
+- [Agent 预算停止案例](./case/case-agent-budget.md) · v2
+- [知识提示注入案例](./case/case-prompt-injection.md) · v2
+- [非法引用案例](./case/case-invalid-citation.md) · v2
+- [空检索拒答案例](./case/case-empty-retrieval.md) · v2
+- [索引幂等案例](./case/case-idempotent-index.md) · v2
+- [知识版本保留案例](./case/case-version-retention.md) · v2
+- [导入事务案例](./case/case-transaction-import.md) · v2
+- [实时问题分流案例](./case/case-realtime-route.md) · v2

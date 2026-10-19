@@ -1,0 +1,268 @@
+{
+  "materialVersion": "a02-v1-candidate",
+  "status": "legacy_published_snapshot",
+  "records": [
+    {
+      "id": "metric-margin",
+      "version": 1,
+      "hash": "7326497eb4aad414db0d9e065cbe8eaa7f7b66466d565b63d1d11a9171d40cb3"
+    },
+    {
+      "id": "metric-returns",
+      "version": 1,
+      "hash": "f1ce1928b3f218a4eae3691e90031ab214465934c878d0268a9316610aa4fad3"
+    },
+    {
+      "id": "metric-orders",
+      "version": 1,
+      "hash": "f03ae80b715cf9ca8a4dd31ee1df0ffe504ad95b139125466abe9d0aaf25d0d2"
+    },
+    {
+      "id": "metric-revenue",
+      "version": 1,
+      "hash": "40009db5729b223a86fb8777f23a5495c30201add969bfd51af9075d81163036"
+    },
+    {
+      "id": "metric-aov",
+      "version": 1,
+      "hash": "121247af143d27b5e59dd0a0f35987609e489e7f95e9d814093a52cc1dd81fb3"
+    },
+    {
+      "id": "metric-east-orders",
+      "version": 1,
+      "hash": "ca0637d9c0c1677b4b049256aecd228e6c2ab13c30bdc472d662e3c55770caf0"
+    },
+    {
+      "id": "metric-new-sku",
+      "version": 1,
+      "hash": "736608add63c7aa0b51ec0555805541ef58f9f80e8af6ac7e5505c5db1858e00"
+    },
+    {
+      "id": "metric-high-value",
+      "version": 1,
+      "hash": "cb73a28fe93261fce3710888b5b5a991286a00c26164ade396fd23b7c93dd507"
+    },
+    {
+      "id": "metric-supplier-price",
+      "version": 1,
+      "hash": "c6e27fa638b95788b2b2ed1c7e9296aab764ba97d1efb99d44ff5428ab57f087"
+    },
+    {
+      "id": "metric-store-cluster",
+      "version": 1,
+      "hash": "c026359baee9bf8bdddf49e7fcbac6dfed38beddc6dd61a00af91ca29e06d325"
+    },
+    {
+      "id": "rule-margin-low",
+      "version": 1,
+      "hash": "665d151f63cdc4508f3603975009b3ef56dec6f64a1870331c03f6666573a543"
+    },
+    {
+      "id": "rule-returns-rise",
+      "version": 1,
+      "hash": "67ad1eb1be8201076b0977ed3a66393f1a3e10eb596be27f75d60d0d9df673b8"
+    },
+    {
+      "id": "rule-orders-decline",
+      "version": 1,
+      "hash": "dc63f9cc04ebfa96679013c7327ca1c8751adbbd025ea7775c35cb2d3863ea93"
+    },
+    {
+      "id": "rule-aov-growth",
+      "version": 1,
+      "hash": "41280fa7bfea2e1aa61122db07b865b1497b7b6b041792676ea8932d46214925"
+    },
+    {
+      "id": "rule-east-threshold",
+      "version": 1,
+      "hash": "fae2cfd71628e96eb046b33f587c50a7788d619fe018388b50736b8f1f54b6c7"
+    },
+    {
+      "id": "rule-new-sku-change",
+      "version": 1,
+      "hash": "a884616b2b37052a37d879c86d94b61160bf7eb9f8751e70d5c20bb3ce6a0d19"
+    },
+    {
+      "id": "rule-high-value-cluster",
+      "version": 1,
+      "hash": "00eb17c5bd2efb1ac487cc9af3af6fd1993114f6a08963568ba1368ce08c7025"
+    },
+    {
+      "id": "rule-supplier-price-change",
+      "version": 1,
+      "hash": "697f95e83d742436375422e8c0e5d975fbdeeb86d0449c96ea73a08cf11b396b"
+    },
+    {
+      "id": "procedure-data-upload",
+      "version": 1,
+      "hash": "cfbe44ec9005a8ebdeaa54beae5a4a29591ce10f45d3c2f22202a3990c5e8e89"
+    },
+    {
+      "id": "procedure-evidence",
+      "version": 1,
+      "hash": "0734dd72f286ffc1fb90e458e1207899e7cffcb533ae82304a7319454441d473"
+    },
+    {
+      "id": "procedure-watch",
+      "version": 1,
+      "hash": "9b8fa135182b0c5300fc1780fbe0d23b67049afec2b43c689dac76d47bb17aba"
+    },
+    {
+      "id": "procedure-action",
+      "version": 1,
+      "hash": "2b3743ac949b119b54897d8f1fe9c039ff883501e560dd25eab40ab67a317d94"
+    },
+    {
+      "id": "procedure-lesson",
+      "version": 1,
+      "hash": "d55eee5493e87a685575e3d47adec27c6d9a1a5fc411a70c00fb65c7f820f525"
+    },
+    {
+      "id": "procedure-offline",
+      "version": 1,
+      "hash": "4a6ab9a9d1591d9fb6c497c8121c100d876998ef211269e4172d82970746e86e"
+    },
+    {
+      "id": "procedure-rag-tools",
+      "version": 1,
+      "hash": "514bc2fcafada6fec4d6576dfa08ada8c58850281ee7ec354dce6d6ba47bc75e"
+    },
+    {
+      "id": "procedure-no-data",
+      "version": 1,
+      "hash": "9ac14922ff3cab0c1aafa0bd19025d120a8465145946e6973eb0db6ef84ef5f3"
+    },
+    {
+      "id": "procedure-agent-run",
+      "version": 1,
+      "hash": "a2a3a8257c046c6e0972f326ad08e8ba5154e23024f1dd0f03372477c4d9dce9"
+    },
+    {
+      "id": "case-zero-denominator",
+      "version": 1,
+      "hash": "95212e979592d09ea2817adad19ed704dc44dd6a96447fd7b30bae1a988cb99e"
+    },
+    {
+      "id": "case-period-order",
+      "version": 1,
+      "hash": "323192d985ec994a58fab32c27cc99d65ff40cd1e9679b05b1659aaecdce3cee"
+    },
+    {
+      "id": "case-dimension-mismatch",
+      "version": 1,
+      "hash": "080e7d191762ee62765952aa3756e01db80b34ac6cee382d6e146ec743ebcaa9"
+    },
+    {
+      "id": "case-event-identity",
+      "version": 1,
+      "hash": "acc89166cc6a429a2a222f8a032009a97e69fe18f41e4012ebb09c0aaa373fb9"
+    },
+    {
+      "id": "case-action-concurrency",
+      "version": 1,
+      "hash": "8aeb03aac7c26a1e62259f74bb011316611e45c0114ff56a15e9f6451845f8c0"
+    },
+    {
+      "id": "case-watch-offline",
+      "version": 1,
+      "hash": "80ed05fa62a82e6fa0e8205d9772953b1eca34d8eb50718f8478de5167b00948"
+    },
+    {
+      "id": "case-watch-escalation",
+      "version": 1,
+      "hash": "7db5d508598b7342eb8164c54c0eb7661861bb98dc16359135d992eaacef1b5b"
+    },
+    {
+      "id": "case-chart-source",
+      "version": 1,
+      "hash": "d4246911523044dccf2948fa2e74b636a1d9f300237385306d9ce328be9a48de"
+    },
+    {
+      "id": "case-unknown-tool",
+      "version": 1,
+      "hash": "fc2b8d72021a2f6894ee9eb244382175a7a348b82161f5d0779aa6f432c159fc"
+    },
+    {
+      "id": "case-agent-budget",
+      "version": 1,
+      "hash": "3802d5e3414bb8a867436dc99f6d4b83d81428ba8ea596aa234cefd0c95cd9ed"
+    },
+    {
+      "id": "case-prompt-injection",
+      "version": 1,
+      "hash": "0c74e1d163d680cdfd3cb36610e66f84949a84b1cfe0ee1eaf2737d92b9d9aca"
+    },
+    {
+      "id": "case-invalid-citation",
+      "version": 1,
+      "hash": "8608f80b06da2a2acff817f61eb33c8b8667d8faa945e591f948fdf8dec1eb19"
+    },
+    {
+      "id": "case-empty-retrieval",
+      "version": 1,
+      "hash": "4f4368e3798fb681dc2eb85c09bd07158832e373d7875950d729e93780cde7bc"
+    },
+    {
+      "id": "case-idempotent-index",
+      "version": 1,
+      "hash": "625951828b8dfc3c71f9bb8d6fac51af6a0cb420ff0a363363dc4307bf2264cf"
+    },
+    {
+      "id": "case-version-retention",
+      "version": 1,
+      "hash": "5fbefce2f90824f02a603c87ea38b78a2d96553eb25f41beed2aa70ecd16c844"
+    },
+    {
+      "id": "case-transaction-import",
+      "version": 1,
+      "hash": "78fbdab492add2202a95207f84702a58788d7d9f3acac4dce5c66bac9d5ae1d9"
+    },
+    {
+      "id": "case-realtime-route",
+      "version": 1,
+      "hash": "87c199f5c3a3fe9c34fe52ae09c0eba424df2bb53cfdd654894d3cf4d0c4ee27"
+    },
+    {
+      "id": "metric-margin",
+      "version": 2,
+      "hash": "a5fd06089076f079c6ce027450a9802be932ae9a49d10d29bd65979270118108"
+    },
+    {
+      "id": "metric-returns",
+      "version": 2,
+      "hash": "1fe6a7d9ec4b80bfcdd0b817ea1dacc74d1cbf4a7faf4487364b1d798c4ed83f"
+    },
+    {
+      "id": "metric-east-orders",
+      "version": 2,
+      "hash": "b94f74822927ead0f606760595144477710f8e92edb9623a5cd939b86f9eedc8"
+    },
+    {
+      "id": "rule-east-threshold",
+      "version": 2,
+      "hash": "cb5ecbc8a30e799607f566c9e7b365ac7100d13861f05b34e83aba3c402cc411"
+    },
+    {
+      "id": "metric-new-sku",
+      "version": 2,
+      "hash": "5e16ea0cca47b6f90d0adfebbfbffa1c672d98e7920affb19087dc779f9ccc10"
+    },
+    {
+      "id": "metric-high-value",
+      "version": 2,
+      "hash": "30fa13d094bf1bb59555a4a3b299972b3fcc60fac89e64111573f774184b61c1"
+    },
+    {
+      "id": "rule-high-value-cluster",
+      "version": 2,
+      "hash": "09ed8777d1d4cea9b8bb565fbccf757463108edf0c46e7027a789fb10bd2dfd4"
+    },
+    {
+      "id": "metric-store-cluster",
+      "version": 2,
+      "hash": "0ce186245be44cf5462ba9b75fb86dff50edfe24c0d60f8482ba87d08f2122ea"
+    }
+  ],
+  "compatibility": "仅这些固定52行可按legacy契约读；新记录或被修改legacy行不可用缺schema_version绕过新治理规则。",
+  "reviewBasis": "Original 52 records released before approved A02 implementation"
+}

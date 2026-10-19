@@ -12,8 +12,8 @@ def template_semantics(iid: str, s: dict) -> dict | None:
 
     if iid == "p1":
         return {
-            "causeA": {"name": "A 产品线采购成本", "value": f"较期初 {b['delta_pct']}%"},
-            "causeB": {"name": "供应商 B", "value": f"较同行高 {abs(b['peer_delta_pct'])}%"},
+            "causeA": {"name": "A 产品线采购成本", "value": f"较期初 {b['delta_pct']}%" if b['delta_pct'] is not None else '基数不足，无法计算'},
+            "causeB": {"name": "供应商 B", "value": f"较同行 {b['peer_delta_pct']:+}%" if b['peer_delta_pct'] is not None else '缺少有效同行基数'},
             "next": [
                 f"核对供应商 B 最近采购价（¥{b['current']}）与合同口径",
                 f"按 A 产品线拆分毛利影响，确认与目标 {mar['target']}% 的差距来源",
@@ -23,11 +23,11 @@ def template_semantics(iid: str, s: dict) -> dict | None:
     if iid == "p2":
         latest = f"{max(r['latest_store'].values())}%"
         return {
-            "causeA": {"name": "高贡献门店", "value": "门店08 / 门店16"},
+            "causeA": {"name": "高贡献门店", "value": " / ".join(r["stores"])},
             "causeB": {"name": "最新退货率", "value": latest},
             "next": [
-                f"提取两家门店的高频退货商品与原因（基线 {r['baseline']}%）",
-                "对比两家门店与其它门店的客服/物流/商品质量差异",
+                f"提取上述门店的高频退货商品与原因（基线 {r['baseline']}%）",
+                "对比上述门店与其它门店的客服/物流/商品质量差异",
                 "处理后观察退货率是否回落至基线以下",
             ],
         }
@@ -52,7 +52,7 @@ def template_semantics(iid: str, s: dict) -> dict | None:
             ],
         }
     if iid == "c1":
-        remain = max(0.0, round(e["threshold"] - e["delta_pct"], 1))
+        remain = max(0.0, round(e["delta_pct"] - e["threshold"], 1))
         return {
             "causeA": {"name": "华东订单量", "value": f"{e['current']:,}"},
             "causeB": {"name": "距升级阈值", "value": f"{remain}pp"},

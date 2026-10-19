@@ -1,10 +1,13 @@
 """数据访问层：引擎从 Repository 读取原始数据与规则配置（默认 PostgreSQL）。"""
 import re
+from contextlib import contextmanager, nullcontext
+from app.series_order import order_rows
+from app.business_store import BusinessStore, business_write
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from app import db
@@ -21,16 +24,25 @@ from app.models import (
     StoreClusterStore,
     WatchEvent,
     WatchTarget,
+    BusinessRevision,
+    VersionedReasoning,
 )
 
 # watch 领域枚举（V4-T1）：契约早暴露，非法值在 Repository 层拒绝
-WATCH_STATUSES = {"watching", "paused"}
+# watch-escalate-handoff：`escalated` = 「升级即移交」的**终态**，只能由评估写路径
+# （`add_watch_event(..., escalate=True)`）产生；客户端可请求值只有 `WATCH_CLIENT_STATUSES`。
+WATCH_STATUSES = {"watching", "paused", "escalated"}
+WATCH_CLIENT_STATUSES = {"watching", "paused"}
+WATCH_TERMINAL_STATUS = "escalated"
 WATCH_FREQUENCIES = {"on_update", "daily 09:00", "weekly"}
 WATCH_EVENT_KINDS = {"change", "escalate"}
 
 # action 领域枚举（V5-T1）
 ACTION_CASE_STATUSES = {"open", "running", "waiting_verify", "resolved"}
 ACTION_STEP_STATUSES = {"pending", "in_progress", "done", "blocked"}
+# action-demo-separation：来源标记（demo=静态演示集随种子建立 / engine=引擎建档或用户认领）
+ACTION_ORIGINS = {"demo", "engine"}
+ACTION_ORIGIN_MINE = "engine"
 
 
 def _now_iso() -> str:
@@ -50,16 +62,38 @@ class DataSourceUnavailableError(Exception):
     """数据源不可用（数据库离线等），上层应映射为 503。"""
 
 
-class Repository:
+class Repository(BusinessStore):
     """读/写接口；每次操作短会话。写接口供 seed 使用，读接口供引擎计算。"""
 
-    def __init__(self, session=None):
+    def __init__(self, session=None, transactional=False):
         self._session = session
+        self._transactional = transactional
 
     def _session_ctx(self):
         if self._session is not None:
-            return _Ctx(self._session)
+            return nullcontext(self._session)
         return _Ctx(db.make_session())
+
+    def _commit(self, session):
+        if self._transactional:
+            session.flush()
+        else:
+            session.commit()
+
+    @contextmanager
+    def action_transaction(self, case_id):
+        """案件行锁覆盖校验与全部写入；借用的 repo 只 flush，由外层统一提交。"""
+        if self._transactional:
+            yield self
+            return
+        with self._session_ctx() as session:
+            try:
+                session.execute(select(ActionCase).where(ActionCase.id == case_id).with_for_update()).scalar_one_or_none()
+                yield Repository(session, transactional=True)
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
 
     def _wrap(self, fn):
         try:
@@ -76,10 +110,10 @@ class Repository:
                     .where(MetricSeries.metric_key == metric_key)
                     .order_by(MetricSeries.id)
                 ).scalars().all()
-                return [
+                return order_rows([
                     {"label": r.label, "value": r.value, "dimension": r.dimension, "unit": r.unit}
                     for r in rows
-                ]
+                ])
         return self._wrap(_do)
 
     # ---------- 读取：门店集群 / 更新事件 / 规则 ----------
@@ -99,6 +133,7 @@ class Repository:
                 if not row:
                     return None
                 return {
+                    "eventId": row.id,
                     "updated": row.updated_at,
                     "rows_added": row.rows_added,
                     "total_rows": row.total_rows,
@@ -117,6 +152,7 @@ class Repository:
         return self._wrap(_do)
 
     # ---------- 写入：种子 upsert ----------
+    @business_write
     def upsert_series(self, items: list[dict[str, Any]]) -> None:
         def _do():
             with self._session_ctx() as s:
@@ -133,16 +169,17 @@ class Repository:
                         existing.unit = it.get("unit", "")
                     else:
                         s.add(MetricSeries(**it))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
+    @business_write
     def delete_all_updates(self) -> None:
         """清空数据更新日志（样例/重置用，恢复出厂事件）。"""
 
         def _do():
             with self._session_ctx() as s:
                 s.execute(delete(DataUpdateLog))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
     def get_reasoning(self, insight_id: str) -> dict | None:
@@ -175,25 +212,28 @@ class Repository:
                         insight_id=insight_id, semantics=semantics,
                         provider=provider, generated_at=generated_at,
                     ))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
     def delete_all_reasoning(self) -> None:
         def _do():
             with self._session_ctx() as s:
                 s.execute(delete(InsightReasoning))
-                s.commit()
+                s.execute(delete(VersionedReasoning))
+                self._commit(s)
         self._wrap(_do)
 
+    @business_write
     def delete_all_series(self) -> None:
         """清空全部时间序列（样例/重置用，保证还原到出厂状态）。"""
 
         def _do():
             with self._session_ctx() as s:
                 s.execute(delete(MetricSeries))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
+    @business_write
     def replace_series(self, metric_keys: list[str], items: list[dict[str, Any]]) -> None:
         """同事务替换指定指标 key 的系列（上传=换数据源语义）。"""
 
@@ -204,9 +244,10 @@ class Repository:
                 for it in items:
                     if it.get("metric_key") in metric_keys:
                         s.add(MetricSeries(**it))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
+    @business_write
     def upsert_cluster_stores(self, items: list[dict[str, Any]]) -> None:
         def _do():
             with self._session_ctx() as s:
@@ -219,24 +260,19 @@ class Repository:
                         existing.aov = it["aov"]
                     else:
                         s.add(StoreClusterStore(**it))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
+    @business_write
     def upsert_data_update(self, item: dict[str, Any]) -> None:
         def _do():
             with self._session_ctx() as s:
-                existing = s.execute(
-                    select(DataUpdateLog).where(DataUpdateLog.updated_at == item["updated_at"])
-                ).scalar_one_or_none()
-                if existing:
-                    existing.rows_added = item["rows_added"]
-                    existing.total_rows = item["total_rows"]
-                    existing.metrics = item["metrics"]
-                else:
-                    s.add(DataUpdateLog(**item))
-                s.commit()
+                # 兼容旧函数名；事件是追加记录，展示时间不是去重键。
+                s.add(DataUpdateLog(**item))
+                self._commit(s)
         self._wrap(_do)
 
+    @business_write
     def upsert_rules(self, items: list[dict[str, Any]]) -> None:
         def _do():
             with self._session_ctx() as s:
@@ -247,7 +283,7 @@ class Repository:
                         existing.value_type = it["value_type"]
                     else:
                         s.add(RuleConfig(**it))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
     def count_rows(self, table: str) -> int:
@@ -265,6 +301,8 @@ class Repository:
             "case_lesson": CaseLesson,
             "knowledge_archive": KnowledgeArchive,
             "agent_run": AgentRun,
+            "business_revision": BusinessRevision,
+            "versioned_reasoning": VersionedReasoning,
         }[table]
 
         def _do():
@@ -280,9 +318,13 @@ class Repository:
         status: str = "watching",
         frequency: str = "on_update",
     ) -> dict[str, Any]:
-        """创建委托；校验 status/frequency 枚举，返回带 id 的完整记录。"""
-        if status not in WATCH_STATUSES:
-            raise ValueError(f"invalid watch status: {status}")
+        """创建委托；校验 status/frequency 枚举，返回带 id 的完整记录。
+
+        watch-escalate-handoff：客户端只能创建非终态（`watching|paused`）委托——
+        `escalated` 是评估写路径产生的终态。
+        """
+        if status not in WATCH_CLIENT_STATUSES:
+            raise ValueError(f"invalid watch status (client-requestable: {'|'.join(sorted(WATCH_CLIENT_STATUSES))}): {status}")
         if frequency not in WATCH_FREQUENCIES:
             raise ValueError(f"invalid watch frequency: {frequency}")
         now = _now_iso()
@@ -294,7 +336,7 @@ class Repository:
                     id=target_id, raw_text=text, intent=intent or {},
                     status=status, frequency=frequency, created_at=now,
                 ))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
         return {
             "id": target_id, "text": text, "intent": intent or {},
@@ -319,21 +361,36 @@ class Repository:
         return self._wrap(_do)
 
     def set_watch_status(self, target_id: str, status: str) -> dict[str, Any] | None:
-        """暂停/恢复；目标不存在返回 None（幂等语义由调用方处理）。"""
-        if status not in WATCH_STATUSES:
-            raise ValueError(f"invalid watch status: {status}")
+        """状态变更（客户端可请求值 = `watching|paused`）；目标不存在返回 None。
+
+        watch-escalate-handoff 迁移矩阵：
+        - `watching ↔ paused`：既有语义不变；
+        - `escalated → watching`：**恢复持续关注**（非破坏性，幂等），历史 `escalate` 事件保留；
+        - `escalated → paused`：无意义（终态已不评估）→ 显式 ValueError（路由映射 4xx）；
+        - 请求 `escalated`：终态只能由评估写路径产生 → 显式 ValueError。
+        """
+        if status not in WATCH_CLIENT_STATUSES:
+            raise ValueError(
+                f"invalid watch status (client-requestable: {'|'.join(sorted(WATCH_CLIENT_STATUSES))}): {status}"
+            )
 
         def _do():
             with self._session_ctx() as s:
-                row = s.get(WatchTarget, target_id)
+                row = s.scalar(select(WatchTarget).where(WatchTarget.id==target_id).with_for_update().execution_options(populate_existing=True))
                 if row is None:
                     return None
+                if row.status == WATCH_TERMINAL_STATUS and status != "watching":
+                    raise ValueError("escalated target can only be restored to watching")
                 row.status = status
-                s.commit()
+                self._commit(s)
                 return _target_dict(row)
         return self._wrap(_do)
 
     def delete_watch_target(self, target_id: str) -> bool:
+        from app.evidence.retention import delete_source_captured
+        return delete_source_captured(self,kind='watch_target',public_id=target_id)
+
+    def _delete_watch_target_in_transaction(self, target_id: str) -> bool:
         """删除委托并级联清理其全部事件；目标不存在返回 False（幂等）。"""
 
         def _do():
@@ -343,18 +400,22 @@ class Repository:
                     return False
                 s.execute(delete(WatchEvent).where(WatchEvent.target_id == target_id))
                 s.delete(row)
-                s.commit()
+                self._commit(s)
                 return True
         return self._wrap(_do)
 
     def delete_all_watch_targets(self) -> None:
+        from app.evidence.retention import delete_all_sources_captured
+        return delete_all_sources_captured(self,kind='watch_target')
+
+    def _delete_all_watch_targets_in_transaction(self) -> None:
         """清空全部委托与事件（出厂重置/T3 接线备用）。"""
 
         def _do():
             with self._session_ctx() as s:
                 s.execute(delete(WatchEvent))
                 s.execute(delete(WatchTarget))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
     def add_watch_event(
@@ -363,26 +424,57 @@ class Repository:
         kind: str,
         summary: str,
         values: dict[str, Any] | None = None,
+        escalate: bool = False,
     ) -> dict[str, Any]:
-        """记录一次命中事件；kind 校验，target 不存在抛 ValueError。"""
+        """记录一次命中事件；kind 校验，target 不存在抛 ValueError。
+
+        watch-escalate-handoff：`escalate=True` 时在**同一次提交**内把委托置终态
+        `escalated`（升级即移交），使"升级"与"终态"不存在"有事件无终态 / 有终态无事件"的
+        中间态。仅自 `watching` 迁移；已是终态时幂等；对 `paused` 委托抛 ValueError
+        （暂停态不评估，不该出现升级事件——否则会出现"在手却有升级凭据"的行）。
+        """
         if kind not in WATCH_EVENT_KINDS:
             raise ValueError(f"invalid watch event kind: {kind}")
+        if escalate and kind != "escalate":
+            raise ValueError("escalate=True requires kind='escalate'")
         now = _now_iso()
 
         def _do():
             with self._session_ctx() as s:
-                if s.get(WatchTarget, target_id) is None:
+                row = s.get(WatchTarget, target_id)
+                if row is None:
                     raise ValueError(f"watch target not found: {target_id}")
                 ev = WatchEvent(
                     target_id=target_id, triggered_at=now, kind=kind,
                     summary=summary, values=values or {},
                 )
                 s.add(ev)
-                row = s.get(WatchTarget, target_id)
                 row.last_event_at = now
-                s.commit()
+                if escalate:
+                    # 同一事务：事件 + 终态一起落（`escalated` 幂等；`paused` 不该产生升级事件）
+                    if row.status == "paused":
+                        raise ValueError("cannot escalate a paused watch target")
+                    if row.status == "watching":
+                        row.status = WATCH_TERMINAL_STATUS
+                self._commit(s)
                 return {"id": ev.id, "target_id": target_id, "triggered_at": now,
                         "kind": kind, "summary": summary, "values": values or {}}
+        return self._wrap(_do)
+
+    def mark_watch_escalated(self, target_id: str) -> bool:
+        """把**在手**（`watching`）委托置终态 `escalated`；返回是否发生了变更（幂等）。
+
+        watch-escalate-handoff：评估命中 `escalate` 但**事件被去重跳过**时（数据未变、
+        恢复后再评估），仍必须把委托置终态——否则会出现「引擎判定升级、委托却还在手」。
+        """
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(WatchTarget, target_id)
+                if row is None or row.status != "watching":
+                    return False
+                row.status = WATCH_TERMINAL_STATUS
+                self._commit(s)
+                return True
         return self._wrap(_do)
 
     def list_watch_events(self, target_id: str) -> list[dict[str, Any]]:
@@ -391,9 +483,19 @@ class Repository:
                 rows = s.execute(
                     select(WatchEvent).where(WatchEvent.target_id == target_id).order_by(WatchEvent.id)
                 ).scalars().all()
+                from app.models import EvidenceBinding
+                from app.business_version import SCOPE_ID
+                ids=[r.history_event_id for r in rows if r.history_event_id]
+                bindings={r.owner_instance_id:r for r in s.scalars(select(EvidenceBinding).where(
+                    EvidenceBinding.scope_id==SCOPE_ID,EvidenceBinding.owner_kind=='watch_event',
+                    EvidenceBinding.owner_instance_id.in_(ids)))} if ids else {}
                 return [
                     {"id": r.id, "target_id": r.target_id, "triggered_at": r.triggered_at,
-                     "kind": r.kind, "summary": r.summary, "values": r.values}
+                     "kind": r.kind, "summary": r.summary, "values": r.values,
+                     "historyEventId":r.history_event_id,
+                     "bindingId":bindings[r.history_event_id].binding_id if r.history_event_id in bindings else None,
+                     "snapshotId":bindings[r.history_event_id].snapshot_id if r.history_event_id in bindings else None,
+                     "occurrenceId":bindings[r.history_event_id].occurrence_id if r.history_event_id in bindings else None}
                     for r in rows
                 ]
         return self._wrap(_do)
@@ -407,28 +509,70 @@ class Repository:
                 if row is None:
                     return False
                 row.last_checked_at = checked_at
-                s.commit()
+                self._commit(s)
                 return True
         return self._wrap(_do)
 
     def delete_all_watch_events(self) -> None:
-        """清空全部命中事件（保留委托；出厂重置时旧数据引用失效）。"""
+        from app.evidence.retention import clear_watch_events_captured
+        return clear_watch_events_captured(self)
+
+    def _delete_all_watch_events_in_transaction(self) -> None:
+        """清空全部命中事件（保留委托；出厂重置时旧数据引用失效）。
+
+        watch-escalate-handoff：事件清空后 `escalated` 失去凭据 → **同一次提交**里归位
+        `watching`（委托保留、重新参与评估），使不变式「`status=escalated` ⟺ 末条事件为
+        `escalate`」在重置后仍成立；`paused` 不受影响。
+        """
 
         def _do():
             with self._session_ctx() as s:
                 s.execute(delete(WatchEvent))
-                s.commit()
+                s.execute(
+                    update(WatchTarget)
+                    .where(WatchTarget.status == WATCH_TERMINAL_STATUS)
+                    .values(status="watching")
+                )
+                self._commit(s)
         self._wrap(_do)
+
+    def backfill_watch_escalation(self) -> int:
+        """watch-escalate-handoff 幂等迁移：末条事件为 `escalate` 且仍 `watching` 的委托 → `escalated`。
+
+        返回本次迁移行数（第二次执行返回 0）；`paused` 与已 `escalated` 的行不覆盖。
+        """
+        def _do():
+            with self._session_ctx() as s:
+                rows = s.execute(
+                    select(WatchTarget).where(WatchTarget.status == "watching")
+                ).scalars().all()
+                moved = 0
+                for row in rows:
+                    last = s.execute(
+                        select(WatchEvent)
+                        .where(WatchEvent.target_id == row.id)
+                        .order_by(WatchEvent.id.desc())
+                        .limit(1)
+                    ).scalars().first()
+                    if last is not None and last.kind == "escalate":
+                        row.status = WATCH_TERMINAL_STATUS
+                        moved += 1
+                if moved:
+                    self._commit(s)
+                return moved
+        return self._wrap(_do)
 
 
     # ---------- 行动档案：action_case / action_step（V5-T1） ----------
     def create_action_case(
         self, case: dict[str, Any], steps: list[dict[str, Any]],
-        status: str = "open",
+        status: str = "open", origin: str = "engine",
     ) -> dict[str, Any]:
         """建案（单事务 case+首步集）；同 id 已存在抛 ValueError（幂等由调用方处理）。"""
         if status not in ACTION_CASE_STATUSES:
             raise ValueError(f"invalid action case status: {status}")
+        if origin not in ACTION_ORIGINS:
+            raise ValueError(f"invalid action case origin: {origin}")
         now = _now_iso()
         case_id = case["id"]
 
@@ -440,19 +584,26 @@ class Repository:
                     id=case_id, kind=case.get("kind", "problem"),
                     tag=case.get("tag", ""), tag_cls=case.get("tag_cls", "red"),
                     case_title=case.get("case_title", ""), code=case.get("code", ""),
-                    source=case.get("source", ""), status=status,
+                    source=case.get("source", ""), status=status, origin=origin,
                     orchestration=case.get("orchestration") or {},
                     archive=case.get("archive", ""), created_at=now, updated_at=now,
                 ))
                 _insert_steps(s, case_id, steps)
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
         return self.get_action_case(case_id) or {}
 
     def upsert_seed_case(self, case: dict[str, Any], steps: list[dict[str, Any]]) -> None:
-        """seed 迁移用幂等 upsert：同事务重建 case+steps，不翻倍。"""
+        """seed 迁移用幂等 upsert：同事务重建 case+steps，不翻倍。
+
+        来源标记：新建时写 `demo`（seed 建立的就是演示档案）；**已存在行不动 `origin`**
+        （用户已认领的档案被重建也不得倒退成演示，见 spec「迁移幂等且不覆盖已认领档案」）。
+        """
         now = _now_iso()
         case_id = case["id"]
+        origin = case.get("origin", "demo")
+        if origin not in ACTION_ORIGINS:
+            raise ValueError(f"invalid action case origin: {origin}")
 
         def _do():
             with self._session_ctx() as s:
@@ -463,6 +614,7 @@ class Repository:
                         tag=case.get("tag", ""), tag_cls=case.get("tag_cls", "red"),
                         case_title=case.get("case_title", ""), code=case.get("code", ""),
                         source=case.get("source", ""), status=case.get("status", "running"),
+                        origin=origin,
                         orchestration=case.get("orchestration") or {},
                         archive=case.get("archive", ""), created_at=now, updated_at=now,
                     ))
@@ -483,16 +635,56 @@ class Repository:
                     row.updated_at = now
                 s.execute(delete(ActionStep).where(ActionStep.case_id == case_id))
                 _insert_steps(s, case_id, steps)
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
-    def list_action_cases(self) -> list[dict[str, Any]]:
+    def list_action_cases(self, origin: str | None = None) -> list[dict[str, Any]]:
+        """列表（可按来源过滤）：None/"all" 不过滤，"mine" → engine，"demo" → demo；非法值抛 ValueError。
+
+        查询参数是外部输入 → 显式归一大小写/空白（`"MINE"` ≡ `"mine"`，不算静默兜底）；
+        真正未知的取值（`bogus`）一律拒绝，不退回「全部」。**写入路径**（`create_action_case` /
+        `set_action_case_origin`）则严格匹配，不做任何归一（库里只存规范值）。
+        """
+        key = (origin or "all").strip().lower()
+        if key in ("all", ""):
+            want: str | None = None
+        elif key == "mine":
+            want = ACTION_ORIGIN_MINE
+        elif key == "demo":
+            want = "demo"
+        else:
+            raise ValueError(f"invalid action case origin filter: {origin}")
+
         def _do():
             with self._session_ctx() as s:
+                stmt = select(ActionCase)
+                if want is not None:
+                    stmt = stmt.where(ActionCase.origin == want)
                 rows = s.execute(
-                    select(ActionCase).order_by(ActionCase.kind, ActionCase.code)
+                    stmt.order_by(ActionCase.kind, ActionCase.code)
                 ).scalars().all()
                 return [_action_case_dict(r) for r in rows]
+        return self._wrap(_do)
+
+    def claim_action_case(self, case_id: str) -> bool:
+        """认领：只把**演示**档案改标 `engine`（幂等；非演示/不存在返回 False，不抛错）。"""
+        return self.set_action_case_origin(case_id, ACTION_ORIGIN_MINE, only_from="demo")
+
+    def set_action_case_origin(self, case_id: str, origin: str, only_from: str | None = None) -> bool:
+        """写来源标记（门禁/认领共用）：返回是否命中并写入；`only_from` 限定可改写的原值。"""
+        if origin not in ACTION_ORIGINS:
+            raise ValueError(f"invalid action case origin: {origin}")
+        if only_from is not None and only_from not in ACTION_ORIGINS:
+            raise ValueError(f"invalid action case origin guard: {only_from}")
+
+        def _do():
+            with self._session_ctx() as s:
+                stmt = update(ActionCase).where(ActionCase.id == case_id)
+                if only_from is not None:
+                    stmt = stmt.where(ActionCase.origin == only_from)
+                row = s.execute(stmt.values(origin=origin, updated_at=_now_iso()))
+                self._commit(s)
+                return bool(row.rowcount)
         return self._wrap(_do)
 
     def get_action_case(self, case_id: str) -> dict[str, Any] | None:
@@ -534,7 +726,7 @@ class Repository:
                 case = s.get(ActionCase, case_id)
                 if case is not None:
                     case.updated_at = now
-                s.commit()
+                self._commit(s)
                 return _action_step_dict(step)
         return self._wrap(_do)
 
@@ -560,7 +752,7 @@ class Repository:
                 case = s.get(ActionCase, case_id)
                 if case is not None:
                     case.updated_at = _now_iso()
-                s.commit()
+                self._commit(s)
                 return _action_step_dict(step)
         return self._wrap(_do)
 
@@ -591,11 +783,14 @@ class Repository:
                             KnowledgeArchive.source_id == case_id)
                     ).scalars().first()
                     if exists is None:
-                        s.add(KnowledgeArchive(
+                        exists = KnowledgeArchive(
                             entry_type=row.kind, source_id=case_id, code=row.code,
                             title=row.case_title, content=row.archive, note=note,
-                            created_at=now))
-                s.commit()
+                            created_at=now)
+                        s.add(exists)
+                    from app.wiki.candidates import capture
+                    capture(s, exists, row)
+                self._commit(s)
                 return _action_case_dict(row)
         return self._wrap(_do)
 
@@ -611,33 +806,46 @@ class Repository:
                     return None
                 row.status = status
                 row.updated_at = _now_iso()
-                s.commit()
+                self._commit(s)
                 return _action_case_dict(row)
         return self._wrap(_do)
 
     def delete_action_case(self, case_id: str) -> bool:
+        from app.evidence.retention import delete_source_captured
+        return delete_source_captured(self,kind='action_case',public_id=case_id)
+
+    def _delete_action_case_in_transaction(self, case_id: str) -> bool:
         """删除档案并级联清理步骤/经验/知识（A1 同事务）；不存在返回 False（幂等）。"""
 
         def _do():
             with self._session_ctx() as s:
-                if s.get(ActionCase, case_id) is None:
+                if s.execute(select(ActionCase).where(ActionCase.id == case_id).with_for_update()).scalar_one_or_none() is None:
                     return False
                 s.execute(delete(ActionStep).where(ActionStep.case_id == case_id))
                 s.execute(delete(CaseLesson).where(CaseLesson.case_id == case_id))
                 s.execute(delete(KnowledgeArchive).where(KnowledgeArchive.source_id == case_id))
+                from app.wiki.candidates import mark_source_removed
+                mark_source_removed(s, [case_id])
                 s.delete(s.get(ActionCase, case_id))
-                s.commit()
+                self._commit(s)
                 return True
         return self._wrap(_do)
 
     def delete_all_action_cases(self) -> None:
+        from app.evidence.retention import delete_all_sources_captured
+        return delete_all_sources_captured(self,kind='action_case')
+
+    def _delete_all_action_cases_in_transaction(self) -> None:
         def _do():
             with self._session_ctx() as s:
+                source_cases = s.execute(select(ActionCase).order_by(ActionCase.id).with_for_update()).scalars().all()
                 s.execute(delete(CaseLesson))
                 s.execute(delete(KnowledgeArchive))
                 s.execute(delete(ActionStep))
+                from app.wiki.candidates import mark_source_removed
+                mark_source_removed(s, [case.id for case in source_cases])
                 s.execute(delete(ActionCase))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
     # ---------- 行动经验沉淀：case_lesson（迭代 36） ----------
@@ -646,12 +854,14 @@ class Repository:
 
         def _do():
             with self._session_ctx() as s:
+                row = s.execute(select(ActionCase).where(ActionCase.id == case_id).with_for_update()).scalar_one_or_none()
+                if row is None:
+                    return None
                 existing = s.get(CaseLesson, case_id)
                 if existing is not None:
                     return {"created": False, "lesson": _case_lesson_dict(existing)}
-                row = s.get(ActionCase, case_id)
-                if row is None:
-                    return None
+                if row.status != "resolved":
+                    raise ValueError("only resolved cases may produce lessons")
                 lesson = CaseLesson(
                     case_id=case_id, code=row.code, kind=row.kind,
                     title=row.case_title, archive=row.archive,
@@ -659,11 +869,14 @@ class Repository:
                 )
                 s.add(lesson)
                 # 统一知识库同步写入（类型 lesson，同事务）
-                s.add(KnowledgeArchive(
+                knowledge = KnowledgeArchive(
                     entry_type="lesson", source_id=case_id, code=row.code,
                     title=row.case_title, content=row.archive, note=note,
-                    created_at=lesson.created_at))
-                s.commit()
+                    created_at=lesson.created_at)
+                s.add(knowledge)
+                from app.wiki.candidates import capture
+                capture(s, knowledge, row)
+                self._commit(s)
                 return {"created": True, "lesson": _case_lesson_dict(lesson)}
         return self._wrap(_do)
 
@@ -685,7 +898,7 @@ class Repository:
                 if row is None:
                     return False
                 s.delete(row)
-                s.commit()
+                self._commit(s)
                 return True
         return self._wrap(_do)
 
@@ -708,7 +921,7 @@ class Repository:
                     entry_type=entry_type, source_id=source_id, code=code,
                     title=title, content=content, note=note, created_at=now)
                 s.add(row)
-                s.commit()
+                self._commit(s)
                 return {"created": True, "entry": _knowledge_dict(row)}
         return self._wrap(_do)
 
@@ -735,7 +948,7 @@ class Repository:
                 if row is None:
                     return False
                 s.delete(row)
-                s.commit()
+                self._commit(s)
                 return True
         return self._wrap(_do)
 
@@ -792,7 +1005,7 @@ class Repository:
                                input=input_data or {}, events=events or [], output=output or {},
                                created_at=now, updated_at=now)
                 s.add(row)
-                s.commit()
+                self._commit(s)
                 return _agent_run_dict(row)
         return self._wrap(_do)
 
@@ -801,14 +1014,14 @@ class Repository:
 
         def _do():
             with self._session_ctx() as s:
-                row = s.get(AgentRun, run_id)
+                row = s.execute(select(AgentRun).where(AgentRun.id == run_id).with_for_update()).scalars().first()
                 if row is None:
                     return None
                 events = list(row.events or [])
                 events.append(event or {})
                 row.events = events
                 row.updated_at = _now_iso()
-                s.commit()
+                self._commit(s)
                 return _agent_run_dict(row)
         return self._wrap(_do)
 
@@ -817,6 +1030,21 @@ class Repository:
             with self._session_ctx() as s:
                 row = s.get(AgentRun, run_id)
                 return _agent_run_dict(row) if row else None
+        return self._wrap(_do)
+
+    def finish_agent_run(self, run_id: str, status: str, output: dict[str, Any]) -> dict[str, Any] | None:
+        """把 running 运行收口为 done/failed/limited；不存在返回 None。"""
+
+        def _do():
+            with self._session_ctx() as s:
+                row = s.get(AgentRun, run_id)
+                if row is None:
+                    return None
+                row.status = status
+                row.output = output
+                row.updated_at = _now_iso()
+                self._commit(s)
+                return _agent_run_dict(row)
         return self._wrap(_do)
 
     def list_agent_runs(self, limit: int = 20) -> list[dict[str, Any]]:
@@ -832,7 +1060,7 @@ class Repository:
         def _do():
             with self._session_ctx() as s:
                 s.execute(delete(AgentRun))
-                s.commit()
+                self._commit(s)
         self._wrap(_do)
 
 
@@ -850,7 +1078,8 @@ def _action_case_dict(row: ActionCase) -> dict[str, Any]:
     return {
         "id": row.id, "kind": row.kind, "tag": row.tag, "tag_cls": row.tag_cls,
         "case_title": row.case_title, "code": row.code, "source": row.source,
-        "status": row.status, "orchestration": row.orchestration,
+        "status": row.status, "origin": row.origin or ACTION_ORIGIN_MINE,
+        "orchestration": row.orchestration,
         "archive": row.archive, "created_at": row.created_at, "updated_at": row.updated_at,
     }
 
@@ -928,4 +1157,3 @@ def _cast(value: str, value_type: str):
     if value_type == "bool":
         return value.lower() == "true"
     return value
-

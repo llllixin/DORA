@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class InsightFactor(BaseModel):
@@ -38,6 +38,11 @@ class InsightSummary(BaseModel):
     question: str
     severity: InsightSeverity
     consequence: InsightConsequence
+    businessVersion: dict | None = None
+    insightTypeId: str | None = None
+    occurrenceId: str | None = None
+    reasonSource: str = "template"
+    generatedAt: str | None = None
 
 
 class Pulse(BaseModel):
@@ -63,6 +68,9 @@ class EvidenceModel(BaseModel):
     judgment: str
     suggestion: str
     rawRows: list[list[str]]
+    businessVersion: dict | None = None
+    insightTypeId: str | None = None
+    occurrenceId: str | None = None
 
 
 class ActionStep(BaseModel):
@@ -118,6 +126,9 @@ class WatchStatusRequest(BaseModel):
 
 class ActionCreateRequest(BaseModel):
     insight_id: str
+    # action-demo-separation：用户明确「加入行动回路 / 转为行动档案」时认领（缺省 false，
+    # 既有调用与门禁行为逐字不变）
+    claim: bool = False
 
 
 class StepBodyRequest(BaseModel):
@@ -162,3 +173,16 @@ class ChatRequest(BaseModel):
     page: str = "pulse"
     insight_id: str | None = None
     workspace: str = "门店经营"
+
+
+# ---------- 普通 RAG：混合检索、受证据约束回答与评价 ----------
+class RagSearchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=500)
+    top_k: int = Field(default=5, ge=1, le=20)
+    knowledge_types: list[str] = Field(default_factory=list)
+
+
+class RagAnswerRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    top_k: int = Field(default=5, ge=1, le=20)
+    knowledge_types: list[str] = Field(default_factory=list)

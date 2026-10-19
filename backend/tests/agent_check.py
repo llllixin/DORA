@@ -43,6 +43,25 @@ def _sse(path: str, payload: dict):
     return events
 
 
+def _numbers(text: str) -> set[str]:
+    return set(re.findall(r"\d+(?:\.\d+)?", text))
+
+
+def _traceable_numbers(payload: dict | list, references: list[dict]) -> set[str]:
+    """数字锁的可回溯基准 = 该洞察的引擎 payload ∪ 该条答案自身下发的检索引用。
+
+    引用编号（`ORD-1022`/`PRF-0831`）属**可回溯标识**（随答案结构化下发、来源为真实检索结果），
+    不计为「引擎外新数字」——见 change `chat-number-lock-references` / D045。
+    """
+    return (_numbers(json.dumps(payload, ensure_ascii=False))
+            | _numbers(json.dumps(references, ensure_ascii=False)))
+
+
+def _number_lock_violations(text: str, allowed: set[str]) -> set[str]:
+    """数字锁：返回文本中不可回溯的数字集合（空集 = 通过）。"""
+    return _numbers(text) - allowed
+
+
 def section1_tools() -> None:
     """1.x query_metric：命中 + 未知指标空数组。"""
     st, body = _http("GET", "/tools/query_metric?metric_key=margin")
@@ -107,12 +126,16 @@ def section4_chat(repo: Repository) -> None:
     done = next(d for e, d in events if e == "done")
     st, run = _http("GET", f"/agent/runs/{done['run_id']}")
     assert run["run"]["trigger"] == "chat", run
-    # 数字锁：答案中的数字必须来自该洞察的引擎 payload
+    # 数字锁：答案中的数字必须来自该洞察的引擎 payload ∪ 该答案自身的检索引用（编号属可回溯标识）
     st, engine = _http("GET", "/engine/run")
     ins = next(i for i in engine["insights"] if i["id"] == "p1")
-    allowed = set(re.findall(r"\d+(?:\.\d+)?", json.dumps(ins, ensure_ascii=False)))
-    used = set(re.findall(r"\d+(?:\.\d+)?", answer["text"]))
-    assert used <= allowed, f"answer numbers not from engine: {used - allowed}"
+    allowed = _traceable_numbers(ins, answer["references"])
+    violations = _number_lock_violations(answer["text"], allowed)
+    assert violations == set(), f"answer numbers not from engine/refs: {violations}"
+    # 锁的非空转自检：伪造数字必须被抓（防止「扩大白名单」演成「把锁改恒真」）
+    fake_hits = _number_lock_violations("本季度增长 12345%，档案 PRF-0001 已归档。",
+                                        _numbers(json.dumps(ins, ensure_ascii=False)) | {"0001"})
+    assert "12345" in fake_hits, f"数字锁自检失败（锁被弱化为恒真？）: {fake_hits}"
     # insight-judgment-structure：既有意图不回归（why / evidence）
     assert next(d for e, d in events if e == "thought_step")["intent"] == "why", events[0]
     ev_events = _sse("/dora/chat", {"question": "证据是什么？", "page": "insight", "insight_id": "p1"})
@@ -127,10 +150,10 @@ def section4_chat(repo: Repository) -> None:
     assert ins["consequence"]["summary"] in cq["text"], cq["text"]
     assert ins["consequence"]["condition"] in cq["text"], cq["text"]
     assert ins["severity"]["drivers"][0]["value"] in cq["text"], cq["text"]
-    cq_used = set(re.findall(r"\d+(?:\.\d+)?", cq["text"]))
-    assert cq_used <= allowed, f"consequence answer numbers not from engine: {cq_used - allowed}"
+    cq_violations = _number_lock_violations(cq["text"], _traceable_numbers(ins, cq["references"]))
+    assert cq_violations == set(), f"consequence answer numbers not from engine/refs: {cq_violations}"
     repo.delete_all_agent_runs()
-    print("[4] dora/chat OK（5 类事件 + run 落库 + 数字锁 + 后果意图两段）")
+    print("[4] dora/chat OK（5 类事件 + run 落库 + 数字锁（payload ∪ 引用，含非空转自检）+ 后果意图两段）")
 
 
 def main() -> int:
@@ -140,7 +163,9 @@ def main() -> int:
     section2_search(repo)
     section3_runs(repo)
     section4_chat(repo)
-    print("agent_check OK（工具层 / 知识检索 / 运行记录 / 问答流 4 节）")
+    from tests.agent_loop_check import run_cases
+    run_cases(repo)
+    print("agent_check OK（工具层 / 知识检索 / 运行记录 / 问答流 / 只读循环 5 节）")
     return 0
 
 

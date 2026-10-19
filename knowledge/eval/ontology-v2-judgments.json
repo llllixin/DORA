@@ -1,0 +1,27 @@
+{
+  "profile": "ontology-v2",
+  "base": "legacy-v1; original questions.jsonl/judgments.jsonl unchanged",
+  "reviewEvidence": "2026-10-14 user approved specific A01 proposal",
+  "overrides": [
+    {
+      "id": "q07",
+      "expected_document_ids": [],
+      "required_points": [
+        "SKU种数",
+        "观察窗口"
+      ],
+      "expected_status": "clarification_required",
+      "reason": "新品SKU指标不能等同 new_sku 新品销量；批准的 A01 语义组要求澄清"
+    },
+    {
+      "id": "q08",
+      "expected_document_ids": [],
+      "required_points": [
+        "门店集合",
+        "订单金额分布"
+      ],
+      "expected_status": "clarification_required",
+      "reason": "高价值门店未明确是集合、门店占比或订单指标；不继续用旧 alias 认定等价"
+    }
+  ]
+}

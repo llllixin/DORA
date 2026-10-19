@@ -1,0 +1,40 @@
+/** Real HTTP + production React acceptance. Requires the guarded A08 runner. */
+import assert from 'node:assert/strict';
+import {mkdirSync,writeFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import path from 'node:path';
+import {launchChrome,newPage,preparePage,goto,evaluate,waitFor,clickSelector,createSuite,finish,fatal,screenshot,ROOT} from './lib/cdp.mjs';
+const suite=createSuite('A08 real PostgreSQL / HTTP / React');const closers=[];
+const api=process.env.DORA_API_BASE,ui=process.env.DORA_UI_BASE;
+const out=path.join(ROOT,'tmp/a06-a08-2026-10-18/full');mkdirSync(out,{recursive:true});
+const packets={};
+try{
+ assert.equal(api,'http://127.0.0.1:8088/api');assert.equal(ui,'http://127.0.0.1:5188');
+ assert.equal(process.env.DATABASE_URL,'postgresql+psycopg://dora_a08:dora_a08@127.0.0.1:55458/dora_a08');assert.equal(process.env.DORA_MODEL_EXTERNAL_ENABLED,'false');
+ const request=async(name,p,body)=>{const r=await fetch(api+p,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined});const value=await r.json();packets[name]={httpStatus:r.status,value};assert.equal(r.status,200,JSON.stringify(value));return value;};
+ const catalog=await request('catalog','/wiki/catalog');assert.equal(catalog.ok,true);assert(catalog.cards.length>0);assert(catalog.cards.every(c=>!('content'in c)));suite.check('a08-11 real metadata catalog',true);
+ const first=catalog.cards[0];const card=await request('sourceCard',`/wiki/cards/${encodeURIComponent(first.id)}?version=${first.version}`);assert.equal(card.card.version,first.version);suite.check('a08-16 real exact source version',true);
+ const definition=await request('definition','/query/answer',{question:'利润率是什么？',includeSimulated:false});assert.equal(definition.status,'answered');assert(definition.evidence.length>0);suite.check('a08-01 real definition with citations',true);
+ const selection=definition.evidence[0];const evidence=await request('evidence',`/query/runs/${encodeURIComponent(definition.runId)}/evidence/${encodeURIComponent(selection.evidenceId)}`);assert.equal(evidence.contentHash,selection.contentHash);assert.equal(evidence.evidenceId,selection.evidenceId);suite.check('a08-17 real retained evidence matches answer',true);
+ const latest=await request('latest','/query/answer',{question:'最新全国利润率是多少？',includeSimulated:true});assert.equal(latest.status,'answered');assert(latest.evidence.some(e=>e.sourceKind==='business'));assert.equal(latest.usage.externalModelCalls,0);assert.equal(latest.usage.totalTokens,null);suite.check('a08-03,08,10 real metric and simulation/unknown usage',true);
+ const today=await request('today','/query/answer',{question:'今天全国利润率是多少？',includeSimulated:true});assert.equal(today.status,'partial');assert.equal(today.reasonCode,'unverified_today');suite.check('a08-09 today remains unverified',true);
+ const empty=await request('unsupported','/query/answer',{question:'去年全国利润率是多少？'});assert.equal(empty.status,'abstained');assert.equal(empty.evidence.length,0);suite.check('a08-04 real unsupported period abstains',true);
+ const records=await request('record','/query/answer',{question:'有没有利润率下降的处理记录？',includeSimulated:true});assert(['answered','abstained','partial'].includes(records.status));assert(records.evidence.every(e=>e.approvalStatus==='unreviewed_record'));suite.check('a08-02 archive answer never upgrades approval',true);
+ const search=await request('search','/query/search',{query:'利润率',includeSimulated:false});assert(Array.isArray(search.hits));suite.check('a08-07 explicit real search',true);
+ const history=await request('stored',`/rag/documents/${encodeURIComponent(first.id)}?version=${first.version}`);assert.equal(history.document.version,first.version);suite.check('a08-16 real stored version',true);
+ const curl=spawnSync('curl',['--fail','--silent','--show-error',`${api}/wiki/catalog?pageSize=1`],{encoding:'utf8'});assert.equal(curl.status,0);assert.equal(JSON.parse(curl.stdout).pageSize,1);packets.curl={exitCode:curl.status,stdout:curl.stdout};suite.check('a08-35 curl same API',true);
+ const chrome=await launchChrome();closers.push(chrome.close);const {session}=await newPage(chrome.port);closers.push(()=>session.close());
+ await preparePage(session,{initScripts:["localStorage.removeItem('doraDataSource');window.__realRequests=[];const f=fetch;window.fetch=(u,o)=>{window.__realRequests.push(String(u));return f(u,o);};"]});
+ await goto(session,ui+'/#page=knowledge',{waitSelector:'#knowledge-question'});
+ await evaluate(session,"(()=>{const e=document.querySelector('#knowledge-question');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(e,'利润率是什么？');e.dispatchEvent(new Event('input',{bubbles:true}));})()");
+ await clickSelector(session,'[data-action=answer]');await waitFor(session,"document.querySelector('.query-result')?.dataset.status==='answered'",{timeout:40000});suite.check('a08-01,35 real browser calls A07 answer',true);
+ await clickSelector(session,'[data-source=evidence]');await waitFor(session,"!!document.querySelector('dialog .reader-content')",{timeout:15000});
+ suite.check('a08-17 real browser opens retained evidence',await evaluate(session,"document.querySelector('dialog').innerText.includes('利润率')&&window.__realRequests.some(u=>u.includes('/query/runs/'))"));
+ await screenshot(session,'a08-real-evidence.png');await clickSelector(session,'[aria-label="关闭资料原文"]');
+ await clickSelector(session,'[data-task=wiki]');await waitFor(session,"!!document.querySelector('[data-source=wiki]')",{timeout:15000});suite.check('a08-11,35 real browser reads catalog',true);
+ await clickSelector(session,'[data-source=wiki]');await waitFor(session,"!!document.querySelector('dialog .reader-content')");suite.check('a08-16 real browser exact source card',await evaluate(session,"document.querySelector('dialog').innerText.includes('明确版本')"));
+ await screenshot(session,'a08-real-wiki.png');await clickSelector(session,'[aria-label="关闭资料原文"]');
+ await clickSelector(session,'[data-task=archive]');await waitFor(session,"!!document.querySelector('.archive-panel [role=status]') && !document.querySelector('.archive-panel').innerText.includes('正在读取')",{timeout:15000});
+ suite.check('a08-29,30 archive usable without fake datasource',await evaluate(session,"!localStorage.getItem('doraDataSource')&&!document.querySelector('.topbar').innerText.includes('数据证据链')"));
+ await screenshot(session,'a08-real-archive.png');
+}catch(error){fatal(error);suite.check('real acceptance completed',false,String(error));}finally{writeFileSync(path.join(out,'real-http.json'),JSON.stringify(packets,null,2));await finish(suite,closers);}

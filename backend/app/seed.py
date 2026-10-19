@@ -79,6 +79,7 @@ def action_cases_from_static() -> list[tuple[dict, list[dict]]]:
             "id": act["id"], "kind": act["kind"], "tag": act["tag"],
             "tag_cls": act["tagCls"], "case_title": act["caseTitle"],
             "code": act["code"], "source": act["source"], "status": "running",
+            "origin": "demo",  # action-demo-separation：静态演示集建档 = 演示档案
             "orchestration": {"experts": act["experts"], "data": act["data"], "expertDesc": act["expertDesc"]},
             "archive": act["archive"],
         }
@@ -94,36 +95,38 @@ def seed_action_cases(repo: Repository) -> None:
     """
     for case, steps in action_cases_from_static():
         if repo.get_action_case(case["id"]) is None:
-            repo.create_action_case(case, steps, status=case.get("status", "running"))
+            repo.create_action_case(
+                case, steps, status=case.get("status", "running"),
+                origin=case.get("origin", "demo"),  # 演示集 → demo（缺省也不写成 engine）
+            )
 
 
-def run_seed() -> dict[str, int]:
-    db.init_db()
+def run_seed(*, include_version=False, reset_watch_events=False) -> dict:
+    db.ensure_initialized()
     repo = Repository()
-    # 出厂重置：先清空系列/更新日志/语义缓存，再写入规范种子
-    repo.delete_all_series()
-    repo.delete_all_updates()
-    repo.delete_all_reasoning()
-    repo.upsert_series(series_items())
-    repo.upsert_cluster_stores(
-        [{"store": name, "region": region, "aov": float(aov)} for name, region, aov in CLUSTER_STORES]
-    )
-    repo.upsert_data_update({
-        "updated_at": ds.DS_UPDATE["updated"],
-        "rows_added": ds.DS_UPDATE["rows_added"],
-        "total_rows": ds.DS_UPDATE["total_rows"],
-        "metrics": ds.DS_UPDATE["metrics_affected"],
-    })
-    repo.upsert_rules(rule_items())
-    seed_action_cases(repo)
-    return {
-        "metric_series": repo.count_rows("metric_series"),
-        "store_cluster_store": repo.count_rows("store_cluster_store"),
-        "data_update_log": repo.count_rows("data_update_log"),
-        "rule_config": repo.count_rows("rule_config"),
-        "action_case": repo.count_rows("action_case"),
-        "action_step": repo.count_rows("action_step"),
-    }
+    with repo.business_transaction(source_mode="sample") as tx:
+        # 出厂重置：先清空系列/更新日志/语义缓存，再写入规范种子
+        tx.delete_all_series()
+        tx.delete_all_updates()
+        tx.delete_all_reasoning()
+        tx.delete_all_cluster_stores()
+        tx.upsert_series(series_items())
+        tx.upsert_cluster_stores(
+            [{"store": name, "region": region, "aov": float(aov)} for name, region, aov in CLUSTER_STORES]
+        )
+        tx.upsert_data_update({
+            "updated_at": ds.DS_UPDATE["updated"],
+            "rows_added": ds.DS_UPDATE["rows_added"],
+            "total_rows": ds.DS_UPDATE["total_rows"],
+            "metrics": ds.DS_UPDATE["metrics_affected"],
+        })
+        tx.upsert_rules(rule_items())
+        seed_action_cases(tx)
+        if reset_watch_events:
+            from app.evidence.retention import clear_watch_events_captured
+            clear_watch_events_captured(tx)
+        counts = {name: tx.count_rows(name) for name in ("metric_series", "store_cluster_store", "data_update_log", "rule_config", "action_case", "action_step")}
+    return {"counts": counts, "businessVersion": tx.committed_business_version} if include_version else counts
 
 
 if __name__ == "__main__":

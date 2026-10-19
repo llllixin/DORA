@@ -7,10 +7,34 @@
 - 引擎不依赖 LLM / Agent（D009/D014），证据行由 Repository 数据生成。
 """
 from app.repository import Repository  # noqa: F401 (engine_evidence 默认数据源)
+from app.business_version import FrozenBusiness, incomplete_version, occurrence_id, reasoning_input_hash
 
 
-def _pct(cur: float, prev: float) -> float:
-    return (cur / prev - 1.0) * 100.0
+def _freeze_business(repo):
+    if isinstance(repo, FrozenBusiness) or not hasattr(repo, "read_business_inputs"):
+        return repo
+    return repo.read_business_inputs()
+
+
+def _pct(cur: float, prev: float) -> float | None:
+    """零基数没有可定义的相对增幅；不伪造 0% 或无穷大。"""
+    return round((cur / prev - 1.0) * 100.0, 1) if prev != 0 else None
+
+
+def _change(value: float | None) -> str:
+    if value is None:
+        return "变化率无法计算（缺少有效基数）"
+    return f"{'↓' if value < 0 else '↑'} {abs(value)}%"
+
+
+def _rising_periods(values: list[float]) -> int:
+    # 上升区间覆盖的观测期数，至少两期；持平或下降会切断区间。
+    count = 1 if values else 0
+    for i in range(len(values) - 1, 0, -1):
+        if values[i] <= values[i - 1]:
+            break
+        count += 1
+    return count if count > 1 else 0
 
 
 def _mean(vals: list[float]) -> float:
@@ -53,7 +77,7 @@ def _rule_map(repo) -> dict:
 
 
 def _series(repo, key: str, dimension: str | None = None) -> list[float]:
-    """从 Repository 读取某指标（可按维度过滤）时间序列值（按存储顺序=时间序）。"""
+    """从 Repository 读取某指标（可按维度过滤）时间序列值（由 Repository 统一按周期排序）。"""
     if repo is None:
         return []
     return [r["value"] for r in repo.get_series(key) if dimension is None or r["dimension"] == dimension]
@@ -76,6 +100,7 @@ def _repo_has_series(repo) -> bool:
 
 def compute_snapshot(repo=None, rules=None) -> dict:
     """从 Repository（默认 PostgreSQL）读取原始数据并计算指标状态。"""
+    repo = _freeze_business(repo)
     rules = rules or _rule_map(repo)
     margin = _series(repo, "margin", "全国")
     orders = _series(repo, "orders", "全国")
@@ -92,7 +117,10 @@ def compute_snapshot(repo=None, rules=None) -> dict:
     returns_by_store: dict[str, list[float]] = {}
     for r in store_rows:
         returns_by_store.setdefault(r["dimension"], []).append(r["value"])
-    latest_store = {s: vals[-1] for s, vals in returns_by_store.items()}
+    # 只有实际连续上升且高于基线的门店参与 p2；下降门店不能借其它门店的趋势入选。
+    rising_stores = {name: vals for name, vals in returns_by_store.items()
+                     if _rising_periods(vals) >= 4 and vals[-1] - baseline >= 1.0}
+    latest_store = {name: vals[-1] for name, vals in rising_stores.items()}
 
     # 供应商价格：按供应商维度分组
     price_rows = repo.get_series("supplier_price") if repo else []
@@ -121,7 +149,7 @@ def compute_snapshot(repo=None, rules=None) -> dict:
             "current": margin[-1] if margin else 0.0,
             "baseline": _mean(margin[:4]) if len(margin) >= 4 else (margin[0] if margin else 0.0),
             "target": target,
-            "delta_pct": round(_pct(margin[-1], _mean(margin[:4])), 1) if len(margin) >= 4 else 0.0,
+            "delta_pct": _pct(margin[-1], _mean(margin[:4])) if len(margin) >= 4 else None,
             "streak_below": _streak_below(margin, target) if margin else 0,
             "latest": margin[-3:],
         },
@@ -129,29 +157,29 @@ def compute_snapshot(repo=None, rules=None) -> dict:
             "latest_store": latest_store,
             "baseline": baseline,
             "delta_pp": round((max(latest_store.values()) if latest_store else 0.0) - baseline, 1),
-            "stores": list(returns_by_store.keys()),
-            "rising_weeks": min((len(v) for v in returns_by_store.values()), default=0),
+            "stores": list(rising_stores.keys()),
+            "rising_weeks": min((_rising_periods(v) for v in rising_stores.values()), default=0),
         },
         "orders": {
             "current": int(orders[-1]) if orders else 0,
-            "delta_pct": round(_pct(orders[-1], _mean(orders[:2])), 1) if len(orders) >= 2 else 0.0,
+            "delta_pct": _pct(orders[-1], _mean(orders[:2])) if len(orders) >= 2 else None,
         },
         "revenue": {
             "current": int(revenue[-1]) if revenue else 0,
-            "delta_pct": round(_pct(revenue[-1], _mean(revenue[:2])), 1) if len(revenue) >= 2 else 0.0,
+            "delta_pct": _pct(revenue[-1], _mean(revenue[:2])) if len(revenue) >= 2 else None,
         },
         "aov": {
             "current": int(aov[-1]) if aov else 0,
-            "delta_pct": round(_pct(aov[-1], _mean(aov[:2])), 1) if len(aov) >= 2 else 0.0,
+            "delta_pct": _pct(aov[-1], _mean(aov[:2])) if len(aov) >= 2 else None,
         },
         "east_orders": {
             "current": int(east[-1]) if east else 0,
-            "delta_pct": round(_pct(east[-1], _mean(east[:2])), 1) if len(east) >= 2 else 0.0,
+            "delta_pct": _pct(east[-1], _mean(east[:2])) if len(east) >= 2 else None,
             "threshold": float(rules["east.threshold"]),
         },
         "new_sku": {
             "current": int(new_sku[-1]) if new_sku else 0,
-            "delta_pct": round(_pct(new_sku[-1], new_sku[0]), 1) if new_sku else 0.0,
+            "delta_pct": _pct(new_sku[-1], new_sku[0]) if len(new_sku) >= 2 else None,
         },
         "high_value": {
             "current": high[-1] if high else 0.0,
@@ -176,8 +204,8 @@ def compute_snapshot(repo=None, rules=None) -> dict:
         },
         "supplier_b": {
             "current": b_prices[-1] if b_prices else 0.0,
-            "delta_pct": round(_pct(b_prices[-1], _mean(b_prices[:-1])), 1) if len(b_prices) > 1 else 0.0,
-            "peer_delta_pct": round(_pct(b_prices[-1], c_prices[-1]), 1) if b_prices and c_prices else 0.0,
+            "delta_pct": _pct(b_prices[-1], _mean(b_prices[:-1])) if len(b_prices) > 1 else None,
+            "peer_delta_pct": _pct(b_prices[-1], c_prices[-1]) if b_prices and c_prices else None,
         },
     }
 
@@ -194,9 +222,9 @@ def evaluate_signals(snap: dict) -> list[dict]:
     if m["streak_below"] >= 3:
         signals.append({
             "id": "sig-margin", "insight": "p1", "type": "problem", "metric_key": "margin",
-            "metric": f"{m['current']}%", "delta": f"↓ {abs(m['delta_pct'])}%",
+            "metric": f"{m['current']}%", "delta": _change(m["delta_pct"]),
             "trigger": f"连续 {m['streak_below']} 天低于目标 {m['target']}%",
-            "factors": [f"A 产品线采购成本变化 {b['delta_pct']}%", f"供应商 B 较同行高 {abs(b['peer_delta_pct'])}%"],
+            "factors": [f"A 产品线采购成本变化 {_change(b['delta_pct'])}", f"供应商 B 较同行 {_change(b['peer_delta_pct'])}"],
             "evidence_kind": "margin",
         })
     if r["delta_pp"] >= 1.0 and r["rising_weeks"] >= 4:
@@ -207,15 +235,15 @@ def evaluate_signals(snap: dict) -> list[dict]:
             "factors": [f"高贡献门店：{' / '.join(r['stores'])}"],
             "evidence_kind": "returns",
         })
-    if o["delta_pct"] < -1.5 and rev["delta_pct"] > 2.0:
+    if o["delta_pct"] is not None and rev["delta_pct"] is not None and o["delta_pct"] < -1.5 and rev["delta_pct"] > 2.0:
         signals.append({
             "id": "sig-order-structure", "insight": "p3", "type": "problem", "metric_key": "orders",
             "metric": f"{o['current']:,}", "delta": f"↓ {abs(o['delta_pct'])}%",
             "trigger": "订单量下滑而销售额逆势增长，结构信号需要复核",
-            "factors": [f"销售额 ↑ {rev['delta_pct']}%", f"客单价 ↑ {a['delta_pct']}%"],
+            "factors": [f"销售额 ↑ {rev['delta_pct']}%", f"客单价 {_change(a['delta_pct'])}"],
             "evidence_kind": "orders",
         })
-    if a["delta_pct"] >= 4.0:
+    if a["delta_pct"] is not None and a["delta_pct"] >= 4.0:
         signals.append({
             "id": "sig-aov", "insight": "o1", "type": "opportunity", "metric_key": "aov",
             "metric": f"¥{a['current']:,}", "delta": f"↑ {a['delta_pct']}%",
@@ -223,7 +251,7 @@ def evaluate_signals(snap: dict) -> list[dict]:
             "factors": ["需拆解价格与商品结构贡献"],
             "evidence_kind": "aov",
         })
-    if e["delta_pct"] < -1.0:
+    if e["delta_pct"] is not None and e["delta_pct"] < -1.0:
         if _breach(e["delta_pct"], e["threshold"]):  # 跌破默认含等于
             # Watch→升级：跌破阈值自动升级为问题（文档 Case 4）
             signals.append({
@@ -241,7 +269,7 @@ def evaluate_signals(snap: dict) -> list[dict]:
                 "factors": ["继续观察，跌破阈值自动升级问题"],
                 "evidence_kind": "east_orders",
             })
-    if n["delta_pct"] >= 30:
+    if n["delta_pct"] is not None and n["delta_pct"] >= 30:
         signals.append({
             "id": "sig-new-sku", "insight": "c3", "type": "change", "metric_key": "new_sku",
             "metric": f"{n['current']:,}", "delta": f"↑ {n['delta_pct']}%",
@@ -287,8 +315,8 @@ INSIGHT_TEMPLATES = {
     "c3": {"tag": "趋势出现", "title": "新品销量快速增长", "desc": "新品销量高增但尚未完成机会确认。", "source": "新品销量 + 周趋势（引擎计算）", "question": "增长门店有没有共同动作？"},
     "c4": {"tag": "结构变化", "title": "高客单门店占比抬升", "desc": "门店结构正朝高价值方向迁移。", "source": "门店分层 + 客单价（引擎计算）", "question": "结构变化是否稳定？"},
     "e2": {"tag": "问题 · 自动升级", "title": "华东订单量跌破升级阈值", "desc": "连续下滑已突破升级阈值，Dora 自动升级为问题。", "source": "华东订单 + 阈值规则（引擎计算）", "question": "如何遏制华东订单量下滑？"},
-    "c2": {"tag": "数据更新", "title": "门店销售数据已更新", "desc": "09:32 新增 {rows_added} 条记录，Dora 已重新计算主动发现。", "source": "数据源状态（引擎计算）", "question": "这次更新影响了哪些指标？"},
-    "o2": {"tag": "增长机会", "title": "高客单门店形成集群", "desc": "Top 高客单门店集中于华东，存在可复制的经营假设。", "source": "门店画像 + 客单价（引擎计算）", "question": "这些门店做对了什么？"},
+    "c2": {"tag": "数据更新", "title": "门店销售数据已更新", "desc": "{updated} 新增 {rows_added} 条记录，Dora 已重新计算主动发现。", "source": "数据源状态（引擎计算）", "question": "这次更新影响了哪些指标？"},
+    "o2": {"tag": "增长机会", "title": "高客单门店形成集群", "desc": "Top 高客单门店集中于{region}，存在可复制的经营假设。", "source": "门店画像 + 客单价（引擎计算）", "question": "这些门店做对了什么？"},
 }
 
 
@@ -333,7 +361,7 @@ def _severity_measures(sig: dict, snap: dict) -> dict:
     factors = len(sig.get("factors") or [])
 
     if sig["insight"] == "p1":
-        return {"trend": (abs(m["delta_pct"]), "pct", "偏离目标"),
+        return {"trend": (abs(m["delta_pct"]), "pct", "较基线变化") if m["delta_pct"] is not None else None,
                 "threshold": (m["current"] < m["target"], round(abs(m["current"] - m["target"]), 1),
                               m["target"], "距目标线"),
                 "duration": (m["streak_below"], "天", "连续低于目标"),
@@ -463,13 +491,13 @@ def _consequence(sig: dict, snap: dict) -> dict:
 
     if ins == "p1":
         return _consequence_of(
-            f"若不干预，利润率将延续 {abs(m['delta_pct'])}% 的偏离幅度（当前 {m['current']}%，目标 {m['target']}%），成本端压力继续放大",
+            f"若不干预，利润率仍可能低于目标（当前 {m['current']}%，目标 {m['target']}%），成本端压力继续放大",
             f"{max(m['streak_below'], 3)} 天", "若成本端未干预",
             [("目标线", f"{m['target']}%"), ("当前利润率", f"{m['current']}%"), ("受影响供应商", "1 家")])
     if ins == "p2":
         latest = max(r["latest_store"].values()) if r["latest_store"] else 0.0
         return _consequence_of(
-            f"若不处理，退货率将延续每周 {r['delta_pp']}pp 的上升（当前最高 {latest}%，基线 {r['baseline']}%），高贡献门店持续受损",
+            f"若不处理，退货率仍可能高于基线 {r['delta_pp']}pp（当前最高 {latest}%，基线 {r['baseline']}%），高贡献门店持续受损",
             f"{max(r['rising_weeks'], 3)} 周", "若退货原因未处理",
             [("基线", f"{r['baseline']}%"), ("当前最高门店退货率", f"{latest}%"), ("高于基线", f"{r['delta_pp']}pp")])
     if ins == "p3":
@@ -529,6 +557,7 @@ def build_insights(signals: list[dict], snap: dict) -> tuple[list[dict], dict]:
             "streak": snap["margin"]["streak_below"],
             "rows_added": snap["data_event"]["rows_added"],
             "updated": snap["data_event"]["updated"],
+            "region": snap["store_cluster"]["region"],
         }
         insights.append({
             "id": sig["insight"],
@@ -560,12 +589,10 @@ def build_insights(signals: list[dict], snap: dict) -> tuple[list[dict], dict]:
     return insights, pulse
 
 
-def _apply_reasoning_cache(repo, insights: list[dict]) -> None:
+def _apply_reasoning_cache(repo, insights: list[dict], snapshot: dict) -> None:
     """合并语义缓存（命中→覆盖 semantics + 来源标注；未命中→reasonSource=template）。"""
-    if repo is None:
-        return
     for ins in insights:
-        cached = repo.get_reasoning(ins["id"])
+        cached = repo.get_reasoning(ins["id"], reasoning_input_hash(ins, snapshot)) if isinstance(repo, FrozenBusiness) else None
         if cached:
             ins["semantics"] = cached["semantics"] or ins.get("semantics")
             ins["reasonSource"] = cached["provider"]
@@ -574,23 +601,65 @@ def _apply_reasoning_cache(repo, insights: list[dict]) -> None:
             ins["reasonSource"] = "template"
 
 
-def run_engine(repo=None, rules=None) -> dict:
+def run_engine(repo=None, rules=None, *, use_cache=True, profile=None) -> dict:
     """全链路：Metric → Rule → Signal → Insight → Pulse（数据源=Repository）。"""
     if repo is None:
         from app.repository import Repository
         repo = Repository()
+    repo = _freeze_business(repo)
+    if rules is not None and isinstance(repo, FrozenBusiness):
+        repo = repo.with_rules(rules)
+    if profile is not None and isinstance(repo, FrozenBusiness):
+        repo = repo.with_profile(profile)
+    version = repo.business_version if isinstance(repo, FrozenBusiness) else incomplete_version()
     snap = compute_snapshot(repo, rules)
+    snap["businessVersion"] = version
     if not _repo_has_series(repo):
         # 空数据门禁：无指标序列则不产洞察（即使 cluster/update_log 残留）
         pulse = {
             "problems": 0, "opportunities": 0, "changes": 0, "watching": 0,
             "last_updated": "--",
         }
-        return {"snapshot": snap, "signals": [], "insights": [], "pulse": pulse}
+        return {"snapshot": snap, "signals": [], "insights": [], "pulse": pulse, "businessVersion": version}
     signals = evaluate_signals(snap)
     insights, pulse = build_insights(signals, snap)
-    _apply_reasoning_cache(repo, insights)
-    return {"snapshot": snap, "signals": signals, "insights": insights, "pulse": pulse}
+    for insight in insights:
+        insight["chart"] = _chart_for(insight["evidence"]["kind"], repo, snap)
+        insight.update(businessVersion=version, insightTypeId=insight["id"], occurrenceId=occurrence_id(version, insight["id"]))
+    if use_cache:
+        _apply_reasoning_cache(repo, insights, snap)
+    else:
+        for insight in insights: insight["reasonSource"] = "template"
+    return {"snapshot": snap, "signals": signals, "insights": insights, "pulse": pulse, "businessVersion": version}
+
+
+def _chart_for(kind: str, repo, snap: dict) -> dict | None:
+    """前端只绘图；序列、维度与规则使用和判定相同的数据源。"""
+    dims = {"margin": "全国", "orders": "全国", "aov": "全国", "east_orders": "华东",
+            "new_sku": "全区域", "high_value": "全国"}
+    if kind == "store_cluster":
+        rows = repo.get_cluster_stores()
+        return {"kind": "bar", "unit": "元", "labels": [r["store"] for r in rows],
+                "series": [{"name": "客单价", "values": [r["aov"] for r in rows], "color": "#665cf5"}]} if rows else None
+    if kind not in dims and kind != "returns":
+        return None
+    rows = [r for r in repo.get_series(kind) if kind not in dims or r["dimension"] == dims[kind]]
+    if not rows:
+        return None
+    labels = list(dict.fromkeys(r["label"] for r in rows))
+    # 多维序列按相同 label 对齐，缺失点保留 null，不把缺数据画成零。
+    dimensions = list(dict.fromkeys(r["dimension"] for r in rows))
+    colors = ["#665cf5", "#3975da", "#d98b24", "#339874"]
+    series = []
+    for i, dim in enumerate(dimensions):
+        points = {r["label"]: r["value"] for r in rows if r["dimension"] == dim}
+        series.append({"name": dim, "values": [points.get(label) for label in labels], "color": colors[i % len(colors)]})
+    chart = {"kind": "line", "labels": labels, "unit": rows[0]["unit"], "series": series}
+    if kind == "margin":
+        chart["threshold"] = {"value": snap["margin"]["target"], "label": "目标", "color": "#e19b34"}
+    if kind == "returns":
+        chart["threshold"] = {"value": snap["returns"]["baseline"], "label": "基线", "color": "#e19b34"}
+    return chart
 
 
 EVIDENCE_META = {
@@ -631,7 +700,7 @@ def _evidence_rows(kind: str, repo) -> list[list[str]]:
     if kind == "margin":
         rs = srows("margin", "全国")[-4:]
         return [[r["label"], "利润率", "全国", f"{r['value']}%",
-                 "低于目标" if r["value"] < 18.5 else "正常"] for r in rs]
+                 "低于目标" if r["value"] < float(_rule_map(repo)["margin.target"]) else "正常"] for r in rs]
     if kind == "returns":
         out = []
         for store in dict.fromkeys(r["dimension"] for r in srows("returns")):
@@ -649,7 +718,7 @@ def _evidence_rows(kind: str, repo) -> list[list[str]]:
     if kind == "new_sku":
         out, prev = [], None
         for r in srows("new_sku", "全区域"):
-            delta = "" if prev is None else f"{(r['value'] / prev - 1) * 100:+.1f}%"
+            delta = "" if prev is None else _change(_pct(r["value"], prev))
             out.append(["新品销量", r["label"], f"{int(r['value']):,}", delta or "—"])
             prev = r["value"]
         return out
@@ -675,7 +744,13 @@ def engine_evidence(insight_id: str, repo=None) -> dict | None:
     if repo is None:
         from app.repository import Repository
         repo = Repository()
-    insight = next((i for i in run_engine(repo)["insights"] if i["id"] == insight_id), None)
+    repo = _freeze_business(repo)
+    return evidence_from_result(insight_id, repo, run_engine(repo))
+
+
+def evidence_from_result(insight_id: str, repo, result: dict) -> dict | None:
+    """Render evidence from the caller's already-frozen engine result without recomputing."""
+    insight = next((i for i in result["insights"] if i["id"] == insight_id), None)
     if not insight:
         return None
     kind = insight["evidence"]["kind"]
@@ -687,9 +762,12 @@ def engine_evidence(insight_id: str, repo=None) -> dict | None:
     # 时间戳取自最新更新事件；无事件显示 --
     _latest = repo.get_latest_update() or {}
     _ts = str(_latest.get("updated") or "--")
-    updated_display = "--" if _ts == "--" else f"{datetime.now():%Y-%m-%d} {_ts}"
+    updated_display = _ts  # 不给历史时分拼接今天的日期
     return {
         "id": insight_id,
+        "insightTypeId": insight_id,
+        "occurrenceId": insight["occurrenceId"],
+        "businessVersion": insight["businessVersion"],
         "title": insight["title"],
         "source": f"{meta['sheet']} + 规则引擎",
         "updated": updated_display,
@@ -704,6 +782,3 @@ def engine_evidence(insight_id: str, repo=None) -> dict | None:
         "suggestion": copy["suggestion"],
         "rawRows": rows,
     }
-
-
-

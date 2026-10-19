@@ -4,7 +4,8 @@ import { insights, chartData } from '../../data';
 import { Tag } from '../../components/ui/Tag';
 import { AskBar } from '../../components/dora/AskBar';
 import { InsightChart } from '../../components/charts/InsightChart';
-import { askDora } from '../../services/doraApi';
+import { EngineChart } from '../../components/charts/EngineChart';
+import { dataConnection, askDora } from '../../services/doraApi';
 
 /*
  * 字段盘点表（W2 frontend-loop-insight，design D3；勿删）
@@ -12,7 +13,7 @@ import { askDora } from '../../services/doraApi';
  * | 归因卡 | semantics{causeA,causeB} | /api/insights 同步结构 | data.ts 镜像 semantics | 无 → 归因区显「模板未覆盖」note + 引擎原文（metric/delta/question/factors） |
  * | 置信/来源 | confidence/source | /api/insights | 镜像 | 有则显 |
  * | 下一步建议 | semantics.next | /api/insights | 镜像 | 无 → 「暂无引擎建议（可重新解释刷新）」 |
- * | 图表 | chartData[id] | 前端静态（F11，另立候选） | 静态 | —（注释显式暴露，不假装真实） |
+ * | 图表 | chart | 后端指标与规则 | 明示历史演示 / 上次结果 | 无序列显示空态 |
  * | 判断列 | /api/dora/chat(why) 判断原文 | dora chat SSE | 引擎 semantics 兜底句 | AI 不可用 → 「引擎语义兜底」note |
  * | 判断·等级 | severity{level,score,rule,drivers} | /api/insights 引擎字段 | data.ts 镜像 | 缺字段 → 段①不渲染（回退本页旧形态） |
  * | 判断·后果 | consequence{summary,condition,horizon,impacts} | /api/insights 引擎字段 | data.ts 镜像 | 缺字段 → 段③不渲染（回退本页旧形态） |
@@ -34,7 +35,7 @@ const SEV_LABEL: Record<'high' | 'medium' | 'low', string> = { high: '高', medi
 
 export function InsightPage({type,selected,onType,onSelect,onTrace,onRoute,onNotice,onRefreshReasoning}:{type:InsightType;selected:number;onType:(t:InsightType)=>void;onSelect:(i:number)=>void;onTrace:(id:string)=>void;onRoute:(type:InsightType,id:string)=>void;onNotice:(m:string)=>void;onRefreshReasoning?:()=>void|Promise<void>}){
  const [explainBusy,setExplainBusy]=useState(false);const runExplain=async()=>{if(explainBusy||!onRefreshReasoning)return;setExplainBusy(true);try{await onRefreshReasoning()}finally{setExplainBusy(false)}};
- const list=insights[type];const x=list[selected]??list[0];const tone=x.type==='problem'?'red':x.type==='opportunity'?'green':'blue';
+ const list=insights[type];const x=list[selected]??list[0];const tone=x?.type==='problem'?'red':x?.type==='opportunity'?'green':'blue';
   const [listOpen, setListOpen] = useState(true);
   const [restOpen, setRestOpen] = useState(false); // 判断列「补充说明」默认收起，避免长文过载
   // 「为什么值得处理/放大/关注？」= 接入 Dora AI 判断（/api/dora/chat SSE，迭代 42）；失败/离线自动降级为引擎 semantics
@@ -43,6 +44,7 @@ export function InsightPage({type,selected,onType,onSelect,onTrace,onRoute,onNot
     let alive = true;
     setRestOpen(false); // 换洞察时收起补充说明，避免把上一条的展开状态带过来
     setJudge({ loading: true, text: '', refs: [], err: false });
+    if (!x) { setJudge({ loading: false, text: '', refs: [], err: false }); return; }
     askDora(x.question || `为什么「${x.title}」值得关注？`, { insightId: x.id, page: 'insight' })
       .then((r) => {
         if (alive) setJudge({ loading: false, text: r.text, refs: (r.references ?? []).map((f) => ({ code: f.code, title: f.title })), err: false });
@@ -52,7 +54,8 @@ export function InsightPage({type,selected,onType,onSelect,onTrace,onRoute,onNot
       });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [x?.id]);
+  }, [x?.id, x?.metric, x?.delta, x?.generatedAt]);
+  if (!x) return <div className="card"><h2>当前没有此类洞察</h2><p>数据尚未触发对应规则；可切换分类或更新数据。</p>{(['problem','opportunity','change'] as const).map(t => <button className="btn" key={t} onClick={() => onType(t)}>{t === 'problem' ? '问题' : t === 'opportunity' ? '机会' : '变化'}</button>)}</div>;
    const sem = x.semantics;
   const semFacts = sem
     ? [
@@ -91,7 +94,7 @@ export function InsightPage({type,selected,onType,onSelect,onTrace,onRoute,onNot
   <div className="tabs">{(['problem','opportunity','change'] as InsightType[]).map(t=><button key={t} className={'tab '+(type===t?'active':'')} onClick={()=>onType(t)}>{t==='problem'?'问题洞察':t==='opportunity'?'机会洞察':'变化洞察'} · {insights[t].length}</button>)}</div>
   <div className="insight-shell"><aside className={'insight-drawer'+(listOpen?' open':'')}><div className="insight-drawer-head">{listOpen&&<b>{type==='problem'?'问题列表':type==='opportunity'?'机会列表':'变化列表'}</b>}<button className="drawer-toggle" onClick={()=>setListOpen(v=>!v)} title={listOpen?'收起':'展开'}>{listOpen?'‹ 收起':'›'}</button></div>{listOpen&&<><div className="list-head"><span>{type==='problem'?'按业务影响排序':type==='opportunity'?'按增长潜力排序':'按重要性排序'}</span></div>{list.map((item,i)=><button key={item.id} className={'insight-item '+(i===selected?'active':'')} aria-selected={i===selected} onClick={()=>onSelect(i)}><div className="itop"><Tag tone={item.type==='problem'?'red':item.type==='opportunity'?'green':'blue'}>{item.tag}</Tag><span className="confidence">置信 <b>{item.confidence}%</b></span></div><div className="iname">{item.title}</div><div className="idesc">{item.desc}</div><div className={'list-status '+(item.type==='change'?'watch':'none')}>{item.type==='change'?'变化先进入持续关注':'未加入行动回路'}</div></button>)}</>}</aside>
    <div className="card detail"><div className="detail-top"><div><Tag tone={tone}>{x.tag}</Tag><div className="detail-title">{x.title}</div><div className="detail-sub">{x.desc}</div></div><div className="detail-right"><Tag tone="ai">可信度 {x.confidence}%</Tag><Tag tone={x.reasonSource==='llm'?'green':'blue'}>{(x.reasonSource==='llm'?'AI 解释':'模板解释')}</Tag></div></div>
-    <div className="chart-card card"><div className="chart-header"><span>{x.type==='problem'?'异常趋势':x.type==='opportunity'?'增长结构':'变化趋势'}</span><span className="muted">鼠标移动到图表区域查看具体数据</span></div><InsightChart data={chartData[x.id]}/></div>
+    <div className="chart-card card"><div className="chart-header"><span>{x.type==='problem'?'异常趋势':x?.type==='opportunity'?'增长结构':'变化趋势'}</span><span className="muted">鼠标移动到图表区域查看具体数据</span></div>{dataConnection.source === 'demo' && chartData[x.id] ? <><p className="note">历史演示图，未连接当前数据</p><InsightChart key={x.id} data={chartData[x.id]}/></> : <EngineChart data={x.chart}/>}</div>
     <div className="insight-route"><div className="route-node"><b>洞察页</b><p>{x.type==='change'?'先判断变化是否值得继续观察，并设置升级条件。':'先确认影响因素，再决定是否进入执行。'}</p></div><div className="route-arrow">→</div><div className="route-node"><b>{x.type==='change'?'持续关注':'行动回路'}</b><p>{x.type==='change'?'变化先进入持续关注，满足阈值后再升级为问题或机会。':'问题 / 机会直接进入行动回路，形成任务、验证和回写。'}</p></div></div>
     {x.type==='change'&&<div className="change-lifecycle"><h4>变化洞察的升级路径</h4><div className="level-row"><div className="level-badge watch">{x.id==='c2'?'数据事件':'观察中'}</div><div className="level-copy"><b>当前状态：</b>{x.id==='c2'?'数据更新已完成，先确认刷新是否带来新的经营变化。':'当前变化尚未达到升级阈值，先进入持续关注。'}</div></div><div className="level-row"><div className="level-badge op">机会升级</div><div className="level-copy"><b>满足条件：</b>正向变化稳定后，可升级为机会洞察并进入行动回路。</div></div><div className="level-row"><div className="level-badge problem">问题升级</div><div className="level-copy"><b>风险条件：</b>变化继续恶化并突破阈值后，升级为问题洞察，转入行动回路处理。</div></div><div className="logic-strip"><span className="logic-pill">持续关注</span><span className="logic-pill">阈值判断</span><span className="logic-pill">升级为问题 / 机会</span></div></div>}
     <div className="detail-bottom one-col">

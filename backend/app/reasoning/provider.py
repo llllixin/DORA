@@ -7,6 +7,8 @@
 import os
 from dataclasses import dataclass, field
 from typing import Protocol
+from app.runtime.executor import managed_call, runtime_managed
+from app.runtime.contracts import ProviderEnvelope
 
 
 @dataclass
@@ -40,8 +42,18 @@ class ReasoningProvider(Protocol):
 
 class TemplateProvider:
     kind = "template"
+    external = False
+    model = 'dora-reasoning-template-v1'
 
-    def explain(self, context: ReasoningContext) -> ReasoningResult:
+    def __init__(self):
+        from app.business_version import reasoning_profile
+        self._profile = reasoning_profile(self.kind)
+
+    @property
+    def profile(self): return dict(self._profile)
+
+    @runtime_managed
+    def explain(self, context: ReasoningContext, *, run_context=None) -> ReasoningResult:
         # semantics 由 reasoning 包提供（V3-T2 收编，不再依赖引擎私有函数）
         from app.reasoning.semantics import template_semantics
         semantics = None
@@ -49,11 +61,13 @@ class TemplateProvider:
             semantics = template_semantics(context.insight_id, context.snapshot) or {}
         except KeyError:  # 引擎无该 id 模板时保持空语义
             semantics = {}
-        return ReasoningResult(
+        value = ReasoningResult(
             semantics=semantics,
             provider=self.kind,
             note="模板解释（V3-T2，与引擎默认输出一致）",
         )
+        return managed_call('reasoning-refresh', run_context, 'reasoning', self,
+                            {'insightId': context.insight_id, 'snapshot': context.snapshot}, lambda a: ProviderEnvelope(value))
 
 
 def resolve_provider(name: str | None = None) -> ReasoningProvider:
