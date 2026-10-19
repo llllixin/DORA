@@ -38,6 +38,7 @@ frontend/vite.config.d.ts
 /TREE.txt
 /backend/README.md
 /backend/tests/check_docs.py
+/tools/cdp/README.md
 /knowledge/README.md
 /knowledge/wiki/README.md
 
