@@ -26,3 +26,34 @@ backend/.env
 *.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
+
+# 本地保留、不推送的文档与规划材料
+/docs/
+/openspec/
+/.cline/
+/.clinerules/
+/AGENT.md
+/README.md
+/RELEASE_NOTES_V*.md
+/TREE.txt
+/backend/README.md
+/backend/tests/check_docs.py
+/knowledge/README.md
+/knowledge/wiki/README.md
+
+# 本地生成物与临时材料
+/output/
+/tmp/
+/.ui-audit/
+/knowledge/documents.json.lock
+
+# 本地文档附件
+*.doc
+*.docx
+*.pdf
+*.ppt
+*.pptx
+*.xls
+*.xlsx
+*.key
+*.pages
