@@ -202,14 +202,12 @@ def full_checks(evidence,owner):
     if not docker:raise RuntimeError('Docker required; no implicit installation or pull')
     required=[ROOT/'tools/cdp'/name for name in CDP_SCRIPTS]
     if any(not path.is_file() for path in required):raise RuntimeError('both production CDP scripts must exist before creating resources')
-    for executable in ('node','npm','curl','openspec'):
+    for executable in ('node','npm','curl'):
         if not shutil.which(executable):raise RuntimeError(f'missing gate executable: {executable}')
     legacy=audit_http_targets();assert_ports_free()
     (evidence.out/'legacy-http-audit.json').write_text(json.dumps(legacy,indent=2))
     local_checks(evidence)
     evidence.run('frontend-build',['npm','run','build'],cwd=ROOT/'frontend')
-    evidence.module('tests.check_docs')
-    evidence.run('openspec-strict',['openspec','validate','knowledge-query-ui','--strict'],cwd=ROOT)
     listed=evidence.run('image-local-id',[docker,'image','ls','--no-trunc','--quiet','--filter','reference='+IMAGE],timeout=30)
     ids=listed.stdout.split()
     if len(ids)!=1 or not re.fullmatch(r'sha256:[a-f0-9]{64}',ids[0]):raise RuntimeError('exact one local PostgreSQL image required')

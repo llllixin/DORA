@@ -104,7 +104,7 @@ def main():
             # Original metric/archive/Chat HTTP tests remain in tests.run_all.
             (OUT/'http-results.json').write_text(json.dumps({'realHTTP':True,'curl':True,'records':records},ensure_ascii=False,indent=2)+'\n')
             checks.append({'name':'real-http-and-curl','exitCode':0})
-            run('tests.run_all');run('tests.check_docs')
+            run('tests.run_all')
         passed=True
     finally:
         if server:

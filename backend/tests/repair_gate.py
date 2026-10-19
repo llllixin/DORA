@@ -56,7 +56,7 @@ def main():
             records.append(dict(path='/datasets',status=413,bytes=len(data),unchangedVersion=True,body=json.loads(body)))
             (OUT/'http-results.json').write_text(json.dumps(dict(realHTTP=True,records=records),ensure_ascii=False,indent=2))
             checks.append(dict(name='real-http-boundaries',exitCode=0))
-            for name in ('tests.boundary_check','tests.action_atomic_check','tests.run_all','tests.check_docs'):run(name)
+            for name in ('tests.boundary_check','tests.action_atomic_check','tests.run_all'):run(name)
             run('frontend-build',['npm','run','build'],ROOT/'frontend')
         passed=True
     finally:

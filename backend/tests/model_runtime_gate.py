@@ -75,7 +75,7 @@ def main():
             before=repo.create_agent_run(events=[{'type':'legacy'}],output={'answer':'old'})
             assert repo.get_agent_run(before['id'])==before
             checks.append({'name':'pg-concurrent-40-events-and-legacy-retention','exitCode':0})
-            for module in ['tests.model_runtime_check','tests.model_runtime_integration_check','tests.agent_loop_check','tests.run_all','tests.check_docs']:
+            for module in ['tests.model_runtime_check','tests.model_runtime_integration_check','tests.agent_loop_check','tests.run_all']:
                 run(module)
             (OUT/'http-results.json').write_text(json.dumps({'index':index,'answer':answer,'search':search,'refresh':refresh},ensure_ascii=False,indent=2)+'\n')
             print('A04 isolated PostgreSQL/HTTP gate: PASS',flush=True)

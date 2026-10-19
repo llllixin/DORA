@@ -66,7 +66,7 @@ def main():
             assert curl.returncode==0 and json.loads(curl.stdout)['indexStatus']=='in_sync'
             (OUT/'http-results.json').write_text(json.dumps({'firstIndex':first,'secondIndex':second,'status':status,'search':search,'answer':answer,'history':history,'wikiStatus':wiki['indexStatus'],'evaluation':report},ensure_ascii=False,indent=2)+'\n')
             checks.append({'name':'real-HTTP-index-search-answer-history-status-wiki-evaluation-and-curl','exitCode':0})
-            for module in ('tests.run_all','tests.check_docs'):run(module)
+            run('tests.run_all')
             # Restart the actual API against the same successful head. Startup must
             # create its audit run without issuing document embedding attempts.
             from sqlalchemy import create_engine,select

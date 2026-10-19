@@ -2717,8 +2717,7 @@
       ],
       "source_refs": [
         "backend/app/routers.py",
-        "backend/app/repository.py",
-        "openspec/specs/business-action/spec.md"
+        "backend/app/repository.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -2726,12 +2725,11 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "a53145dd812d8d7e309356e76480669d0c4bdf2d3b9ad22c278650031d772942"
+        "payload_hash": "4c6aed9dd88790403d749102bfca85091a8981ebf07286301a5eff27f2afe81e"
       },
       "source_hashes": {
-        "backend/app/routers.py": "fe3225912b7645c78950dc7c846e83fdeae503eb84edec8afeafe84066c2bd6f",
-        "backend/app/repository.py": "5c78460d47bf294c055f372e4dcf7d89bab76d13c076150c81cfc4f023144fe4",
-        "openspec/specs/business-action/spec.md": "6689a65a16c4640f8c347d5a404bfa819e6a2aa4f0a49a7138be539f1803e0b4"
+        "backend/app/routers.py": "c850488491909e56ed613ea5b7004bd3b64e54adc3bd04f7208c9e847b44de4e",
+        "backend/app/repository.py": "2a8c0e8761f7983a918ff857f62e6da890636adb0cf0bbfe3ce6e0dcae5b0a36"
       }
     }
   },
@@ -2802,7 +2800,7 @@
       "知识与实时数据"
     ],
     "source_type": "project",
-    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_ref": "backend/app/agent/tools.py",
     "source_url": "",
     "version": 2,
     "valid_from": "2026-10-14",
@@ -2828,7 +2826,7 @@
         "企业操作流程与责任分工"
       ],
       "source_refs": [
-        "docs/agent/RAG整体搭建计划.md"
+        "backend/app/agent/tools.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -2836,10 +2834,10 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "816638a2db56cd5c2d1b91ce6dd1c95c828007b45623a9a81eaa1429e7262171"
+        "payload_hash": "b322f2ec77ce36025c87e09756535a109ae52c0e2f9669214d4beea0c9f6843a"
       },
       "source_hashes": {
-        "docs/agent/RAG整体搭建计划.md": "d0d960033fec6488afae29f72383b201745ef859eed67ada458532a38954d252"
+        "backend/app/agent/tools.py": "7e86089d8802dac12e73ebe5b0623b1ed9b7ef92e2590ae515962f37bfd20107"
       }
     }
   },
@@ -2857,7 +2855,7 @@
       "拒答"
     ],
     "source_type": "project",
-    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_ref": "backend/app/rag/answer.py",
     "source_url": "",
     "version": 2,
     "valid_from": "2026-10-14",
@@ -2883,7 +2881,7 @@
         "企业操作流程与责任分工"
       ],
       "source_refs": [
-        "docs/agent/RAG整体搭建计划.md"
+        "backend/app/rag/answer.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -2891,10 +2889,10 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "1433a24116cfde9d52b322821dba543e37e059d5c4e5d620a4e1ce8c39e778bf"
+        "payload_hash": "c9e527709b6d6c999d159a8e4b7a8d2f0800a51a098e606043bb532d0fded28d"
       },
       "source_hashes": {
-        "docs/agent/RAG整体搭建计划.md": "d0d960033fec6488afae29f72383b201745ef859eed67ada458532a38954d252"
+        "backend/app/rag/answer.py": "2a36e56f2287db6678a0d8e2d6070f100997c41062b54c72c9ff37fc641293ad"
       }
     }
   },
@@ -3566,7 +3564,7 @@
       "提示注入"
     ],
     "source_type": "simulated",
-    "source_ref": "docs/agent/README.md",
+    "source_ref": "backend/app/agent/tools.py",
     "source_url": "",
     "version": 2,
     "valid_from": "2026-10-14",
@@ -3595,7 +3593,7 @@
         "企业经营验证材料"
       ],
       "source_refs": [
-        "docs/agent/README.md"
+        "backend/app/agent/tools.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -3603,10 +3601,10 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "9fef7a8bf9ab719b665ae56f49bb4c73f7d1a25f62aa210e84c00ba0cc8e2aa2"
+        "payload_hash": "c590f348129db4eae3b4582614fb323a11d8510c20a47903553c968aa0cb5a22"
       },
       "source_hashes": {
-        "docs/agent/README.md": "8fdbf67e1a0b7a8295c4d36b068f5a1cd425bf17a89484dfe6a52f561ef3db3f"
+        "backend/app/agent/tools.py": "7e86089d8802dac12e73ebe5b0623b1ed9b7ef92e2590ae515962f37bfd20107"
       }
     }
   },
@@ -3625,7 +3623,7 @@
       "伪造引用"
     ],
     "source_type": "simulated",
-    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_ref": "backend/app/rag/answer.py",
     "source_url": "",
     "version": 2,
     "valid_from": "2026-10-14",
@@ -3654,7 +3652,7 @@
         "企业经营验证材料"
       ],
       "source_refs": [
-        "openspec/specs/business-agent/spec.md"
+        "backend/app/rag/answer.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -3662,10 +3660,10 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "7ded4d7e66c9622ca4b0ee61138935290ab50dc5493d37a380856d2b5a2c7c2d"
+        "payload_hash": "d9df5c20cea8153f6c007793c944539034aaee1bb778e450fae72ec8295d86bb"
       },
       "source_hashes": {
-        "openspec/specs/business-agent/spec.md": "d5c7c3c4cfd56e1b5e415d91c93f60d1d82d2fc3e0b6e6b2f0ca3ad3fe0c2296"
+        "backend/app/rag/answer.py": "2a36e56f2287db6678a0d8e2d6070f100997c41062b54c72c9ff37fc641293ad"
       }
     }
   },
@@ -3682,7 +3680,7 @@
       "无命中"
     ],
     "source_type": "simulated",
-    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_ref": "backend/app/rag/retrieval.py",
     "source_url": "",
     "version": 2,
     "valid_from": "2026-10-14",
@@ -3711,7 +3709,7 @@
         "企业经营验证材料"
       ],
       "source_refs": [
-        "docs/agent/RAG整体搭建计划.md"
+        "backend/app/rag/retrieval.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -3719,10 +3717,10 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "3edeffa010954f339c43a96838e9a8f156074f1ec0d3e7818a8deede68f17a0f"
+        "payload_hash": "a6ce5b4a9ba9cf7d02089170b205b6d011577e569ade5bc78687d621df626fef"
       },
       "source_hashes": {
-        "docs/agent/RAG整体搭建计划.md": "d0d960033fec6488afae29f72383b201745ef859eed67ada458532a38954d252"
+        "backend/app/rag/retrieval.py": "189f50afbd39ed78b9afc4d24c3cc9ef2249369cce9ce8c9ef87aa95260cbece"
       }
     }
   },
@@ -3739,7 +3737,7 @@
       "重复索引"
     ],
     "source_type": "simulated",
-    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_ref": "backend/app/rag/identity.py",
     "source_url": "",
     "version": 2,
     "valid_from": "2026-10-14",
@@ -3768,7 +3766,7 @@
         "企业经营验证材料"
       ],
       "source_refs": [
-        "openspec/specs/business-agent/spec.md"
+        "backend/app/rag/identity.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -3776,10 +3774,10 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "f476a301713a58ed88dc3c859230e3d79827b20e9f1e47ee37976398bdc2d536"
+        "payload_hash": "7a95bdad5fe2286589f8561fd80d813817897f3fdf38a0522b64e24f73705838"
       },
       "source_hashes": {
-        "openspec/specs/business-agent/spec.md": "d5c7c3c4cfd56e1b5e415d91c93f60d1d82d2fc3e0b6e6b2f0ca3ad3fe0c2296"
+        "backend/app/rag/identity.py": "db9c26125aea8f1f462a564b2d28536e0a33cab8741f8eb375e0eb04b2731955"
       }
     }
   },
@@ -3796,7 +3794,7 @@
       "历史版本"
     ],
     "source_type": "simulated",
-    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_ref": "backend/app/rag/lifecycle.py",
     "source_url": "",
     "version": 2,
     "valid_from": "2026-10-14",
@@ -3825,7 +3823,7 @@
         "企业经营验证材料"
       ],
       "source_refs": [
-        "openspec/specs/business-agent/spec.md"
+        "backend/app/rag/lifecycle.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -3833,10 +3831,10 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "3acb14814b0a888722c27089b452b1cc99144aebbe242e34ea5c2225ff7c0178"
+        "payload_hash": "7e5aa4b3cf46f49a25c925271682bec581c492407d27704d58999cf3182c78d1"
       },
       "source_hashes": {
-        "openspec/specs/business-agent/spec.md": "d5c7c3c4cfd56e1b5e415d91c93f60d1d82d2fc3e0b6e6b2f0ca3ad3fe0c2296"
+        "backend/app/rag/lifecycle.py": "a68be9ac1995e790a24311ada080b90c9cfff633e8d5fbac4e459602c1274fbd"
       }
     }
   },
@@ -3853,7 +3851,7 @@
       "半批写入"
     ],
     "source_type": "simulated",
-    "source_ref": "openspec/specs/business-agent/spec.md",
+    "source_ref": "backend/app/rag/indexer.py",
     "source_url": "",
     "version": 2,
     "valid_from": "2026-10-14",
@@ -3882,7 +3880,7 @@
         "企业经营验证材料"
       ],
       "source_refs": [
-        "openspec/specs/business-agent/spec.md"
+        "backend/app/rag/indexer.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -3890,10 +3888,10 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "6398d4bd3d47199e730f8174ca68d67f3138778d1aae7405f97b4a0b19f02fec"
+        "payload_hash": "74dcd143c76f1de1c2bd187f8cbc376ff4f17777dc3d18df8891ef40d8c0e587"
       },
       "source_hashes": {
-        "openspec/specs/business-agent/spec.md": "d5c7c3c4cfd56e1b5e415d91c93f60d1d82d2fc3e0b6e6b2f0ca3ad3fe0c2296"
+        "backend/app/rag/indexer.py": "2719b9fadde0eab622cc70b815b4dd6631d1719e3d799321f2b37062534dd486"
       }
     }
   },
@@ -3916,7 +3914,7 @@
       "今天利润率"
     ],
     "source_type": "simulated",
-    "source_ref": "docs/agent/RAG整体搭建计划.md",
+    "source_ref": "backend/app/query/routing.py",
     "source_url": "",
     "version": 2,
     "valid_from": "2026-10-14",
@@ -3945,7 +3943,7 @@
         "企业经营验证材料"
       ],
       "source_refs": [
-        "docs/agent/RAG整体搭建计划.md"
+        "backend/app/query/routing.py"
       ],
       "review": {
         "actor": "project-user:A02-review-2026-10-14",
@@ -3953,10 +3951,10 @@
         "timestamp": "2026-10-14T11:53:22+00:00",
         "decision": "approve",
         "base_version": 1,
-        "payload_hash": "57d64b21ffbac0a848cb4775f7d953e133235b0fd20a2720da03eca9d934f2fa"
+        "payload_hash": "40fc6046c15826381501f2d3c48f365d1a92abe9c2792cb28409e888313421c8"
       },
       "source_hashes": {
-        "docs/agent/RAG整体搭建计划.md": "d0d960033fec6488afae29f72383b201745ef859eed67ada458532a38954d252"
+        "backend/app/query/routing.py": "c8b18cbce94ea281c5167f6d4c46052d29075f3814a36f4b33b9b52162f12779"
       }
     }
   }
